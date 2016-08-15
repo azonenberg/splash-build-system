@@ -8,4 +8,4 @@ set(EXTRA_WARNINGS "-Wcast-align -Winit-self -Wmissing-declarations")
 set(EXTRA_WARNINGS "${EXTRA_WARNINGS} -Wswitch -Wwrite-strings ")
 set( CMAKE_CXX_FLAGS "-Wall -Wextra ${EXTRA_WARNINGS} -std=c++11 -fPIC -shared-libgcc -g3")
 
-#add_subdirectory(src)
+add_subdirectory(src)
