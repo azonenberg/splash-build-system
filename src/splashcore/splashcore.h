@@ -27,62 +27,60 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
+#ifndef splashcore_h
+#define splashcore_h
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Platform includes
+
+#include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// libc includes
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <string.h>
+#include <stdarg.h>
+#include <typeinfo>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// libstdc++ includes
+
 #include <string>
+#include <vector>
+#include <list>
 
-using namespace std;
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Other library includes
 
-void ShowUsage();
+#include <crypto++/sha.h>
 
-void WatchDirRecursively(string dir);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Global functions
 
-int main(int argc, char* argv[])
-{
-	string source_dir;
-	string ctl_server;
-	
-	//Parse command-line arguments
-	for(int i=1; i<argc; i++)
-	{
-		string s(argv[i]);
-		
-		if(s == "--help")
-		{
-			ShowUsage();
-			return 0;
-		}
-		
-		else if(source_dir == "")
-		{
-			if(i+1 >= argc)
-				ShowUsage();
-				
-			source_dir = argv[++i];
-		}
-		
-		else
-		{
-			if(i+1 >= argc)
-				ShowUsage();
-				
-			ctl_server = argv[++i];
-		}
-	}
-	
-	//Open the source directory and start an inotify watcher on it and all subdirectories (recursively)
-	
-	
-	return 0;
-}
+double GetTime();
 
-void WatchDirRecursively(string dir)
-{
-	
-}
+void FatalError(const char* format, ...);
 
-void ShowUsage()
-{
-	printf("Usage: splashdev srcdir ctlserver\n");
-	exit(0);
-}
+std::string CanonicalizePath(std::string fname);
+bool DoesDirectoryExist(std::string fname);
+bool DoesFileExist(std::string fname);
+std::string GetDirOfFile(std::string fname);
+std::string GetBasenameOfFile(std::string fname);
+std::string GetBasenameOfFileWithoutExt(std::string fname);
+void FindFilesByExtension(std::string dir, std::string ext, std::vector<std::string>& files);
+void FindSubdirs(std::string dir, std::vector<std::string>& subdirs);
+std::string GetRelativePathOfFile(std::string dir, std::string fname);
+
+void MakeDirectoryRecursive(std::string path, int mode);
+
+std::string sha256(std::string str);
+std::string sha256_file(std::string path);
+
+#endif
