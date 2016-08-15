@@ -1,2 +1,5 @@
 # splash-build-system
-Parallel build system for multi-language / multi-architecture embedded projects
+
+Complete from-scratch rebuild of the original Splash build system, inspired by Google Blaze.
+
+TODO: write some stuff here. See the wiki for most info.
