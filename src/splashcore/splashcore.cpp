@@ -75,10 +75,10 @@ void ParseSearchPath(vector<string>& dirs)
 string CanonicalizePath(string fname)
 {
 	char* cpath = realpath(fname.c_str(), NULL);
-	if(cpath == NULL)
+	if(cpath == NULL)	//file probably does not exist
 	{
-		LogFatal("Could not canonicalize path %s\n", fname.c_str());
-		return fname;
+		//LogDebug("Could not canonicalize path %s\n", fname.c_str());
+		return "";
 	}
 	string str(cpath);
 	free(cpath);
@@ -162,7 +162,7 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 			continue;
 			
 		//Extension match
-		string fname = CanonicalizePath(dir + "/" + ent.d_name);
+		string fname = dir + "/" + ent.d_name;
 		if(fname.find(ext) == (fname.length() - ext.length()) )
 			files.push_back(fname);
 	}
@@ -192,7 +192,7 @@ void FindFilesBySubstring(string dir, string sub, vector<string>& files)
 			continue;
 		
 		//Extension match
-		string fname = CanonicalizePath(dir + "/" + ent.d_name);
+		string fname = dir + "/" + ent.d_name;
 		if(fname.find(sub) != string::npos )
 			files.push_back(fname);
 	}
@@ -221,7 +221,7 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 		if(ent.d_name[0] == '.')	//don't find hidden dirs
 			continue;
 		
-		string fname = CanonicalizePath(dir + "/" + ent.d_name);
+		string fname = dir + "/" + ent.d_name;
 		if(!DoesDirectoryExist(fname))
 			continue;
 
