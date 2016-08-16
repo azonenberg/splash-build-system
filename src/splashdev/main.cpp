@@ -27,15 +27,19 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
+#include "../splashcore/splashcore.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+
+#include <sys/inotify.h>
 
 using namespace std;
 
 void ShowUsage();
 
-void WatchDirRecursively(string dir);
+void WatchDirRecursively(int hnotify, string dir);
 
 int main(int argc, char* argv[])
 {
@@ -53,32 +57,61 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		
-		else if(source_dir == "")
-		{
-			if(i+1 >= argc)
-				ShowUsage();
-				
-			source_dir = argv[++i];
-		}
+		else if(source_dir == "")				
+			source_dir = argv[i];
 		
-		else
-		{
-			if(i+1 >= argc)
-				ShowUsage();
-				
-			ctl_server = argv[++i];
-		}
+		else	
+			ctl_server = argv[i];
+
 	}
 	
-	//Open the source directory and start an inotify watcher on it and all subdirectories (recursively)
+	//Open the source directory and start an inotify watcher on it and all subdirectories
+	source_dir = CanonicalizePath(source_dir);
+	int hnotify = inotify_init();
+	if(hnotify < 0)
+		FatalError("Couldn't start inotify\n");
+	WatchDirRecursively(hnotify, source_dir);
+
+	//TODO: signal handler so we can quit gracefully
+
+	//Main event loop
+	size_t buflen = sizeof(inotify_event) + NAME_MAX + 1;
+	inotify_event* evt = (inotify_event*)malloc(buflen);
+	if(evt == NULL)
+		FatalError("Couldn't allocate buffer\n");
+	while(1)
+	{
+		//Get the event
+		size_t len = read(hnotify, evt, buflen);
+		if(len <= 0)
+			break;
+			
+		//See what it is
+		printf("Got event of type %d for %s (len %d, namelen %d)\n", evt->mask, evt->name, len, evt->len);
+	}
 	
-	
+	//Done
+	free(evt);
+	close(hnotify);	
 	return 0;
 }
 
-void WatchDirRecursively(string dir)
+void WatchDirRecursively(int hnotify, string dir)
 {
+	//Watch changes to the directory
+	if(0 > inotify_add_watch(
+		hnotify,
+		dir.c_str(),
+		IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF))
+	{
+		FatalError("Failed to watch directory %s\n", dir.c_str());
+	}
 	
+	//Look for any subdirs and watch them
+	vector<string> subdirs;
+	FindSubdirs(dir, subdirs);
+	for(auto s : subdirs)
+		WatchDirRecursively(hnotify, s);
 }
 
 void ShowUsage()
