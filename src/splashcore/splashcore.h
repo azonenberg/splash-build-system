@@ -66,6 +66,8 @@
 
 double GetTime();
 
+void ParseSearchPath(std::vector<std::string>& dirs);
+
 std::string CanonicalizePath(std::string fname);
 bool DoesDirectoryExist(std::string fname);
 bool DoesFileExist(std::string fname);

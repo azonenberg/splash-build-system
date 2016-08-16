@@ -45,6 +45,28 @@ double GetTime()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Parse $PATH into a vector of strings
+
+void ParseSearchPath(vector<string>& dirs)
+{
+	string path = getenv("PATH");
+
+	string dir = "";
+	for(size_t i=0; i<path.length(); i++)
+	{
+		if(path[i] == ':')
+		{
+			dirs.push_back(dir);
+			dir = "";
+		}
+		else
+			dir += path[i];
+	}
+	if(dir != "")
+		dirs.push_back(dir);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Filename manipulation
 
 /**
