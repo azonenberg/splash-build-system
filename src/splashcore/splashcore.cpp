@@ -152,6 +152,36 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 }
 
 /**
+	@brief Find all files whose name contains the specified substring in a given directory.
+ */
+void FindFilesBySubstring(string dir, string sub, vector<string>& files)
+{
+	DIR* hdir = opendir(dir.c_str());
+	if(!hdir)
+		LogFatal("Directory %s could not be opened\n", dir.c_str());
+	
+	dirent ent;
+	dirent* pent;
+	while(0 == readdir_r(hdir, &ent, &pent))
+	{
+		if(pent == NULL)
+			break;
+		if(ent.d_name[0] == '.')
+			continue;
+		
+		//Extension match
+		string fname = CanonicalizePath(dir + "/" + ent.d_name);
+		if(fname.find(sub) != string::npos )
+			files.push_back(fname);
+	}
+	
+	//Sort the list of files to ensure determinism
+	sort(files.begin(), files.end());
+	
+	closedir(hdir);
+}
+
+/**
 	@brief Find all subdirectories in a given directory.
  */
 void FindSubdirs(string dir, vector<string>& subdirs)

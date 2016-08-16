@@ -72,8 +72,11 @@ bool DoesFileExist(std::string fname);
 std::string GetDirOfFile(std::string fname);
 std::string GetBasenameOfFile(std::string fname);
 std::string GetBasenameOfFileWithoutExt(std::string fname);
+
+void FindFilesBySubstring(std::string dir, std::string sub, std::vector<std::string>& files);
 void FindFilesByExtension(std::string dir, std::string ext, std::vector<std::string>& files);
 void FindSubdirs(std::string dir, std::vector<std::string>& subdirs);
+
 std::string GetRelativePathOfFile(std::string dir, std::string fname);
 
 void MakeDirectoryRecursive(std::string path, int mode);
