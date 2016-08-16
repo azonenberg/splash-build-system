@@ -27,72 +27,45 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashcore_h
-#define splashcore_h
+#ifndef Toolchain_h
+#define Toolchain_h
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Platform includes
+/**
+	@brief A toolchain for compiling some language(s)
+ */
+class Toolchain
+{
+public:
+	Toolchain(std::string basepath);
+	virtual ~Toolchain();
+	
+	//IDs for all supported languages in Splash (add more here as necessary)
+	enum Language
+	{
+		LANG_C,
+		LANG_CPP,
+		LANG_VERILOG
+	};
+	
+	/**
+		@brief Get the list of languages that we can compile.
+	 */
+	virtual void GetSupportedLanguages(std::vector<Language>& langs) =0;
+	
+	/**
+		@brief Get the list of architecture triplets that we can target.
+	 */
+	virtual void GetTargetTriplets(std::vector<std::string>& triplets) =0;
+	
+protected:
 
-#include <unistd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libc includes
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <stdarg.h>
-#include <typeinfo>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libstdc++ includes
-
-#include <string>
-#include <vector>
-#include <list>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Other library includes
-
-#include <crypto++/sha.h>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Project includes
-
-#include "Toolchain.h"
-#include "CToolchain.h"
-#include "CPPToolchain.h"
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Global functions
-
-double GetTime();
-
-std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
-
-void ParseSearchPath(std::vector<std::string>& dirs);
-
-std::string CanonicalizePath(std::string fname);
-bool DoesDirectoryExist(std::string fname);
-bool DoesFileExist(std::string fname);
-std::string GetDirOfFile(std::string fname);
-std::string GetBasenameOfFile(std::string fname);
-std::string GetBasenameOfFileWithoutExt(std::string fname);
-
-void FindFilesBySubstring(std::string dir, std::string sub, std::vector<std::string>& files);
-void FindFilesByExtension(std::string dir, std::string ext, std::vector<std::string>& files);
-void FindSubdirs(std::string dir, std::vector<std::string>& subdirs);
-
-std::string GetRelativePathOfFile(std::string dir, std::string fname);
-
-void MakeDirectoryRecursive(std::string path, int mode);
-
-std::string sha256(std::string str);
-std::string sha256_file(std::string path);
+	/**
+		@brief Base path for the toolchain.
+		
+		This may be either the compiler executable for something like gcc, or
+		the base install directory for e.g. an FPGA tool suite.
+	 */
+	std::string m_basepath;
+};
 
 #endif

@@ -27,72 +27,27 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashcore_h
-#define splashcore_h
+#include "splashcore.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Platform includes
+using namespace std;
 
-#include <unistd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libc includes
+CPPToolchain::CPPToolchain(string basepath)
+	: CToolchain(basepath)
+{
+}
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <stdarg.h>
-#include <typeinfo>
+CPPToolchain::~CPPToolchain()
+{
+}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libstdc++ includes
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Toolchain properties
 
-#include <string>
-#include <vector>
-#include <list>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Other library includes
-
-#include <crypto++/sha.h>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Project includes
-
-#include "Toolchain.h"
-#include "CToolchain.h"
-#include "CPPToolchain.h"
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Global functions
-
-double GetTime();
-
-std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
-
-void ParseSearchPath(std::vector<std::string>& dirs);
-
-std::string CanonicalizePath(std::string fname);
-bool DoesDirectoryExist(std::string fname);
-bool DoesFileExist(std::string fname);
-std::string GetDirOfFile(std::string fname);
-std::string GetBasenameOfFile(std::string fname);
-std::string GetBasenameOfFileWithoutExt(std::string fname);
-
-void FindFilesBySubstring(std::string dir, std::string sub, std::vector<std::string>& files);
-void FindFilesByExtension(std::string dir, std::string ext, std::vector<std::string>& files);
-void FindSubdirs(std::string dir, std::vector<std::string>& subdirs);
-
-std::string GetRelativePathOfFile(std::string dir, std::string fname);
-
-void MakeDirectoryRecursive(std::string path, int mode);
-
-std::string sha256(std::string str);
-std::string sha256_file(std::string path);
-
-#endif
+void CPPToolchain::GetSupportedLanguages(vector<Language>& langs)
+{
+	CToolchain::GetSupportedLanguages(langs);
+	langs.push_back(LANG_CPP);
+}
