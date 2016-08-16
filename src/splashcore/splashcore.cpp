@@ -28,6 +28,7 @@
 ***********************************************************************************************************************/
 
 #include "splashcore.h"
+#include "../log/log.h"
 
 using namespace std;
 
@@ -44,26 +45,6 @@ double GetTime()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Debug logging (for now)
-
-void FatalError(const char* format, ...)
-{
-	fprintf(stderr, "\033[0mERROR: ");
-	
-	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-	
-	//trap to debugger
-	fflush(stdout);
-	fflush(stderr);
-	asm("int3");
-	
-	exit(1);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Filename manipulation
 
 /**
@@ -74,7 +55,7 @@ string CanonicalizePath(string fname)
 	char* cpath = realpath(fname.c_str(), NULL);
 	if(cpath == NULL)
 	{
-		FatalError("Could not canonicalize path %s\n", fname.c_str());
+		LogFatal("Could not canonicalize path %s\n", fname.c_str());
 		return fname;
 	}
 	string str(cpath);
@@ -147,7 +128,7 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 {
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
-		FatalError("Directory %s could not be opened\n", dir.c_str());
+		LogFatal("Directory %s could not be opened\n", dir.c_str());
 	
 	dirent ent;
 	dirent* pent;
@@ -177,7 +158,7 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 {
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
-		FatalError("Directory %s could not be opened\n", dir.c_str());
+		LogFatal("Directory %s could not be opened\n", dir.c_str());
 	
 	dirent ent;
 	dirent* pent;
@@ -238,7 +219,7 @@ void MakeDirectoryRecursive(string path, int mode)
 			if( (errno == EEXIST) && DoesDirectoryExist(path) )
 			{}
 			else
-				FatalError("Could not create directory %s (%s)\n", path.c_str(), strerror(errno));
+				LogFatal("Could not create directory %s (%s)\n", path.c_str(), strerror(errno));
 		}
 	}
 }
@@ -270,7 +251,7 @@ string sha256_file(string path)
 {
 	FILE* fp = fopen(path.c_str(), "rb");
 	if(!fp)
-		FatalError("sha256_file: Could not open file \"%s\"\n", path.c_str());
+		LogFatal("sha256_file: Could not open file \"%s\"\n", path.c_str());
 	fseek(fp, 0, SEEK_END);
 	long fsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);

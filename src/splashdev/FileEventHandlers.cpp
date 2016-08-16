@@ -34,7 +34,9 @@ using namespace std;
 /**
 	@brief Do something when a file changes
  */
-void WatchedFileChanged(int type, string str)
+void WatchedFileChanged(int type, string fname)
 {
-	printf("Watched file %s changed\n", str.c_str());
+	LogNotice("Watched file %s changed\n", fname.c_str());
+	string hash = sha256_file(fname);
+	LogDebug("    New hash: %s\n", hash.c_str());
 }

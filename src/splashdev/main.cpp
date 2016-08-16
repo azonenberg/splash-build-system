@@ -32,6 +32,7 @@
 using namespace std;
 
 void ShowUsage();
+void ShowVersion();
 
 /**
 	@brief Program entry point
@@ -41,17 +42,31 @@ int main(int argc, char* argv[])
 	string source_dir;
 	string ctl_server;
 	
+	LogSink::Severity console_verbosity = LogSink::NOTICE;
+	
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
 	{
 		string s(argv[i]);
 		
-		if(s == "--help")
+		//Let the logger eat its args first
+		if(ParseLoggerArguments(i, argc, argv, console_verbosity))
+			continue;
+		
+		else if(s == "--help")
 		{
 			ShowUsage();
 			return 0;
 		}
 		
+		else if(s == "--version")
+		{
+			ShowVersion();
+			return 0;
+		}
+		
+		//Last two args without switches are source dir and control server.
+		//TODO: mandatory arguments to introduce these?		
 		else if(source_dir == "")				
 			source_dir = argv[i];
 		
@@ -60,11 +75,22 @@ int main(int argc, char* argv[])
 
 	}
 	
+	//Set up logging
+	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
+
+	//Print header
+	if(console_verbosity >= LogSink::NOTICE)
+	{
+		ShowVersion();
+		printf("\n");
+	}
+	
 	//Open the source directory and start an inotify watcher on it and all subdirectories
 	source_dir = CanonicalizePath(source_dir);
 	int hnotify = inotify_init();
 	if(hnotify < 0)
-		FatalError("Couldn't start inotify\n");
+		LogFatal("Couldn't start inotify\n");
+	LogNotice("Running on directory: %s\n", source_dir.c_str());
 	WatchDirRecursively(hnotify, source_dir);
 
 	//TODO: signal handler so we can quit gracefully
@@ -103,13 +129,15 @@ int main(int argc, char* argv[])
  */
 void WatchDirRecursively(int hnotify, string dir)
 {
+	LogDebug("    Recursively watching directory %s\n", dir.c_str());
+	
 	//Watch changes to the directory
 	if(0 > inotify_add_watch(
 		hnotify,
 		dir.c_str(),
 		IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF))
 	{
-		FatalError("Failed to watch directory %s\n", dir.c_str());
+		LogFatal("Failed to watch directory %s\n", dir.c_str());
 	}
 	
 	//Look for any subdirs and watch them
@@ -117,6 +145,16 @@ void WatchDirRecursively(int hnotify, string dir)
 	FindSubdirs(dir, subdirs);
 	for(auto s : subdirs)
 		WatchDirRecursively(hnotify, s);
+}
+
+void ShowVersion()
+{
+	printf(
+		"SPLASH build system developer daemon by Andrew D. Zonenberg.\n"
+		"\n"
+		"License: 3-clause BSD\n"
+		"This is free software: you are free to change and redistribute it.\n"
+		"There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 void ShowUsage()

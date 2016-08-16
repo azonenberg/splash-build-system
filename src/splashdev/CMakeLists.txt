@@ -5,4 +5,4 @@ add_executable(splashdev
 )
 
 target_link_libraries(splashdev
-	rt splashcore)
+	rt splashcore log)

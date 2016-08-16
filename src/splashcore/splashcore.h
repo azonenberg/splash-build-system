@@ -66,8 +66,6 @@
 
 double GetTime();
 
-void FatalError(const char* format, ...);
-
 std::string CanonicalizePath(std::string fname);
 bool DoesDirectoryExist(std::string fname);
 bool DoesFileExist(std::string fname);

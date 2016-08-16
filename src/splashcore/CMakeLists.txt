@@ -3,4 +3,4 @@ ADD_LIBRARY(splashcore SHARED
 )
 
 target_link_libraries(splashcore
-	cryptopp rt)
+	cryptopp rt log)

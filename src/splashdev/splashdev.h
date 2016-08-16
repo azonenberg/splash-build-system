@@ -31,6 +31,7 @@
 #define splashdev_h
 
 #include "../splashcore/splashcore.h"
+#include "../log/log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
