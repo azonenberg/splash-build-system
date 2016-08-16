@@ -75,23 +75,33 @@ int main(int argc, char* argv[])
 	//TODO: signal handler so we can quit gracefully
 
 	//Main event loop
-	size_t buflen = sizeof(inotify_event) + NAME_MAX + 1;
-	inotify_event* evt = (inotify_event*)malloc(buflen);
-	if(evt == NULL)
-		FatalError("Couldn't allocate buffer\n");
+	size_t buflen = 8192;
+	char ebuf[buflen];
 	while(1)
 	{
 		//Get the event
-		size_t len = read(hnotify, evt, buflen);
+		size_t len = read(hnotify, ebuf, buflen);
 		if(len <= 0)
 			break;
 			
-		//See what it is
-		printf("Got event of type %d for %s (len %d, namelen %d)\n", evt->mask, evt->name, len, evt->len);
+		size_t offset = 0;
+		while(offset < len)
+		{
+			inotify_event* evt = reinterpret_cast<inotify_event*>(ebuf + offset);
+			
+			//Skip events without a filename, or hidden files
+			if( (evt->len != 0) && (evt->name[0] != '.') )
+			{
+				//See what it is
+				printf("Got event of type %d for %s (len %zu, namelen %d)\n", evt->mask, evt->name, len, evt->len);
+			}
+			
+			//Go on to the next one
+			offset += sizeof(inotify_event) + evt->len;
+		}
 	}
 	
 	//Done
-	free(evt);
 	close(hnotify);	
 	return 0;
 }
@@ -102,7 +112,7 @@ void WatchDirRecursively(int hnotify, string dir)
 	if(0 > inotify_add_watch(
 		hnotify,
 		dir.c_str(),
-		IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF))
+		IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF))
 	{
 		FatalError("Failed to watch directory %s\n", dir.c_str());
 	}

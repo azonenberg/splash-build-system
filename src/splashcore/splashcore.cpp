@@ -183,6 +183,11 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 	dirent* pent;
 	while(0 == readdir_r(hdir, &ent, &pent))
 	{
+		if(pent == NULL)
+			break;
+		if(ent.d_name[0] == '.')	//don't find hidden dirs
+			continue;
+		
 		string fname = CanonicalizePath(dir + "/" + ent.d_name);
 		if(!DoesDirectoryExist(fname))
 			continue;
