@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 	int hnotify = inotify_init();
 	if(hnotify < 0)
 		LogFatal("Couldn't start inotify\n");
-	LogNotice("Running on directory: %s\n", source_dir.c_str());
+	LogNotice("Working copy root directory: %s\n", source_dir.c_str());
 	WatchDirRecursively(hnotify, source_dir);
 
 	//TODO: signal handler so we can quit gracefully
