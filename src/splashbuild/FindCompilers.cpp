@@ -59,11 +59,55 @@ void FindFPGACompilers()
 void FindGCCCompilers()
 {
 	LogDebug("    Searching for GCC compilers...\n");
+	
+	//Find all directories that normally have executables in them
+	vector<string> path;
+	ParseSearchPath(path);
+	for(auto dir : path)
+	{
+		//Find all files in this directory that have gcc- in the name.
+		//Note that this will often include things like nm, as, etc so we have to then search for numbers at the end to confirm
+		vector<string> exes;
+		FindFilesBySubstring(dir, "gcc-", exes);
+		for(auto exe : exes)
+		{			
+			//Trim off the directory and see if we have a name of the format [maybe arch triplet-]gcc-%d.%d
+			string base = GetBasenameOfFile(exe);
+			size_t offset = base.find("gcc");
+			
+			//If no triplet found ("gcc" at start of string), or no "gcc" found, this is the system default gcc
+			//Ignore that, it's probably a symlink to/from an arch specific gcc anyway
+			if( (offset == 0) || (offset == string::npos) )
+				continue;
+			string triplet = base.substr(0, offset-1);
+			
+			//The text after the triplet should be of the form gcc-major.minor
+			string remainder = base.substr(offset);
+			int major;
+			int minor;
+			if(2 != sscanf(remainder.c_str(), "gcc-%d.%d", &major, &minor))
+				continue;
+			
+			//TODO: Save this somewhere
+			//TODO: run --version to confirm?
+			LogDebug("        Found GCC %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), exe.c_str());
+		
+			//See if we have a matching G++ for the same triplet and version
+			string gxxpath = str_replace("gcc-", "g++-", exe);
+			if(DoesFileExist(gxxpath))
+			{
+				//TODO: Save this somewhere
+				//TODO: run --version to confirm?
+				LogDebug("        Found G++ %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), gxxpath.c_str());
+			}
+		}
+	}
 }
 
 void FindClangCompilers()
 {
 	LogDebug("    Searching for Clang compilers...\n");
+	LogDebug("        Not implemented yet\n");
 }
 
 void FindXilinxISECompilers()
@@ -83,10 +127,10 @@ void FindXilinxISECompilers()
 	for(auto dir : dirs)
 	{
 		//Any ##.## format directory is probably an ISE installation
-		int major_version;
-		int minor_version;
+		int major;
+		int minor;
 		string format = xilinxdir + "/%d.%d";
-		if(2 != sscanf(dir.c_str(), format.c_str(), &major_version, &minor_version))
+		if(2 != sscanf(dir.c_str(), format.c_str(), &major, &minor))
 			continue;
 			
 		//To make sure, look for XST
@@ -95,7 +139,7 @@ void FindXilinxISECompilers()
 			continue;
 		
 		//TODO: save this somewhere
-		LogNotice("    Found ISE %d.%d at %s\n", major_version, minor_version, dir.c_str());
+		LogNotice("        Found ISE %d.%d at %s\n", major, minor, dir.c_str());
 	}
 }
 
@@ -116,10 +160,10 @@ void FindXilinxVivadoCompilers()
 	for(auto dir : dirs)
 	{
 		//Any ##.## format directory is probably a Vivado installation
-		int major_version;
-		int minor_version;
+		int major;
+		int minor;
 		string format = xilinxdir + "/%d.%d";
-		if(2 != sscanf(dir.c_str(), format.c_str(), &major_version, &minor_version))
+		if(2 != sscanf(dir.c_str(), format.c_str(), &major, &minor))
 			continue;
 			
 		//To make sure, look for the Vivado executable
@@ -128,6 +172,6 @@ void FindXilinxVivadoCompilers()
 			continue;
 		
 		//TODO: save this somewhere
-		LogNotice("    Found Vivado %d.%d at %s\n", major_version, minor_version, dir.c_str());
+		LogNotice("        Found Vivado %d.%d at %s\n", major, minor, dir.c_str());
 	}
 }
