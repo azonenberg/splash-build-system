@@ -1,4 +1,6 @@
 add_executable(splashdev
+	FileEventHandlers.cpp
+
 	main.cpp
 )
 

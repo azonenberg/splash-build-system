@@ -27,100 +27,19 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashdev.h"
+#ifndef splashdev_h
+#define splashdev_h
 
-using namespace std;
+#include "../splashcore/splashcore.h"
 
-void ShowUsage();
+#include <stdio.h>
+#include <stdlib.h>
 
-/**
-	@brief Program entry point
- */
-int main(int argc, char* argv[])
-{
-	string source_dir;
-	string ctl_server;
-	
-	//Parse command-line arguments
-	for(int i=1; i<argc; i++)
-	{
-		string s(argv[i]);
-		
-		if(s == "--help")
-		{
-			ShowUsage();
-			return 0;
-		}
-		
-		else if(source_dir == "")				
-			source_dir = argv[i];
-		
-		else	
-			ctl_server = argv[i];
+#include <string>
 
-	}
-	
-	//Open the source directory and start an inotify watcher on it and all subdirectories
-	source_dir = CanonicalizePath(source_dir);
-	int hnotify = inotify_init();
-	if(hnotify < 0)
-		FatalError("Couldn't start inotify\n");
-	WatchDirRecursively(hnotify, source_dir);
+#include <sys/inotify.h>
 
-	//TODO: signal handler so we can quit gracefully
+void WatchDirRecursively(int hnotify, std::string dir);
+void WatchedFileChanged(int type, std::string str);
 
-	//Main event loop
-	size_t buflen = 8192;
-	char ebuf[buflen];
-	while(1)
-	{
-		//Get the event
-		size_t len = read(hnotify, ebuf, buflen);
-		if(len <= 0)
-			break;
-			
-		size_t offset = 0;
-		while(offset < len)
-		{
-			inotify_event* evt = reinterpret_cast<inotify_event*>(ebuf + offset);
-			
-			//Skip events without a filename, or hidden files
-			if( (evt->len != 0) && (evt->name[0] != '.') )
-				WatchedFileChanged(evt->mask, CanonicalizePath(source_dir + "/" + evt->name));
-			
-			//Go on to the next one
-			offset += sizeof(inotify_event) + evt->len;
-		}
-	}
-	
-	//Done
-	close(hnotify);	
-	return 0;
-}
-
-/**
-	@brief Add watches to a directory *and* all subdirectories
- */
-void WatchDirRecursively(int hnotify, string dir)
-{
-	//Watch changes to the directory
-	if(0 > inotify_add_watch(
-		hnotify,
-		dir.c_str(),
-		IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF))
-	{
-		FatalError("Failed to watch directory %s\n", dir.c_str());
-	}
-	
-	//Look for any subdirs and watch them
-	vector<string> subdirs;
-	FindSubdirs(dir, subdirs);
-	for(auto s : subdirs)
-		WatchDirRecursively(hnotify, s);
-}
-
-void ShowUsage()
-{
-	printf("Usage: splashdev srcdir ctlserver\n");
-	exit(0);
-}
+#endif
