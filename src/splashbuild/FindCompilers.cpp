@@ -90,7 +90,7 @@ void FindGCCCompilers()
 			
 			//TODO: Save this somewhere
 			//TODO: run --version to confirm?
-			LogDebug("        Found GCC %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), exe.c_str());
+			LogVerbose("        Found GCC %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), exe.c_str());
 		
 			//See if we have a matching G++ for the same triplet and version
 			string gxxpath = str_replace("gcc-", "g++-", exe);
@@ -98,7 +98,7 @@ void FindGCCCompilers()
 			{
 				//TODO: Save this somewhere
 				//TODO: run --version to confirm?
-				LogDebug("        Found G++ %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), gxxpath.c_str());
+				LogVerbose("        Found G++ %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), gxxpath.c_str());
 			}
 		}
 	}
@@ -139,7 +139,7 @@ void FindXilinxISECompilers()
 			continue;
 		
 		//TODO: save this somewhere
-		LogNotice("        Found ISE %d.%d at %s\n", major, minor, dir.c_str());
+		LogVerbose("        Found ISE %d.%d at %s\n", major, minor, dir.c_str());
 	}
 }
 
@@ -172,6 +172,6 @@ void FindXilinxVivadoCompilers()
 			continue;
 		
 		//TODO: save this somewhere
-		LogNotice("        Found Vivado %d.%d at %s\n", major, minor, dir.c_str());
+		LogVerbose("        Found Vivado %d.%d at %s\n", major, minor, dir.c_str());
 	}
 }
