@@ -150,7 +150,7 @@ void WatchDirRecursively(int hnotify, string dir)
 void ShowVersion()
 {
 	printf(
-		"SPLASH build system developer daemon by Andrew D. Zonenberg.\n"
+		"SPLASH developer workstation daemon by Andrew D. Zonenberg.\n"
 		"\n"
 		"License: 3-clause BSD\n"
 		"This is free software: you are free to change and redistribute it.\n"
