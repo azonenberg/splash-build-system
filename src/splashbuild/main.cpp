@@ -86,7 +86,8 @@ int main(int argc, char* argv[])
 	}
 	
 	//Look for compilers
-	LogNotice("Enumerating compilers...\n");
+	LogVerbose("Enumerating compilers...\n");
+	FindLinkers();
 	FindCPPCompilers();
 	FindFPGACompilers();
 	

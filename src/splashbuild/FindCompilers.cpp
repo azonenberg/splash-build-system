@@ -47,6 +47,40 @@ void FindCPPCompilers()
 }
 
 /**
+	@brief Search for all linkers (of any type) on the current system.
+ */
+void FindLinkers()
+{
+	LogDebug("Searching for linkers...\n");
+
+	//Find all directories that normally have executables in them
+	vector<string> path;
+	ParseSearchPath(path);
+	for(auto dir : path)
+	{
+		//Find all files in this directory that have gcc- in the name.
+		//Note that this will often include things like nm, as, etc so we have to then search for numbers at the end to confirm
+		vector<string> exes;
+		FindFilesBySubstring(dir, "-ld", exes);
+		for(auto exe : exes)
+		{
+			//Trim off the directory and see if we have a name of the format [arch triplet]-ld
+			string base = GetBasenameOfFile(exe);
+			size_t offset = base.find("-ld");
+
+			//Sanity check that we have a triplet
+			//If we don't end in "-ld" we're an internal file, ignore it
+			if( (offset != (base.length() - 3)) || (offset == 0) || (offset == string::npos))
+				continue;
+			string triplet = base.substr(0, offset);
+
+			//TODO: run --version to find the linker version
+			LogVerbose("        Found LD [no version yet] for triplet %s at %s\n", triplet.c_str(), exe.c_str());
+		}
+	}
+}
+
+/**
 	@brief Search for all FPGA compilers (of any type) on the current system.
  */
 void FindFPGACompilers()

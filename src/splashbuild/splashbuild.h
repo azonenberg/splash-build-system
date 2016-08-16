@@ -39,6 +39,7 @@
 #include <string>
 
 void FindCPPCompilers();
+void FindLinkers();
 void FindFPGACompilers();
 
 #endif
