@@ -5,4 +5,5 @@ add_subdirectory(xptools)
 # Project code
 add_subdirectory(splashbuild)
 add_subdirectory(splashcore)
+add_subdirectory(splashctl)
 add_subdirectory(splashdev)
