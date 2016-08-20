@@ -31,37 +31,49 @@
 #define Toolchain_h
 
 /**
-	@brief A toolchain for compiling some language(s)
+	@brief A toolchain for compiling and/or linking some language(s)
  */
 class Toolchain
 {
 public:
 	Toolchain(std::string basepath);
 	virtual ~Toolchain();
-	
+
 	//IDs for all supported languages in Splash (add more here as necessary)
 	enum Language
 	{
-		LANG_C,
-		LANG_CPP,
-		LANG_VERILOG
+		//Non-languages
+		LANG_OBJECT,			//object files only (used for linkers)
+
+		//High-level languages
+		LANG_C,					//C source
+		LANG_CPP,				//C++ source
+
+		//Assembly languages
+		LANG_ASM,				//Assembly language (no syntax specified)
+		//TODO: dialects like ATT/Intel
+
+		//HDLs
+		LANG_VERILOG,			//Verilog source
+
+		LANG_MAX				//end marker
 	};
-	
+
 	/**
 		@brief Get the list of languages that we can compile.
 	 */
 	virtual void GetSupportedLanguages(std::vector<Language>& langs) =0;
-	
+
 	/**
 		@brief Get the list of architecture triplets that we can target.
 	 */
 	virtual void GetTargetTriplets(std::vector<std::string>& triplets) =0;
-	
+
 protected:
 
 	/**
 		@brief Base path for the toolchain.
-		
+
 		This may be either the compiler executable for something like gcc, or
 		the base install directory for e.g. an FPGA tool suite.
 	 */
