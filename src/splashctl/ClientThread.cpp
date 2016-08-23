@@ -27,20 +27,13 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashctl_h
-#define splashctl_h
+#include "splashctl.h"
 
-#include "../splashcore/splashcore.h"
-#include "../log/log.h"
+using namespace std;
 
-#include "../xptools/Socket.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <string>
-#include <thread>
-
-void ClientThread(ZSOCKET sock);
-
-#endif
+void ClientThread(ZSOCKET sock)
+{
+	Socket s(sock);
+	
+	LogNotice("New connection received\n");
+}

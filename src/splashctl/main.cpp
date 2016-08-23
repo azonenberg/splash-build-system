@@ -82,7 +82,17 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 
-	//TODO: Run the actual server
+	//Socket server
+	Socket server(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if(!server.Bind(port))
+		return -1;
+	if(!server.Listen())
+		return -1;
+	while(true)
+	{
+		thread t(ClientThread, server.Accept().Detach());
+		t.detach();
+	}
 
 	return 0;
 }
