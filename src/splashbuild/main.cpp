@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 	msgServerHello shi;
 	if(!sock.RecvLooped((unsigned char*)&shi, sizeof(shi)))
 	{
-		LogNotice("Connection dropped (while reading serverHello)\n");
+		LogWarning("Connection dropped (while reading serverHello)\n");
 		return 1;
 	}
 	
@@ -105,25 +105,25 @@ int main(int argc, char* argv[])
 	msgClientHello chi(CLIENT_BUILD);
 	if(!sock.SendLooped((unsigned char*)&chi, sizeof(chi)))
 	{
-		LogNotice("Connection dropped (while sending clientHello)\n");
+		LogWarning("Connection dropped (while sending clientHello)\n");
 		return 1;
 	}
 	string hostname = ShellCommand("hostname", true);
 	if(!sock.SendPascalString(hostname))
 	{
-		LogNotice("Connection dropped (while sending clientHello.hostname)\n");
+		LogWarning("Connection dropped (while sending clientHello.hostname)\n");
 		return 1;
 	}
 	
 	//Validate the connection
 	if(chi.magic != shi.magic)
 	{
-		LogNotice("Connection dropped (bad magic number in serverHello)\n");
+		LogWarning("Connection dropped (bad magic number in serverHello)\n");
 		return 1;
 	}
 	if(shi.serverVersion != 1)
 	{
-		LogNotice("Connection dropped (bad version number in serverHello)\n");
+		LogWarning("Connection dropped (bad version number in serverHello)\n");
 		return 1;
 	}
 	
