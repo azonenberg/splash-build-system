@@ -37,13 +37,13 @@ void ClientThread(ZSOCKET sock)
 	
 	string client_hostname = "[no hostname]";
 	
-	LogNotice("New connection received from %s\n", client_hostname.c_str());
+	LogDebug("New connection received from %s\n", client_hostname.c_str());
 	
 	//Send it a server hello
 	msgServerHello shi;
 	if(!s.SendLooped((unsigned char*)&shi, sizeof(shi)))
 	{
-		LogNotice("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
+		LogWarning("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
 		return;
 	}
 	
@@ -51,17 +51,17 @@ void ClientThread(ZSOCKET sock)
 	msgClientHello chi(CLIENT_LAST);
 	if(!s.RecvLooped((unsigned char*)&chi, sizeof(chi)))
 	{
-		LogNotice("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
+		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
 		return;
 	}
 	if(chi.magic != shi.magic)
 	{
-		LogNotice("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
+		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
 		return;
 	}
 	if(chi.clientVersion != 1)
 	{
-		LogNotice("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
+		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
 		return;
 	}
 	if(!s.RecvPascalString(client_hostname))
@@ -74,7 +74,7 @@ void ClientThread(ZSOCKET sock)
 		if(isalnum(c) || (c == '-') )
 			continue;
 		
-		LogNotice("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
+		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
 		return;
 	}
 	
@@ -90,7 +90,7 @@ void ClientThread(ZSOCKET sock)
 			break;
 		
 		default:
-			LogNotice("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
+			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
 			break;
 	}
 }
