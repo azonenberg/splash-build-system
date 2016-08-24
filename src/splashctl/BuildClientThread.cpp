@@ -27,11 +27,13 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include <stdio.h>
+#include "splashctl.h"
 
-int main(int argc, char* argv[])
+using namespace std;
+
+void BuildClientThread(Socket& s, string& hostname)
 {
-	printf("Hello World\n");	
-	return 0;
+	LogNotice("Build server %s connected\n", hostname.c_str());
+	
+	//TODO: more stuff
 }
-asdf

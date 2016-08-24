@@ -35,5 +35,62 @@ void ClientThread(ZSOCKET sock)
 {
 	Socket s(sock);
 	
-	LogNotice("New connection received\n");
+	string client_hostname = "[no hostname]";
+	
+	LogNotice("New connection received from %s\n", client_hostname.c_str());
+	
+	//Send it a server hello
+	msgServerHello shi;
+	if(!s.SendLooped((unsigned char*)&shi, sizeof(shi)))
+	{
+		LogNotice("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
+		return;
+	}
+	
+	//Get a client hello
+	msgClientHello chi(CLIENT_LAST);
+	if(!s.RecvLooped((unsigned char*)&chi, sizeof(chi)))
+	{
+		LogNotice("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
+		return;
+	}
+	if(chi.magic != shi.magic)
+	{
+		LogNotice("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
+		return;
+	}
+	if(chi.clientVersion != 1)
+	{
+		LogNotice("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
+		return;
+	}
+	if(!s.RecvPascalString(client_hostname))
+		return;
+	
+	//If hostname is alphanumeric or - chars, fail
+	for(size_t i=0; i<client_hostname.length(); i++)
+	{
+		auto c = client_hostname[i];
+		if(isalnum(c) || (c == '-') )
+			continue;
+		
+		LogNotice("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
+		return;
+	}
+	
+	//Protocol-specific processing
+	switch(chi.type)
+	{
+		case CLIENT_DEVELOPER:
+			LogError("Developer clients not implemented\n");
+			break;
+			
+		case CLIENT_BUILD:
+			BuildClientThread(s, client_hostname);
+			break;
+		
+		default:
+			LogNotice("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
+			break;
+	}
 }

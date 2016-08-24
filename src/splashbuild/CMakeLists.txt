@@ -5,4 +5,4 @@ add_executable(splashbuild
 )
 
 target_link_libraries(splashbuild
-	rt splashcore log)
+	rt splashcore log xptools)

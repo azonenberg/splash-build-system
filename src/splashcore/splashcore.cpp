@@ -45,6 +45,31 @@ double GetTime()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// System info etc
+
+/**
+	@brief Runs a shell command and returns the output
+ */
+string ShellCommand(string cmd, bool trimNewline)
+{
+	FILE* fp = popen(cmd.c_str(), "r");
+	if(fp == NULL)
+	{
+		LogError("popen(%s) failed\n", cmd.c_str());
+		return "";
+	}
+	string retval;
+	char line[1024];
+	while(NULL != fgets(line, sizeof(line), fp))
+		retval += line;
+	pclose(fp);
+	
+	if(trimNewline)
+		retval.erase(retval.find_last_not_of(" \n\r\t")+1);
+	return retval;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // String manipulation helpers
 
 string str_replace(const string& search, const string& replace, string subject)

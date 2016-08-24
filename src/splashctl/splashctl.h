@@ -41,6 +41,9 @@
 #include <string>
 #include <thread>
 
+#include "protocol.h"
+
 void ClientThread(ZSOCKET sock);
+void BuildClientThread(Socket& s, std::string& hostname);
 
 #endif

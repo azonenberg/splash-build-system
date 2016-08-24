@@ -44,6 +44,9 @@ int main(int argc, char* argv[])
 	
 	LogSink::Severity console_verbosity = LogSink::NOTICE;
 	
+	//TODO: argument for this?
+	int port = 49000;
+	
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
 	{
@@ -85,11 +88,54 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 	
+	//Connect to the server
+	LogVerbose("Connecting to server...\n");
+	Socket sock(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock.Connect(ctl_server, port);
+	
+	//Get the serverHello
+	msgServerHello shi;
+	if(!sock.RecvLooped((unsigned char*)&shi, sizeof(shi)))
+	{
+		LogNotice("Connection dropped (while reading serverHello)\n");
+		return 1;
+	}
+	
+	//Send the clientHello
+	msgClientHello chi(CLIENT_BUILD);
+	if(!sock.SendLooped((unsigned char*)&chi, sizeof(chi)))
+	{
+		LogNotice("Connection dropped (while sending clientHello)\n");
+		return 1;
+	}
+	string hostname = ShellCommand("hostname", true);
+	if(!sock.SendPascalString(hostname))
+	{
+		LogNotice("Connection dropped (while sending clientHello.hostname)\n");
+		return 1;
+	}
+	
+	//Validate the connection
+	if(chi.magic != shi.magic)
+	{
+		LogNotice("Connection dropped (bad magic number in serverHello)\n");
+		return 1;
+	}
+	if(shi.serverVersion != 1)
+	{
+		LogNotice("Connection dropped (bad version number in serverHello)\n");
+		return 1;
+	}
+	
 	//Look for compilers
 	LogVerbose("Enumerating compilers...\n");
 	FindLinkers();
 	FindCPPCompilers();
 	FindFPGACompilers();
+	
+	//Report the toolchains we found to the server
+	
+	//TODO: Sit around and wait for stuff to come in
 	
 	return 0;
 }

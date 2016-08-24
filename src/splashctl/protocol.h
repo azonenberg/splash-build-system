@@ -72,16 +72,7 @@
 //Message type (first 2 bytes of every message)
 enum msgType
 {
-	//Identify the client
-	//magic 			uint32		"BILD"
-	//clientVersion		uint16		protocol version supported by client (always 1 for now)
-	//clientType		uint8		type of client, all further processing depends on this
-	//hostname 			string		host name of client (for logging etc)
 	MSG_TYPE_CLIENTHELLO,
-	
-	//Identify the server
-	//magic				uint32		"BILD"
-	//serverVersion		uint16		protocol version supported by server (always 1 for now)
 	MSG_TYPE_SERVERHELLO,
 	
 	//Report basic info about a build server, so we can schedule jobs more effectively
@@ -131,8 +122,55 @@ enum msgType
 enum clientType
 {
 	CLIENT_DEVELOPER,
-	CLIENT_BUILD
+	CLIENT_BUILD,
+	
+	//all types beyond here reserved for expansion
+	CLIENT_LAST
 };
+
+class msg
+{
+public:
+	msg(uint16_t t)
+	: type(t)
+	{}
+
+	uint16_t		type;
+} __attribute__ ((packed));
+
+//Identify the client
+class msgClientHello : public msg
+{
+public:
+	msgClientHello(uint8_t ctype)
+		: msg(MSG_TYPE_CLIENTHELLO)
+		, magic(0x444c4942)	//"BILD"
+		, clientVersion(1)
+		, type(ctype)
+	{}
+	
+	uint32_t magic;			//magic number
+	uint16_t clientVersion;	//protocol version supported by server (always 1 for now)
+	uint8_t type;			//clientType
+	
+	//followed by hostname as Pascal string
+	
+} __attribute__ ((packed)); 
+
+//Identify the server to clients
+class msgServerHello : public msg
+{
+public:
+	msgServerHello()
+		: msg(MSG_TYPE_SERVERHELLO)
+		, magic(0x444c4942)	//"BILD"
+		, serverVersion(1)
+	{}
+
+	uint32_t magic;			//magic number
+	uint16_t serverVersion;	//protocol version supported by server (always 1 for now)
+	
+} __attribute__ ((packed));
 
 #endif
 

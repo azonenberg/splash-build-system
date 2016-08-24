@@ -73,6 +73,8 @@
 
 double GetTime();
 
+std::string ShellCommand(std::string cmd, bool trimNewline);
+
 std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
 
 void ParseSearchPath(std::vector<std::string>& dirs);

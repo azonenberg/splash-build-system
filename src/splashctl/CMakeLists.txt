@@ -1,4 +1,5 @@
 add_executable(splashctl
+	BuildClientThread.cpp
 	ClientThread.cpp
 
 	main.cpp
