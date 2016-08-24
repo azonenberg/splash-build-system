@@ -54,6 +54,11 @@ void ClientThread(ZSOCKET sock)
 		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
 		return;
 	}
+	if(chi.type != MSG_TYPE_SERVERHELLO)
+	{
+		LogWarning("Connection from %s dropped (bad message type in clientHello)\n", client_hostname.c_str());
+		return;
+	}
 	if(chi.magic != shi.magic)
 	{
 		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());

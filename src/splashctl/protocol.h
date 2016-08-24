@@ -74,14 +74,6 @@ enum msgType
 {
 	MSG_TYPE_CLIENTHELLO,
 	MSG_TYPE_SERVERHELLO,
-	
-	//Report basic info about a build server, so we can schedule jobs more effectively
-	//cpuCount			uint16		Number of logical CPU cores on the system
-	//cpuSpeed			uint32		Processor speed according to some TBD benchmark.
-	//								Used to prioritize jobs so faster servers get work first
-	//								when the cluster is lightly loaded
-	//ramSize			uint16		Amount of memory on the system, in GB
-	//TODO: ram speed?
 	MSG_TYPE_BUILD_INFO,
 	
 	//Add a new compiler to the list of compilers present on a given build server
@@ -169,6 +161,24 @@ public:
 
 	uint32_t magic;			//magic number
 	uint16_t serverVersion;	//protocol version supported by server (always 1 for now)
+	
+} __attribute__ ((packed));
+
+//Report basic info about a build server, so we can schedule jobs more effectively
+class msgBuildInfo : public msg
+{
+public:
+	msgBuildInfo()
+		: msg(MSG_TYPE_BUILD_INFO)
+	{}
+
+	uint16_t cpuCount;		//Number of logical CPU cores on the system
+	uint32_t cpuSpeed;		//Processor speed according to some arbitrary benchmark.
+							//Used to prioritize jobs so faster servers get work first
+							//when the cluster is lightly loaded.
+							//For now just use bogomips, TODO something more accurate
+	uint16_t ramSize;		//RAM capacity, in MB
+	//TODO: ram speed?
 	
 } __attribute__ ((packed));
 

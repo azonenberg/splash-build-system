@@ -100,6 +100,16 @@ int main(int argc, char* argv[])
 		LogWarning("Connection dropped (while reading serverHello)\n");
 		return 1;
 	}
+	if(shi.serverVersion != 1)
+	{
+		LogWarning("Connection dropped (bad version number in serverHello)\n");
+		return 1;
+	}
+	if(shi.type != MSG_TYPE_SERVERHELLO)
+	{
+		LogWarning("Connection dropped (bad message type in serverHello)\n");
+		return 1;
+	}
 	
 	//Send the clientHello
 	msgClientHello chi(CLIENT_BUILD);
@@ -121,9 +131,15 @@ int main(int argc, char* argv[])
 		LogWarning("Connection dropped (bad magic number in serverHello)\n");
 		return 1;
 	}
-	if(shi.serverVersion != 1)
+	
+	//Get some basic metadata about our hardware and tell the server
+	msgBuildInfo binfo;
+	binfo.cpuCount = atoi(ShellCommand("cat /proc/cpuinfo  | grep processor | wc -l").c_str());
+	binfo.cpuSpeed = atoi(ShellCommand("cat /proc/cpuinfo | grep bogo | head -n 1 | cut -d : -f 2").c_str());
+	binfo.ramSize = atol(ShellCommand("cat /proc/meminfo  | grep MemTotal  | cut -d : -f 2").c_str()) / 1024;
+	if(!sock.SendLooped((unsigned char*)&binfo, sizeof(binfo)))
 	{
-		LogWarning("Connection dropped (bad version number in serverHello)\n");
+		LogWarning("Connection dropped (while sending buildInfo)\n");
 		return 1;
 	}
 	

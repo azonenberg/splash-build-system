@@ -73,7 +73,7 @@
 
 double GetTime();
 
-std::string ShellCommand(std::string cmd, bool trimNewline);
+std::string ShellCommand(std::string cmd, bool trimNewline = true);
 
 std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
 

@@ -35,5 +35,20 @@ void BuildClientThread(Socket& s, string& hostname)
 {
 	LogNotice("Build server %s connected\n", hostname.c_str());
 	
-	//TODO: more stuff
+	//Expect a BuildInfo message
+	msgBuildInfo binfo;
+	if(!s.RecvLooped((unsigned char*)&binfo, sizeof(binfo)))
+	{
+		LogWarning("Connection from %s dropped (while getting buildInfo)\n", hostname.c_str());
+		return;
+	}
+	if(binfo.type != MSG_TYPE_BUILD_INFO)
+	{
+		LogWarning("Connection from %s dropped (bad message type in buildInfo)\n", hostname.c_str());
+		return;
+	}
+	
+	//Print stats
+	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB\n",
+		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize);
 }

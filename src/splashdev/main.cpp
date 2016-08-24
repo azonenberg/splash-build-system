@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 	LogSink::Severity console_verbosity = LogSink::NOTICE;
 	
 	//TODO: argument for this?
-	int port = 49000;
+	//int port = 49000;
 	
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
