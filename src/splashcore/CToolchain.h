@@ -40,27 +40,9 @@ public:
 	virtual ~CToolchain();
 
 	/**
-		@brief Type of compiler
-
-		Allows build server to report installed compilers to splashctl
-	 */
-	enum CompilerType
-	{
-		COMPILER_TYPE_GNU,		//GNU C/C++
-		COMPILER_TYPE_CLANG,	//Clang
-
-		COMPILER_TYPE_LAST		//placeholder
-	};
-
-	/**
 		@brief Get the list of languages that we can compile.
 	 */
 	virtual void GetSupportedLanguages(std::vector<Language>& langs);
-
-	/**
-		@brief Get the list of architecture triplets that we can target.
-	 */
-	virtual void GetTargetTriplets(std::vector<std::string>& triplets) =0;
 
 protected:
 };

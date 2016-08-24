@@ -44,11 +44,6 @@ public:
 	 */
 	virtual void GetSupportedLanguages(std::vector<Language>& langs);
 	
-	/**
-		@brief Get the list of architecture triplets that we can target.
-	 */
-	virtual void GetTargetTriplets(std::vector<std::string>& triplets) =0;
-	
 protected:
 };
 

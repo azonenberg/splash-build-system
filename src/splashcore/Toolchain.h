@@ -58,6 +58,23 @@ public:
 
 		LANG_MAX				//end marker
 	};
+	
+	/**
+		@brief Type of compiler
+
+		Allows build server to report installed compilers to splashctl
+	 */
+	/*
+	enum ToolchainType
+	{
+		TOOLCHAIN_GNU,		//GNU C/C++
+		TOOLCHAIN_CLANG,	//Clang
+		TOOLCHAIN_ISE,		//Xilinx ISE
+		TOOLCHAIN_VIVADO,	//Xilinx Vivado
+
+		TOOLCHAIN_LAST		//placeholder
+	};
+	*/
 
 	/**
 		@brief Get the list of languages that we can compile.
@@ -67,8 +84,16 @@ public:
 	/**
 		@brief Get the list of architecture triplets that we can target.
 	 */
-	virtual void GetTargetTriplets(std::vector<std::string>& triplets) =0;
+	void GetTargetTriplets(std::vector<std::string>& triplets)
+	{ triplets = m_triplets; }
 
+
+	/**
+		@brief Get a hash that uniquely identifies this toolchain (including target arch and patch level)
+	 */
+	std::string GetHash()
+	{ return m_hash; }
+	
 protected:
 
 	/**
@@ -78,6 +103,20 @@ protected:
 		the base install directory for e.g. an FPGA tool suite.
 	 */
 	std::string m_basepath;
+	
+	/**
+		@brief A hash that uniquely identifies this toolchain
+		
+		Must be set in the constructor.
+	 */
+	std::string m_hash;
+	
+	/**
+		@brief List of architecture triplets we support
+		
+		Must be set in the constructor.
+	 */
+	std::vector<std::string> m_triplets;
 };
 
 #endif

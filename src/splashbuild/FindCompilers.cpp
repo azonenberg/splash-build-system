@@ -130,9 +130,8 @@ void FindGCCCompilers()
 			string gxxpath = str_replace("gcc-", "g++-", exe);
 			if(DoesFileExist(gxxpath))
 			{
-				//TODO: Save this somewhere
-				//TODO: run --version to confirm?
-				LogVerbose("        Found G++ %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), gxxpath.c_str());
+				auto gxx = new GNUCPPToolchain(gxxpath, triplet);
+				g_toolchains[gxx->GetHash()] = gxx;
 			}
 		}
 	}

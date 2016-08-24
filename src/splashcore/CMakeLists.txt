@@ -1,6 +1,8 @@
 ADD_LIBRARY(splashcore SHARED
+	
 	CPPToolchain.cpp
 	CToolchain.cpp
+	GNUCPPToolchain.cpp
 	Toolchain.cpp
 
 	splashcore.cpp
