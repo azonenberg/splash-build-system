@@ -159,8 +159,12 @@ int main(int argc, char* argv[])
 		
 		//Debug prints
 		LogVerbose("Toolchain %s:\n", it.first.c_str());
-		LogVerbose("    Type:\n        %s\n", t->GetToolchainType().c_str());
-		LogVerbose("    Path:\n        %s\n", t->GetBasePath().c_str());
+		LogVerbose("    Type:        %s\n", t->GetToolchainType().c_str());
+		if(t->GetPatchVersion() != 0)
+			LogVerbose("    Version:     %d.%d.%d\n", t->GetMajorVersion(), t->GetMinorVersion(), t->GetPatchVersion());
+		else
+			LogVerbose("    Version:     %d.%d\n", t->GetMajorVersion(), t->GetMinorVersion());
+		LogVerbose("    Path:        %s\n", t->GetBasePath().c_str());
 		vector<string> langs;
 		t->GetSupportedLanguages(langs);
 		LogVerbose("    Source languages:\n");

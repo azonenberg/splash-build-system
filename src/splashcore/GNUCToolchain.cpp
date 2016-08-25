@@ -27,88 +27,51 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashcore_h
-#define splashcore_h
+#include "splashcore.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Platform includes
+using namespace std;
 
-#include <unistd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libc includes
+GNUCToolchain::GNUCToolchain(string basepath, string triplet)
+	: CToolchain(basepath, TOOLCHAIN_GNU)
+{
+	//Get the full compiler version
+	m_stringVersion = ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
+	
+	//Parse it
+	if(3 != sscanf(m_stringVersion.c_str(), "%d.%d.%d",
+		&m_majorVersion, &m_minorVersion, &m_patchVersion))
+	{
+		//TODO: handle this better, don't abort :P
+		LogFatal("bad gcc version\n");
+	}
+	
+	//Some compilers can target other arches if you feed them the right flags.
+	//Thanks to @GyrosGeier for this
+	string cmd =
+		string("/bin/bash -c \"") + 
+		basepath + " -print-multi-lib | sed -e 's/.*;//' -e 's/@/ -/g' | while read line; do " +
+		basepath + " \\$line -print-multiarch; done" +
+		string("\"");
+	string extra_arches = ShellCommand(cmd);
+	ParseLines(extra_arches, m_triplets);
+	
+	//If no arches found in the last step, fall back to the triplet in the file name
+	if(m_triplets.empty())
+		m_triplets.push_back(triplet);
+	
+	 //TODO: figure out what flags we need to pass to target each one
+		
+	//Generate the hash
+	//TODO: Anything else to add here?
+	m_hash = sha256(string("GNU C ") + triplet + m_stringVersion);
+}
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <stdarg.h>
-#include <typeinfo>
+GNUCToolchain::~GNUCToolchain()
+{
+}
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libstdc++ includes
-
-#include <string>
-#include <vector>
-#include <list>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Other library includes
-
-#include <crypto++/sha.h>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Project includes
-
-#include "../log/log.h"
-
-#include "Toolchain.h"
-
-#include "CToolchain.h"
-
-#include "CPPToolchain.h"
-#include "FPGAToolchain.h"
-#include "GNUCToolchain.h"
-#include "GNUCPPToolchain.h"
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Global functions
-
-double GetTime();
-
-void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false);
-
-std::string ShellCommand(std::string cmd, bool trimNewline = true);
-
-std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
-
-void ParseSearchPath(std::vector<std::string>& dirs);
-
-std::string CanonicalizePath(std::string fname);
-bool DoesDirectoryExist(std::string fname);
-bool DoesFileExist(std::string fname);
-std::string GetDirOfFile(std::string fname);
-std::string GetBasenameOfFile(std::string fname);
-std::string GetBasenameOfFileWithoutExt(std::string fname);
-
-void FindFilesBySubstring(std::string dir, std::string sub, std::vector<std::string>& files);
-void FindFilesByExtension(std::string dir, std::string ext, std::vector<std::string>& files);
-void FindSubdirs(std::string dir, std::vector<std::string>& subdirs);
-
-std::string GetRelativePathOfFile(std::string dir, std::string fname);
-
-void MakeDirectoryRecursive(std::string path, int mode);
-
-std::string sha256(std::string str);
-std::string sha256_file(std::string path);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Global data
-
-extern std::map<std::string, Toolchain*> g_toolchains;
-
-#endif
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Toolchain properties

@@ -48,7 +48,7 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		LogFatal("bad G++ version\n");
 	}
 	
-	//Some arches can target other arches if you feed them the right flags.
+	//Some compilers can target other arches if you feed them the right flags.
 	//Thanks to @GyrosGeier for this
 	string cmd =
 		string("/bin/bash -c \"") + 

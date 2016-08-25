@@ -78,7 +78,7 @@ void Toolchain::GetSupportedLanguages(vector<string>& langs)
 		switch(x)
 		{
 			case LANG_OBJECT:
-				langs.push_back("Object");
+				langs.push_back("Object files");
 				break;
 				
 			case LANG_C:

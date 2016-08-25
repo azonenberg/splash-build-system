@@ -2,6 +2,8 @@ ADD_LIBRARY(splashcore SHARED
 	
 	CPPToolchain.cpp
 	CToolchain.cpp
+	FPGAToolchain.cpp
+	GNUCToolchain.cpp
 	GNUCPPToolchain.cpp
 	Toolchain.cpp
 

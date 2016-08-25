@@ -36,7 +36,7 @@
 class GNUCToolchain : public CToolchain
 {
 public:
-	GNUCToolchain(std::string basepath);
+	GNUCToolchain(std::string basepath, std::string triplet);
 	virtual ~GNUCToolchain();
 
 protected:

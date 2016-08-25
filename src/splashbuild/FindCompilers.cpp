@@ -122,10 +122,10 @@ void FindGCCCompilers()
 			if(2 != sscanf(remainder.c_str(), "gcc-%d.%d", &major, &minor))
 				continue;
 			
-			//TODO: Save this somewhere
-			//TODO: run --version to confirm?
-			//LogVerbose("        Found GCC %d.%d for triplet %s at %s\n", major, minor, triplet.c_str(), exe.c_str());
-		
+			//Create the toolchain object
+			auto gcc = new GNUCToolchain(exe, triplet);
+			g_toolchains[gcc->GetHash()] = gcc;
+			
 			//See if we have a matching G++ for the same triplet and version
 			string gxxpath = str_replace("gcc-", "g++-", exe);
 			if(DoesFileExist(gxxpath))
