@@ -5,6 +5,8 @@ ADD_LIBRARY(splashcore SHARED
 	FPGAToolchain.cpp
 	GNUCToolchain.cpp
 	GNUCPPToolchain.cpp
+	GNULinkerToolchain.cpp
+	LinkerToolchain.cpp
 	Toolchain.cpp
 	XilinxISEToolchain.cpp
 	XilinxVivadoToolchain.cpp

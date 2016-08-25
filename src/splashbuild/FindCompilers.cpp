@@ -74,8 +74,17 @@ void FindLinkers()
 				continue;
 			string triplet = base.substr(0, offset);
 
-			//TODO: run --version to find the linker version
-			//LogVerbose("        Found LD [no version yet] for triplet %s at %s\n", triplet.c_str(), exe.c_str());
+			//See if it's a GNU linker
+			string ver = ShellCommand(exe + " --version | head -n 1 | grep GNU");
+			if(ver == "")
+			{
+				LogWarning("Ignoring linker %s because it's not a GNU linker\n", exe.c_str());
+				continue;
+			}
+			
+			//Create the linker
+			auto ld = new GNULinkerToolchain(exe, triplet);
+			g_toolchains[ld->GetHash()] = ld;
 		}
 	}
 }
