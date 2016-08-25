@@ -49,6 +49,57 @@ void BuildClientThread(Socket& s, string& hostname)
 	}
 	
 	//Print stats
-	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB\n",
-		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize);
+	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
+		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize, binfo.toolchainCount);
+		
+	//Read the toolchains
+	for(unsigned int i=0; i<binfo.toolchainCount; i++)
+	{
+		//Get the header
+		msgAddCompiler tadd;
+		if(!s.RecvLooped((unsigned char*)&tadd, sizeof(tadd)))
+		{
+			LogWarning("Connection from %s dropped (while getting addCompiler header)\n", hostname.c_str());
+			return;
+		}
+		
+		//Read the hash
+		string hash;
+		if(!s.RecvPascalString(hash))
+		{
+			LogWarning("Connection from %s dropped (while getting addCompiler hash)\n", hostname.c_str());
+			return;
+		}
+		
+		//and compiler version
+		string ver;
+		if(!s.RecvPascalString(ver))
+		{
+			LogWarning("Connection from %s dropped (while getting addCompiler ver)\n", hostname.c_str());
+			return;
+		}
+		
+		//Languages
+		for(unsigned int j=0; j<tadd.numLangs; j++)
+		{			
+			uint8_t lang;
+			if(!s.RecvLooped((unsigned char*)&lang, 1))
+			{
+				LogWarning("Connection from %s dropped (while getting addCompiler lang)\n", hostname.c_str());
+				return;
+			}
+		}
+		
+		//Triplets
+		for(unsigned int j=0; j<tadd.numTriplets; j++)
+		{
+			string triplet;
+			if(!s.RecvPascalString(triplet))
+			{
+				LogWarning("Connection from %s dropped (while getting addCompiler triplet %u/%u)\n",
+					hostname.c_str(), j, tadd.numTriplets);
+				return;
+			}
+		}
+	}
 }

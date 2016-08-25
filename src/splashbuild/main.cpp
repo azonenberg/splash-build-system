@@ -135,29 +135,36 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	
-	//Get some basic metadata about our hardware and tell the server
-	msgBuildInfo binfo;
-	binfo.cpuCount = atoi(ShellCommand("cat /proc/cpuinfo  | grep processor | wc -l").c_str());
-	binfo.cpuSpeed = atoi(ShellCommand("cat /proc/cpuinfo | grep bogo | head -n 1 | cut -d : -f 2").c_str());
-	binfo.ramSize = atol(ShellCommand("cat /proc/meminfo  | grep MemTotal  | cut -d : -f 2").c_str()) / 1024;
-	if(!sock.SendLooped((unsigned char*)&binfo, sizeof(binfo)))
-	{
-		LogWarning("Connection dropped (while sending buildInfo)\n");
-		return 1;
-	}
-	
 	//Look for compilers
 	LogVerbose("Enumerating compilers...\n");
 	FindLinkers();
 	FindCPPCompilers();
 	FindFPGACompilers();
 	
+	//Get some basic metadata about our hardware and tell the server
+	msgBuildInfo binfo;
+	binfo.cpuCount = atoi(ShellCommand("cat /proc/cpuinfo  | grep processor | wc -l").c_str());
+	binfo.cpuSpeed = atoi(ShellCommand("cat /proc/cpuinfo | grep bogo | head -n 1 | cut -d : -f 2").c_str());
+	binfo.ramSize = atol(ShellCommand("cat /proc/meminfo  | grep MemTotal  | cut -d : -f 2").c_str()) / 1024;
+	binfo.toolchainCount = g_toolchains.size();
+	if(!sock.SendLooped((unsigned char*)&binfo, sizeof(binfo)))
+	{
+		LogWarning("Connection dropped (while sending buildInfo)\n");
+		return 1;
+	}
+	
 	//Report the toolchains we found to the server
 	for(auto it : g_toolchains)
 	{
 		auto t = it.second;
 		
+		vector<string> langs;
+		t->GetSupportedLanguages(langs);
+		vector<string> triplets;
+		t->GetTargetTriplets(triplets);
+		
 		//Debug prints
+		/*
 		LogVerbose("Toolchain %s:\n", it.first.c_str());
 		LogVerbose("    Type:        %s\n", t->GetToolchainType().c_str());
 		if(t->GetPatchVersion() != 0)
@@ -165,16 +172,58 @@ int main(int argc, char* argv[])
 		else
 			LogVerbose("    Version:     %d.%d\n", t->GetMajorVersion(), t->GetMinorVersion());
 		LogVerbose("    Path:        %s\n", t->GetBasePath().c_str());
-		vector<string> langs;
-		t->GetSupportedLanguages(langs);
 		LogVerbose("    Source languages:\n");
 		for(auto x : langs)
 			LogVerbose("        %s\n", x.c_str());
 		LogVerbose("    Target triplets:\n");
-		vector<string> triplets;
-		t->GetTargetTriplets(triplets);
 		for(auto x : triplets)
 			LogVerbose("        %s\n", x.c_str());
+		*/
+			
+		//Send the toolchain header to the server
+		msgAddCompiler tadd;
+		tadd.compilerType = t->GetType();
+		tadd.versionNum =	(t->GetMajorVersion() << 24) |
+							(t->GetMinorVersion() << 16) |
+							(t->GetPatchVersion() << 8);
+		tadd.numLangs = langs.size();
+		tadd.numTriplets = triplets.size();
+		if(!sock.SendLooped((unsigned char*)&tadd, sizeof(tadd)))
+		{
+			LogWarning("Connection dropped (while sending addCompiler)\n");
+			return 1;
+		}
+		
+		//Send supplemental payload data
+		if(!sock.SendPascalString(t->GetHash()))
+		{
+			LogWarning("Connection dropped (while sending addCompiler)\n");
+			return 1;
+		}
+		if(!sock.SendPascalString(t->GetVersionString()))
+		{
+			LogWarning("Connection dropped (while sending addCompiler)\n");
+			return 1;
+		}
+		vector<Toolchain::Language> dlangs;
+		t->GetSupportedLanguages(dlangs);
+		for(auto x : dlangs)
+		{
+			uint8_t l = x;
+			if(!sock.SendLooped((unsigned char*)&l, 1))
+			{
+				LogWarning("Connection dropped (while sending addCompiler)\n");
+				return 1;
+			}
+		}
+		for(auto x : triplets)
+		{
+			if(!sock.SendPascalString(x))
+			{
+				LogWarning("Connection dropped (while sending addCompiler)\n");
+				return 1;
+			}
+		}
 	}
 	
 	//TODO: Sit around and wait for stuff to come in

@@ -98,4 +98,6 @@ void ClientThread(ZSOCKET sock)
 			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
 			break;
 	}
+	
+	LogVerbose("Client %s disconnected\n", client_hostname.c_str());
 }

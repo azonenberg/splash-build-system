@@ -88,6 +88,9 @@ public:
 		@brief Get the type of the toolchain as a string (one word)
 	 */
 	std::string GetToolchainType();
+	
+	ToolchainType GetType()
+	{ return m_type; }
 
 	/**
 		@brief Get the list of architecture triplets that we can target.
@@ -124,6 +127,9 @@ public:
 	 */
 	std::string GetBasePath()
 	{ return m_basepath; }
+	
+	std::string GetVersionString()
+	{ return m_stringVersion; }
 	
 protected:
 

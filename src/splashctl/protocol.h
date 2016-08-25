@@ -75,14 +75,6 @@ enum msgType
 	MSG_TYPE_CLIENTHELLO,
 	MSG_TYPE_SERVERHELLO,
 	MSG_TYPE_BUILD_INFO,
-	
-	//Add a new compiler to the list of compilers present on a given build server
-	//compilerType 		uint8		Type of compiler (CToolchain::CompilerType)
-	//versionStr 		string		Human-readable / hashable version string of compiler
-	//versionNum 		uint32		Machine-readable version number of compiler, left justified hex
-	//								4.9.2 is encoded as 0x04090200
-	//langs 			uint8 arr	Array of languages we support
-	//triplets			str arr		Array of triplets we can target
 	MSG_TYPE_ADD_COMPILER,
 	
 	//Report basic information about a developer client
@@ -180,6 +172,30 @@ public:
 	uint16_t ramSize;		//RAM capacity, in MB
 	//TODO: ram speed?
 	
+	uint16_t toolchainCount;//Number of toolchains on the node
+	
+} __attribute__ ((packed));
+
+//Report compilers installed on the build server
+class msgAddCompiler : public msg
+{
+public:
+	msgAddCompiler()
+		: msg(MSG_TYPE_ADD_COMPILER)
+	{}
+	
+	uint8_t compilerType;			//Type of compiler (CToolchain::CompilerType)
+	uint32_t versionNum;			//Machine-readable version number of compiler, left justified hex
+									//4.9.2 is encoded as 0x04090200
+									//This coding is easier to quickly compare greater/less than loose ints
+	uint16_t numLangs;				//number of languages we support
+	uint16_t numTriplets;			//number of architecture triplets we support
+	
+	//After this struct:
+	//string		hash
+	//string		versionStr
+	//uint8[]		langs
+	//string[]		triplets
 } __attribute__ ((packed));
 
 #endif
