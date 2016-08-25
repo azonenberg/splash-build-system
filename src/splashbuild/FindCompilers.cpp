@@ -166,13 +166,20 @@ void FindXilinxISECompilers()
 		if(2 != sscanf(dir.c_str(), format.c_str(), &major, &minor))
 			continue;
 			
+		//If the version is not 14.7, ignore it (old ISE is deader than dead)
+		if( (major != 14) || (minor != 7))
+		{
+			LogWarning("Ignoring old ISE version %d.%d (only 14.7 is supported for now)\n", major, minor);
+			continue;
+		}
+			
 		//To make sure, look for XST
 		string expected_xst_path = dir + "/ISE_DS/ISE/bin/lin64/xst";
 		if(!DoesFileExist(expected_xst_path))
 			continue;
 		
-		//TODO: save this somewhere
-		//LogVerbose("        Found ISE %d.%d at %s\n", major, minor, dir.c_str());
+		auto ise = new XilinxISEToolchain(dir, major, minor);
+		g_toolchains[ise->GetHash()] = ise;
 	}
 }
 
@@ -204,7 +211,7 @@ void FindXilinxVivadoCompilers()
 		if(!DoesFileExist(expected_vivado_path))
 			continue;
 		
-		//TODO: save this somewhere
-		//LogVerbose("        Found Vivado %d.%d at %s\n", major, minor, dir.c_str());
+		auto vdo = new XilinxVivadoToolchain(dir, major, minor);
+		g_toolchains[vdo->GetHash()] = vdo;
 	}
 }
