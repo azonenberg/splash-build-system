@@ -34,11 +34,72 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-Toolchain::Toolchain(string basepath)
+Toolchain::Toolchain(string basepath, ToolchainType type)
 	: m_basepath(basepath)
+	, m_type(type)
 {
 }
 
 Toolchain::~Toolchain()
 {
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Accessors
+
+string Toolchain::GetToolchainType()
+{
+	switch(m_type)
+	{
+		case TOOLCHAIN_GNU:
+			return "GNU";
+			
+		case TOOLCHAIN_CLANG:
+			return "Clang";
+			
+		case TOOLCHAIN_ISE:
+			return "ISE";
+		
+		case TOOLCHAIN_VIVADO:
+			return "Vivado";
+		
+		default:
+			return "invalid";
+	}
+}
+
+void Toolchain::GetSupportedLanguages(vector<string>& langs)
+{
+	vector<Language> v;
+	GetSupportedLanguages(v);
+	
+	for(auto x : v)
+	{
+		switch(x)
+		{
+			case LANG_OBJECT:
+				langs.push_back("Object");
+				break;
+				
+			case LANG_C:
+				langs.push_back("C");
+				break;
+				
+			case LANG_CPP:
+				langs.push_back("C++");
+				break;
+				
+			case LANG_ASM:
+				langs.push_back("Assembly");
+				break;
+			
+			case LANG_VERILOG:
+				langs.push_back("Verilog");
+				break;
+				
+			default:
+				langs.push_back("invalid");
+				break;
+		}
+	}
 }

@@ -78,6 +78,8 @@
 
 double GetTime();
 
+void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false);
+
 std::string ShellCommand(std::string cmd, bool trimNewline = true);
 
 std::string str_replace(const std::string& search, const std::string& replace, std::string subject);

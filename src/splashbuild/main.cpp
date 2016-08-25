@@ -153,6 +153,25 @@ int main(int argc, char* argv[])
 	FindFPGACompilers();
 	
 	//Report the toolchains we found to the server
+	for(auto it : g_toolchains)
+	{
+		auto t = it.second;
+		
+		//Debug prints
+		LogVerbose("Toolchain %s:\n", it.first.c_str());
+		LogVerbose("    Type:\n        %s\n", t->GetToolchainType().c_str());
+		LogVerbose("    Path:\n        %s\n", t->GetBasePath().c_str());
+		vector<string> langs;
+		t->GetSupportedLanguages(langs);
+		LogVerbose("    Source languages:\n");
+		for(auto x : langs)
+			LogVerbose("        %s\n", x.c_str());
+		LogVerbose("    Target triplets:\n");
+		vector<string> triplets;
+		t->GetTargetTriplets(triplets);
+		for(auto x : triplets)
+			LogVerbose("        %s\n", x.c_str());
+	}
 	
 	//TODO: Sit around and wait for stuff to come in
 	

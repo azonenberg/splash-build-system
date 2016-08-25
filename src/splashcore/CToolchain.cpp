@@ -34,8 +34,8 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-CToolchain::CToolchain(string basepath)
-	: Toolchain(basepath)
+CToolchain::CToolchain(string basepath, ToolchainType type)
+	: Toolchain(basepath, type)
 {
 }
 

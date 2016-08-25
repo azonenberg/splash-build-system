@@ -36,7 +36,22 @@
 class Toolchain
 {
 public:
-	Toolchain(std::string basepath);
+	/**
+		@brief Type of compiler
+
+		Allows build server to report installed compilers to splashctl
+	 */
+	enum ToolchainType
+	{
+		TOOLCHAIN_GNU,		//GNU C/C++
+		TOOLCHAIN_CLANG,	//Clang
+		TOOLCHAIN_ISE,		//Xilinx ISE
+		TOOLCHAIN_VIVADO,	//Xilinx Vivado
+
+		TOOLCHAIN_LAST		//placeholder
+	};
+	
+	Toolchain(std::string basepath, ToolchainType type);
 	virtual ~Toolchain();
 
 	//IDs for all supported languages in Splash (add more here as necessary)
@@ -60,26 +75,19 @@ public:
 	};
 	
 	/**
-		@brief Type of compiler
-
-		Allows build server to report installed compilers to splashctl
-	 */
-	/*
-	enum ToolchainType
-	{
-		TOOLCHAIN_GNU,		//GNU C/C++
-		TOOLCHAIN_CLANG,	//Clang
-		TOOLCHAIN_ISE,		//Xilinx ISE
-		TOOLCHAIN_VIVADO,	//Xilinx Vivado
-
-		TOOLCHAIN_LAST		//placeholder
-	};
-	*/
-
-	/**
 		@brief Get the list of languages that we can compile.
 	 */
 	virtual void GetSupportedLanguages(std::vector<Language>& langs) =0;
+	
+	/**
+		@brief Get the list of languages that we can compile, as strings (for debug)
+	 */
+	virtual void GetSupportedLanguages(std::vector<std::string>& langs);
+	
+	/**
+		@brief Get the type of the toolchain as a string (one word)
+	 */
+	std::string GetToolchainType();
 
 	/**
 		@brief Get the list of architecture triplets that we can target.
@@ -87,12 +95,35 @@ public:
 	void GetTargetTriplets(std::vector<std::string>& triplets)
 	{ triplets = m_triplets; }
 
-
 	/**
 		@brief Get a hash that uniquely identifies this toolchain (including target arch and patch level)
 	 */
 	std::string GetHash()
 	{ return m_hash; }
+	
+	/**
+		@brief Get major toolchain version
+	 */
+	int GetMajorVersion()
+	{ return m_majorVersion; }
+	
+	/**
+		@brief Get minor toolchain version
+	 */
+	int GetMinorVersion()
+	{ return m_minorVersion; }
+	
+	/**
+		@brief Get patch toolchain version
+	 */
+	int GetPatchVersion()
+	{ return m_patchVersion; }
+	
+	/**
+		@brief Get base path of toolchain (debug only, don't expect this to be an exe or dir or anything useful)
+	 */
+	std::string GetBasePath()
+	{ return m_basepath; }
 	
 protected:
 
@@ -103,6 +134,11 @@ protected:
 		the base install directory for e.g. an FPGA tool suite.
 	 */
 	std::string m_basepath;
+	
+	/**
+		@brief Type of the toolchain (used when a dev requests a specific toolchain by name)
+	 */
+	ToolchainType m_type;
 	
 	/**
 		@brief A hash that uniquely identifies this toolchain
@@ -117,6 +153,26 @@ protected:
 		Must be set in the constructor.
 	 */
 	std::vector<std::string> m_triplets;
+	
+	/**
+		@brief Toolchain major version
+	 */
+	int m_majorVersion;
+	
+	/**
+		@brief Toolchain minor version
+	 */
+	int m_minorVersion;
+	
+	/**
+		@brief Toolchain patch version
+	 */
+	int m_patchVersion;
+	
+	/**
+		@brief Toolchain string version. This may include info like distro patches etc
+	 */
+	std::string m_stringVersion;
 };
 
 #endif

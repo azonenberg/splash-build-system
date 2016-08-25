@@ -72,6 +72,31 @@ string ShellCommand(string cmd, bool trimNewline)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // String manipulation helpers
 
+/**
+	@brief Split a large string into an array of lines
+ */
+void ParseLines(string str, vector<string>& lines, bool clearVector)
+{
+	if(clearVector)
+		lines.clear();
+		
+	string s;
+	size_t len = str.length();
+	for(size_t i=0; i<len; i++)
+	{
+		char c = str[i];
+		if(c == '\n')
+		{
+			lines.push_back(s);
+			s = "";
+		}
+		else
+			s += c;
+	}
+	if(s != "")
+		lines.push_back(s);
+}
+
 string str_replace(const string& search, const string& replace, string subject)
 {
 	size_t pos = 0;

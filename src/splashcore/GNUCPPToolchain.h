@@ -40,10 +40,6 @@ public:
 	virtual ~GNUCPPToolchain();
 	
 protected:
-	int m_majorVersion;
-	int m_minorVersion;
-	int m_patchVersion;
-	std::string m_stringVersion;
 };
 
 #endif

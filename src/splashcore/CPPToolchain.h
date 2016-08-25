@@ -36,7 +36,7 @@
 class CPPToolchain : public CToolchain
 {
 public:
-	CPPToolchain(std::string basepath);
+	CPPToolchain(std::string basepath, ToolchainType type);
 	virtual ~CPPToolchain();
 	
 	/**

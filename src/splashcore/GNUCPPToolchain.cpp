@@ -35,7 +35,7 @@ using namespace std;
 // Construction / destruction
 
 GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
-	: CPPToolchain(basepath)
+	: CPPToolchain(basepath, TOOLCHAIN_GNU)
 {
 	//Get the full compiler version
 	m_stringVersion = ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
@@ -48,13 +48,25 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		LogFatal("bad G++ version\n");
 	}
 	
-	LogVerbose("        Found G++ %d.%d.%d for triplet %s at %s\n",
-		m_majorVersion, m_minorVersion, m_patchVersion, triplet.c_str(), basepath.c_str());
+	//Some arches can target other arches if you feed them the right flags.
+	//Thanks to @GyrosGeier for this
+	string cmd =
+		string("/bin/bash -c \"") + 
+		basepath + " -print-multi-lib | sed -e 's/.*;//' -e 's/@/ -/g' | while read line; do " +
+		basepath + " \\$line -print-multiarch; done" +
+		string("\"");
+	string extra_arches = ShellCommand(cmd);
+	ParseLines(extra_arches, m_triplets);
 	
-	//Get our list of triplets
-	m_triplets.push_back(triplet);
+	//If no arches found in the last step, fall back to the triplet in the file name
+	if(m_triplets.empty())
+		m_triplets.push_back(triplet);
+	
+	 //TODO: figure out what flags we need to pass to target each one
 		
 	//Generate the hash
+	//TODO: Anything else to add here?
+	m_hash = sha256(string("GNU C++ ") + triplet + m_stringVersion);
 }
 
 GNUCPPToolchain::~GNUCPPToolchain()
