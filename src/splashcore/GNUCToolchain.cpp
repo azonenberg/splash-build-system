@@ -41,7 +41,7 @@ GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 	m_stringVersion = string("GNU C") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
 	
 	//Parse it
-	if(3 != sscanf(m_stringVersion.c_str(), "GNU C %d.%d.%d",
+	if(3 != sscanf(m_stringVersion.c_str(), "GNU C %4d.%4d.%4d",
 		&m_majorVersion, &m_minorVersion, &m_patchVersion))
 	{
 		//TODO: handle this better, don't abort :P

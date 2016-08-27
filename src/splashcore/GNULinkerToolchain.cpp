@@ -41,7 +41,7 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	m_stringVersion = string("GNU Linker") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
 	
 	//Parse it
-	if(2 != sscanf(m_stringVersion.c_str(), "GNU Linker %d.%d",
+	if(2 != sscanf(m_stringVersion.c_str(), "GNU Linker %4d.%4d",
 		&m_majorVersion, &m_minorVersion))
 	{
 		//TODO: handle this better, don't abort :P

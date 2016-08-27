@@ -128,7 +128,7 @@ void FindGCCCompilers()
 			string remainder = base.substr(offset);
 			int major;
 			int minor;
-			if(2 != sscanf(remainder.c_str(), "gcc-%d.%d", &major, &minor))
+			if(2 != sscanf(remainder.c_str(), "gcc-%4d.%4d", &major, &minor))
 				continue;
 			
 			//Create the toolchain object

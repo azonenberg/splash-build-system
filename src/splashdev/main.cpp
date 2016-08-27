@@ -148,11 +148,11 @@ int main(int argc, char* argv[])
 	while(1)
 	{
 		//Get the event
-		size_t len = read(hnotify, ebuf, buflen);
+		ssize_t len = read(hnotify, ebuf, buflen);
 		if(len <= 0)
 			break;
 			
-		size_t offset = 0;
+		ssize_t offset = 0;
 		while(offset < len)
 		{
 			inotify_event* evt = reinterpret_cast<inotify_event*>(ebuf + offset);
