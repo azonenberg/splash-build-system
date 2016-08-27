@@ -52,6 +52,24 @@ void BuildClientThread(Socket& s, string& hostname)
 	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
 		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize, binfo.toolchainCount);
 		
+	//If we already have this node registered, complain and drop it
+	//TODO: drop the old node instead?
+	if(g_activeClients.find(hostname) != g_activeClients.end())
+	{
+		LogWarning("Connection from %s dropped (already connected)\n", hostname.c_str());
+		return;
+	}
+		
+	//If no toolchains, just quit now
+	if(binfo.toolchainCount == 0)
+	{
+		LogWarning("Connection from %s dropped (no toolchains found)\n", hostname.c_str());
+		return;
+	}
+	
+	//Register this toolchain
+	g_activeClients.emplace(hostname);
+		
 	//Read the toolchains
 	for(unsigned int i=0; i<binfo.toolchainCount; i++)
 	{	
@@ -81,9 +99,13 @@ void BuildClientThread(Socket& s, string& hostname)
 		
 		//Create and initialize the toolchain object
 		RemoteToolchain* toolchain = new RemoteToolchain(
-			static_cast<RemoteToolchain::ToolchainType>(tadd.compilerType));
-			
-		//TODO: Finish filling it out
+			static_cast<RemoteToolchain::ToolchainType>(tadd.compilerType),
+			hash,
+			ver,
+			(tadd.versionNum >> 24) & 0xff,
+			(tadd.versionNum >> 16) & 0xff,
+			(tadd.versionNum >> 8) & 0xff
+			);
 		
 		//Languages
 		for(unsigned int j=0; j<tadd.numLangs; j++)
@@ -94,11 +116,13 @@ void BuildClientThread(Socket& s, string& hostname)
 				LogWarning("Connection from %s dropped (while getting addCompiler lang)\n", hostname.c_str());
 				return;
 			}
+			
+			toolchain->AddLanguage(static_cast<Toolchain::Language>(lang));
 		}
 		
 		//Triplets
 		for(unsigned int j=0; j<tadd.numTriplets; j++)
-		{
+		{		
 			string triplet;
 			if(!s.RecvPascalString(triplet))
 			{
@@ -106,6 +130,17 @@ void BuildClientThread(Socket& s, string& hostname)
 					hostname.c_str(), j, tadd.numTriplets);
 				return;
 			}
+			
+			toolchain->AddTriplet(triplet);
 		}
+		
+		//Register the toolchain in the global indexes
+		g_toolchainsByNode[hostname].emplace(toolchain);
+		auto langs = toolchain->GetSupportedLanguages();
+		auto triplets = toolchain->GetTargetTriplets();
+		for(auto l : langs)
+			for(auto t : triplets)
+				g_nodesByLanguage[larch(l, t)].emplace(hostname);
+		g_nodesByCompiler[hash].emplace(hostname);
 	}
 }

@@ -34,9 +34,18 @@ using namespace std;
 void ShowUsage();
 void ShowVersion();
 
-/*
-	Global toolchain metadata
- */
+//List of nodes (eliminate multiple splashbuild instances)
+unordered_set<string> g_activeClients;
+
+//List of compilers available on each node
+//This is the authoritative pointer to nodes
+map<string, vtool> g_toolchainsByNode;
+
+//List of nodes with any compiler for a given language and target architecture
+map<larch, vnode> g_nodesByLanguage;
+
+//List of nodes with a specific compiler (by hash)
+map<string, vnode> g_nodesByCompiler;
 
 /**
 	@brief Program entry point

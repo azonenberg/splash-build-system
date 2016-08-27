@@ -38,10 +38,10 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 	: CPPToolchain(basepath, TOOLCHAIN_GNU)
 {
 	//Get the full compiler version
-	m_stringVersion = ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
+	m_stringVersion = string("GNU C++") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
 	
 	//Parse it
-	if(3 != sscanf(m_stringVersion.c_str(), "%d.%d.%d",
+	if(3 != sscanf(m_stringVersion.c_str(), "GNU C++ %d.%d.%d",
 		&m_majorVersion, &m_minorVersion, &m_patchVersion))
 	{
 		//TODO: handle this better, don't abort :P
@@ -66,7 +66,7 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		
 	//Generate the hash
 	//TODO: Anything else to add here?
-	m_hash = sha256(string("GNU C++ ") + triplet + m_stringVersion);
+	m_hash = sha256(m_stringVersion + triplet);
 }
 
 GNUCPPToolchain::~GNUCPPToolchain()

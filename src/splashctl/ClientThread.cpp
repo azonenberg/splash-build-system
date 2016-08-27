@@ -37,7 +37,7 @@ void ClientThread(ZSOCKET sock)
 	
 	string client_hostname = "[no hostname]";
 	
-	LogDebug("New connection received from %s\n", client_hostname.c_str());
+	//LogDebug("New connection received from %s\n", client_hostname.c_str());
 	
 	//Send it a server hello
 	msgServerHello shi;
@@ -91,7 +91,23 @@ void ClientThread(ZSOCKET sock)
 			break;
 			
 		case CLIENT_BUILD:
-			BuildClientThread(s, client_hostname);
+			{
+				BuildClientThread(s, client_hostname);
+				
+				//Delete any toolchains registered to this node after the build thread terminates
+				auto chains = g_toolchainsByNode[client_hostname];
+				for(auto x : chains)
+					delete x;
+				g_toolchainsByNode.erase(client_hostname);
+				for(auto x : g_nodesByLanguage)
+					x.second.erase(client_hostname);
+				for(auto x : g_nodesByCompiler)
+					x.second.erase(client_hostname);
+				
+				//Remove the toolchain itself from the active list
+				g_activeClients.erase(client_hostname);
+			}
+			
 			break;
 		
 		default:

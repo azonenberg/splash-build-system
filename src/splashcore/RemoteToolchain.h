@@ -36,8 +36,14 @@
 class RemoteToolchain : public Toolchain
 {
 public:
-	RemoteToolchain(ToolchainType type);
+	RemoteToolchain(ToolchainType type, std::string hash, std::string sver, int major, int minor, int patch);
 	virtual ~RemoteToolchain();
+
+	void AddLanguage(Language l)
+	{ m_langs.push_back(l); }
+
+	void AddTriplet(std::string triplet)
+	{ m_triplets.push_back(triplet); }
 
 protected:
 };

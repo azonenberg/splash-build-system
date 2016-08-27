@@ -38,10 +38,10 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	: LinkerToolchain(basepath, TOOLCHAIN_GNU)
 {
 	//Get the full toolchain version
-	m_stringVersion = ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
+	m_stringVersion = string("GNU Linker") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
 	
 	//Parse it
-	if(2 != sscanf(m_stringVersion.c_str(), "%d.%d.%d",
+	if(2 != sscanf(m_stringVersion.c_str(), "GNU Linker %d.%d",
 		&m_majorVersion, &m_minorVersion))
 	{
 		//TODO: handle this better, don't abort :P
@@ -66,7 +66,7 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	
 	//Generate the hash
 	//TODO: Anything else to add here?
-	m_hash = sha256(string("GNU LD ") + triplet + m_stringVersion);
+	m_hash = sha256(m_stringVersion + triplet);
 }
 
 GNULinkerToolchain::~GNULinkerToolchain()

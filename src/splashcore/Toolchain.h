@@ -101,8 +101,8 @@ public:
 	/**
 		@brief Get the list of architecture triplets that we can target.
 	 */
-	void GetTargetTriplets(std::vector<std::string>& triplets)
-	{ triplets = m_triplets; }
+	const std::vector<std::string>& GetTargetTriplets()
+	{ return m_triplets; }
 
 	/**
 		@brief Get a hash that uniquely identifies this toolchain (including target arch and patch level)

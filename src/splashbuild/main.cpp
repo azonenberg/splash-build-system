@@ -160,8 +160,10 @@ int main(int argc, char* argv[])
 		
 		vector<string> langs;
 		t->GetSupportedLanguages(langs);
-		vector<string> triplets;
-		t->GetTargetTriplets(triplets);
+		auto triplets = t->GetTargetTriplets();
+		
+		//DEBUG: Print it out
+		//t->DebugPrint();
 			
 		//Send the toolchain header to the server
 		msgAddCompiler tadd;

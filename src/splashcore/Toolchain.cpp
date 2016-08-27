@@ -51,8 +51,6 @@ void Toolchain::DebugPrint()
 {
 	vector<string> langs;
 	GetSupportedLanguages(langs);
-	vector<string> triplets;
-	GetTargetTriplets(triplets);
 	
 	LogVerbose("Toolchain %s:\n", GetHash().c_str());
 	LogVerbose("    Type:        %s\n", GetToolchainType().c_str());
@@ -60,12 +58,13 @@ void Toolchain::DebugPrint()
 		LogVerbose("    Version:     %d.%d.%d\n", GetMajorVersion(), GetMinorVersion(), GetPatchVersion());
 	else
 		LogVerbose("    Version:     %d.%d\n", GetMajorVersion(), GetMinorVersion());
+	LogVerbose("    String ver:  %s\n", GetVersionString().c_str());
 	LogVerbose("    Path:        %s\n", GetBasePath().c_str());
 	LogVerbose("    Source languages:\n");
 	for(auto x : langs)
 		LogVerbose("        %s\n", x.c_str());
 	LogVerbose("    Target triplets:\n");
-	for(auto x : triplets)
+	for(auto x : m_triplets)
 		LogVerbose("        %s\n", x.c_str());
 }
 

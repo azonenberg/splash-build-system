@@ -40,10 +40,26 @@
 
 #include <string>
 #include <thread>
+#include <map>
+#include <unordered_set>
 
 #include "protocol.h"
 
 void ClientThread(ZSOCKET sock);
 void BuildClientThread(Socket& s, std::string& hostname);
+
+//set of toolchains
+typedef std::unordered_set<Toolchain*> vtool;
+
+//set of node names
+typedef std::unordered_set<std::string> vnode;
+
+//(language, target arch) tuple
+typedef std::pair<Toolchain::Language, std::string> larch;
+
+extern std::unordered_set<std::string> g_activeClients;
+extern std::map<std::string, vtool> g_toolchainsByNode;
+extern std::map<larch, vnode> g_nodesByLanguage;
+extern std::map<std::string, vnode> g_nodesByCompiler;
 
 #endif

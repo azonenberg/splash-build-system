@@ -34,9 +34,14 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-RemoteToolchain::RemoteToolchain(ToolchainType type)
-	: Toolchain("", type)
+RemoteToolchain::RemoteToolchain(ToolchainType type, string hash, string ver, int major, int minor, int patch)
+: Toolchain("", type)
 {
+	m_hash = hash;
+	m_stringVersion = ver;
+	m_majorVersion = major;
+	m_minorVersion = minor;
+	m_patchVersion = patch;
 }
 
 RemoteToolchain::~RemoteToolchain()
