@@ -31,37 +31,57 @@
 
 using namespace std;
 
-void SendChangeNotification(Socket& s, string path)
+void SendChangeNotificationForDir(Socket& s, string path)
 {
-	//Stop if it doesn't exist
+	//Stop if it doesn't exist (sanity check)
 	if(!DoesDirectoryExist(path))
 		return;
-	
-	//Don't send anything for the dir itself... directories have no importance server side.
-	//Just send recursive change notices for children
 			
 	//Send change notices for our subdirectories
 	vector<string> children;
 	FindSubdirs(path, children);
 	for(auto x : children)
-		SendChangeNotification(s, x);
+		SendChangeNotificationForDir(s, x);
 	
 	//Send change notices for our files
 	vector<string> files;
 	FindFiles(path, files);
 	for(auto x : files)
+		SendChangeNotificationForFile(s, x);
+}
+
+void SendChangeNotificationForFile(Socket& s, string path)
+{
+	//Is the file a build.yml? If so, re-parse it and don't push it to the server
+	if(GetBasenameOfFile(path) == "build.yml")
 	{
-		//Hash the file
-		string hash = sha256_file(x);
-		
-		//Get path relative to project root
-		string fname = x;
-		if(fname.find(g_rootDir) == 0)
-			fname = fname.substr(g_rootDir.length() + 1);	//add 1 to trim trailing /
-		else
-			LogWarning("Changed file %s is not within project root\n", x.c_str());
-		
-		//Send the change
-		LogDebug("Sending change notice for %s, hash %s\n", fname.c_str(), hash.c_str());
-	}
+		ProcessChangedBuildScript(path);
+		return;
+	}	
+	
+	//Hash the file
+	string hash = sha256_file(path);
+	
+	//Get path relative to project root
+	string fname = path;
+	if(fname.find(g_rootDir) == 0)
+		fname = fname.substr(g_rootDir.length() + 1);	//add 1 to trim trailing /
+	else
+		LogWarning("Changed file %s is not within project root\n", path.c_str());
+	
+	//Send the change
+	msgFileChanged mcg;
+	if(!s.SendLooped((unsigned char*)&mcg, sizeof(mcg)))
+		LogFatal("Connection dropped (while sending fileChanged)\n");
+	if(!s.SendPascalString(fname))
+		LogFatal("Connection dropped (while sending fileChanged.fname)\n");
+	if(!s.SendPascalString(hash))
+		LogFatal("Connection dropped (while sending fileChanged.hash)\n");
+	
+	//TODO: wait for server to respond "I have it" or "send me the updated version"?
+}
+
+void ProcessChangedBuildScript(string path)
+{
+	LogDebug("Build script %s changed, need to reload\n", path.c_str());
 }

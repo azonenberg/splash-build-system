@@ -50,29 +50,40 @@ void DevClientThread(Socket& s, string& hostname)
 	string arch;
 	if(!s.RecvPascalString(arch))
 	{
-		LogWarning("Connection from %s dropped (while getting devInfo arch)\n", arch.c_str());
+		LogWarning("Connection from %s dropped (while getting devInfo arch)\n", hostname.c_str());
 		return;
 	}
 	LogVerbose("    (architecture is %s)\n", arch.c_str());
 	
-	/*
-	//Print stats
-	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
-		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize, binfo.toolchainCount);
-		
-	//If we already have this node registered, complain and drop it
-	//TODO: drop the old node instead?
-	if(g_activeClients.find(hostname) != g_activeClients.end())
+	while(true)
 	{
-		LogWarning("Connection from %s dropped (already connected)\n", hostname.c_str());
-		return;
-	}
+		//Expect fileChanged messages (all build requests etc will come through from a "splash" client)
+		msgFileChanged mfc;
+		if(!s.RecvLooped((unsigned char*)&mfc, sizeof(mfc)))
+			break;
+		if(mfc.type != MSG_TYPE_FILE_CHANGED)
+		{
+			LogWarning("Connection from %s dropped (bad message type in fileChanged)\n", hostname.c_str());
+			return;
+		}
+		string fname;
+		if(!s.RecvPascalString(fname))
+		{
+			LogWarning("Connection from %s dropped (while getting fileChanged.fname)\n", hostname.c_str());
+			return;
+		}
+		string hash;
+		if(!s.RecvPascalString(hash))
+		{
+			LogWarning("Connection from %s dropped (while getting fileChanged.hash)\n", hostname.c_str());
+			return;
+		}
 		
-	//If no toolchains, just quit now
-	if(binfo.toolchainCount == 0)
-	{
-		LogWarning("Connection from %s dropped (no toolchains found)\n", hostname.c_str());
-		return;
+		//TODO: do something with the result
+		
+		LogVerbose("File %s on node %s changed\n    new hash is %s\n",
+			fname.c_str(),
+			hostname.c_str(),
+			hash.c_str());
 	}
-	*/
 }

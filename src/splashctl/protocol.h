@@ -77,13 +77,6 @@ enum msgType
 	MSG_TYPE_BUILD_INFO,
 	MSG_TYPE_ADD_COMPILER,
 	MSG_TYPE_DEV_INFO,
-	
-	//Report that a file changed clientside
-	//Note that we do not report file deletion; deleted files stay in cache until evicted.
-	//TODO: immediate report for deletion of build scripts? Are those parsed client or server side?
-	//Directory creation/destruction is also irrelevant to the build, as is file moving.
-	//fname				string		Path of changed file
-	//hash				string		ASCII hex SHA-256 sum of the changed file
 	MSG_TYPE_FILE_CHANGED,
 	
 	//Server requests the contents of a file from the client
@@ -207,6 +200,24 @@ public:
 	//After this struct:
 	//arch			string		Client OS architecture triplet
 };
+
+//Report that a file changed clientside
+class msgFileChanged : public msg
+{
+public:
+	msgFileChanged()
+		: msg(MSG_TYPE_FILE_CHANGED)
+	{}
+	
+	//After this struct:
+	//fname				string		Path of changed file
+	//hash				string		ASCII hex SHA-256 sum of the changed file
+};
+
+//TODO: Decide how to do the rest of this... old notes
+//Note that we do not report file deletion; deleted files stay in cache until evicted.
+//TODO: immediate report for deletion of build scripts? Are those parsed client or server side?
+//Directory creation/destruction is also irrelevant to the build, as is file moving.
 
 #endif
 

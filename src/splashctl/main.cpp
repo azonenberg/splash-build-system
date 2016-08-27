@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 {
 	int port = 49000;
 
-	LogSink::Severity console_verbosity = LogSink::NOTICE;
+	Severity console_verbosity = Severity::NOTICE;
 	
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
 	//Print header
-	if(console_verbosity >= LogSink::NOTICE)
+	if(console_verbosity >= Severity::NOTICE)
 	{
 		ShowVersion();
 		printf("\n");

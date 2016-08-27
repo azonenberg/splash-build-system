@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 {
 	string ctl_server;
 	
-	LogSink::Severity console_verbosity = LogSink::NOTICE;
+	Severity console_verbosity = Severity::NOTICE;
 	
 	//TODO: argument for this?
 	int port = 49000;
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
 	//Print header
-	if(console_verbosity >= LogSink::NOTICE)
+	if(console_verbosity >= Severity::NOTICE)
 	{
 		ShowVersion();
 		printf("\n");
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
 	//(in case anything changed while we weren't running)
 	LogVerbose("Sending initial change notifications...\n");
 	g_rootDir = CanonicalizePath(g_rootDir);
-	SendChangeNotification(sock, g_rootDir);
+	SendChangeNotificationForDir(sock, g_rootDir);
 	
 	//Open the source directory and start an inotify watcher on it and all subdirectories
 	int hnotify = inotify_init();

@@ -46,7 +46,9 @@
 void WatchDirRecursively(int hnotify, std::string dir);
 void WatchedFileChanged(Socket& s, int type, std::string str);
 
-void SendChangeNotification(Socket& s, std::string path);
+void SendChangeNotificationForDir(Socket& s, std::string path);
+void SendChangeNotificationForFile(Socket& s, std::string path);
+void ProcessChangedBuildScript(std::string path);
 
 extern std::string g_rootDir;
 
