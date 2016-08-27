@@ -9,4 +9,10 @@ set(EXTRA_WARNINGS "${EXTRA_WARNINGS} -Wswitch -Wwrite-strings ")
 set( CMAKE_CXX_FLAGS "-Wall -Wextra ${EXTRA_WARNINGS} -std=c++11 -fPIC -shared-libgcc -ggdb")
 set( CMAKE_LINK_FLAGS "-ggdb")
 
+#Custom target to run static analysis
+add_custom_target(
+	analysis
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	COMMAND cppcheck . --enable=style,performance,portability,missingInclude --force --suppress=missingIncludeSystem -q)
+
 add_subdirectory(src)

@@ -6,3 +6,7 @@ add_executable(splashbuild
 
 target_link_libraries(splashbuild
 	rt splashcore log xptools)
+
+#force static analysis to rerun
+#TODO: automate this for every target?
+add_dependencies(splashbuild analysis)

@@ -17,3 +17,7 @@ ADD_LIBRARY(splashcore SHARED
 
 target_link_libraries(splashcore
 	cryptopp rt log)
+
+#force static analysis to rerun
+#TODO: automate this for every target?
+add_dependencies(splashcore analysis)
