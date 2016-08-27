@@ -1,0 +1,103 @@
+########################################################################################################################
+#                                                                                                                      #
+# SPLASH build system v0.2                                                                                             #
+#                                                                                                                      #
+# Copyright (c) 2016 Andrew D. Zonenberg                                                                               #
+# All rights reserved.                                                                                                 #
+#                                                                                                                      #
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the     #
+# following conditions are met:                                                                                        #
+#                                                                                                                      #
+#    * Redistributions of source code must retain the above copyright notice, this list of conditions, and the         #
+#      following disclaimer.                                                                                           #
+#                                                                                                                      #
+#    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the       #
+#      following disclaimer in the documentation and/or other materials provided with the distribution.                #
+#                                                                                                                      #
+#    * Neither the name of the author nor the names of any contributors may be used to endorse or promote products     #
+#      derived from this software without specific prior written permission.                                           #
+#                                                                                                                      #
+# THIS SOFTWARE IS PROVIDED BY THE AUTHORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED   #
+# TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL #
+# THE AUTHORS BE HELD LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES        #
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR       #
+# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT #
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE       #
+# POSSIBILITY OF SUCH DAMAGE.                                                                                          #
+#                                                                                                                      #
+########################################################################################################################
+
+
+########################################################################################################################
+# Recursive global configuration (one YAML document per toolchain, containing a single object named "recursive_config")
+# Syntax is identical to that of a normal target, except only configuration is legal (no sources block)
+# Configuration specified here applies to targets in the current file, as well as in all subdirectories.
+# This block is normally only used in the build.yml file at the root of the project, but it's legal to use
+# at lower scopes (for example, configuration of a major subsystem with its own directory)
+
+# Global configuration for generic/cpp target
+# This is a fairly sane default configuration
+---
+recursive_config:
+
+    # The target toolchain for this recursive_config block
+    toolchain:     generic/cpp
+    
+    # Target architecture (just one by default)
+    targets:
+        - x86_64-linux-gnu
+
+    # List of flags that apply regardless of configuration
+    # (compile vs link is implied by the flag)
+    # use maximum warning level and generate debug info for GDB
+    flags:
+        - warning/max
+        - debug/gdb
+
+    # List of configurations and flags for each one
+    # no optimizations in debug mode, optimize for speed in release
+    configurations:
+        debug:
+            flags:
+                - optimize/none
+        release:
+            flags:
+                - optimize/speed
+
+########################################################################################################################
+# Per-file global configuration (one YAML document per toolchain, containing a single object named "file_config")
+# Basically the same as recursive_config, except it doesn't apply to subdirectories
+
+# Global configuration for generic/cpp target
+# Nothing here, just specified as an example
+---
+file_config:
+    toolchain:     generic/cpp
+
+########################################################################################################################
+# An actual target (many targets allowed in only one document)
+# Most build.yml files in individual source directories will only contain targets and not global configurations.
+---
+MultiArch:
+
+    # type of compiler to use (generic C++ compiler, no preference on version or suite)
+    toolchain:     generic/cpp
+    
+    # array of targets we're being compiled for
+    # The special target "global" pulls in the globally specified targets.
+    # Having no "targets" section at all is equivalent to "targets: [global]" and is usually a sane default.
+    # In this case, however, we're adding additional targets to the global list
+    targets:
+        - global
+        - i386-linux-gnu
+        
+    # array of source files (TODO support wildcards)
+    sources:
+        - main.cpp
+
+    # Toolchain flags
+    # No special config here, inherit global configs
+    # Note that config/global only NEEDS to be specified if we're adding flags.
+    # If you want to use global flags exclusively, just omit the entire flags section
+    flags:
+        config/global
