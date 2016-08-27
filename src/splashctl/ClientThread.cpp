@@ -54,9 +54,10 @@ void ClientThread(ZSOCKET sock)
 		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
 		return;
 	}
-	if(chi.type != MSG_TYPE_SERVERHELLO)
+	if(chi.type != MSG_TYPE_CLIENTHELLO)
 	{
-		LogWarning("Connection from %s dropped (bad message type in clientHello)\n", client_hostname.c_str());
+		LogWarning("Connection from %s dropped (bad message type %d in clientHello)\n",
+			client_hostname.c_str(), chi.type);
 		return;
 	}
 	if(chi.magic != shi.magic)
@@ -84,10 +85,12 @@ void ClientThread(ZSOCKET sock)
 	}
 	
 	//Protocol-specific processing
-	switch(chi.type)
+	switch(chi.ctype)
 	{
 		case CLIENT_DEVELOPER:
 			LogError("Developer clients not implemented\n");
+			
+			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
 			break;
 			
 		case CLIENT_BUILD:
@@ -113,12 +116,12 @@ void ClientThread(ZSOCKET sock)
 			}
 			g_toolchainListMutex.unlock();
 			
+			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
+			
 			break;
 		
 		default:
 			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
 			break;
 	}
-	
-	LogVerbose("Client %s disconnected\n", client_hostname.c_str());
 }

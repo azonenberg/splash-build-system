@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 	LogSink::Severity console_verbosity = LogSink::NOTICE;
 	
 	//TODO: argument for this?
-	//int port = 49000;
+	int port = 49000;
 	
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
@@ -88,6 +88,50 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 	
+	//Connect to the server
+	LogVerbose("Connecting to server...\n");
+	Socket sock(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	sock.Connect(ctl_server, port);
+	
+	//Get the serverHello
+	msgServerHello shi;
+	if(!sock.RecvLooped((unsigned char*)&shi, sizeof(shi)))
+	{
+		LogWarning("Connection dropped (while reading serverHello)\n");
+		return 1;
+	}
+	if(shi.serverVersion != 1)
+	{
+		LogWarning("Connection dropped (bad version number in serverHello)\n");
+		return 1;
+	}
+	if(shi.type != MSG_TYPE_SERVERHELLO)
+	{
+		LogWarning("Connection dropped (bad message type in serverHello)\n");
+		return 1;
+	}
+	
+	//Send the clientHello
+	msgClientHello chi(CLIENT_DEVELOPER);
+	if(!sock.SendLooped((unsigned char*)&chi, sizeof(chi)))
+	{
+		LogWarning("Connection dropped (while sending clientHello)\n");
+		return 1;
+	}
+	string hostname = ShellCommand("hostname", true);
+	if(!sock.SendPascalString(hostname))
+	{
+		LogWarning("Connection dropped (while sending clientHello.hostname)\n");
+		return 1;
+	}
+	
+	//Validate the connection
+	if(chi.magic != shi.magic)
+	{
+		LogWarning("Connection dropped (bad magic number in serverHello)\n");
+		return 1;
+	}
+	
 	//Open the source directory and start an inotify watcher on it and all subdirectories
 	source_dir = CanonicalizePath(source_dir);
 	int hnotify = inotify_init();
@@ -115,7 +159,7 @@ int main(int argc, char* argv[])
 			
 			//Skip events without a filename, or hidden files
 			if( (evt->len != 0) && (evt->name[0] != '.') )
-				WatchedFileChanged(evt->mask, CanonicalizePath(source_dir + "/" + evt->name));
+				WatchedFileChanged(sock, evt->mask, CanonicalizePath(source_dir + "/" + evt->name));
 			
 			//Go on to the next one
 			offset += sizeof(inotify_event) + evt->len;

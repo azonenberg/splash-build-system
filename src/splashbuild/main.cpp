@@ -42,7 +42,6 @@ map<string, Toolchain*> g_toolchains;
  */
 int main(int argc, char* argv[])
 {
-	string source_dir;
 	string ctl_server;
 	
 	LogSink::Severity console_verbosity = LogSink::NOTICE;
@@ -71,12 +70,9 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		
-		//Last two args without switches are source dir and control server.
+		//Last args without switche is control server.
 		//TODO: mandatory arguments to introduce these?		
-		else if(source_dir == "")				
-			source_dir = argv[i];
-		
-		else	
+		else
 			ctl_server = argv[i];
 
 	}
@@ -233,6 +229,6 @@ void ShowVersion()
 
 void ShowUsage()
 {
-	printf("Usage: splashbuild tempdir ctlserver\n");
+	printf("Usage: splashbuild ctlserver\n");
 	exit(0);
 }

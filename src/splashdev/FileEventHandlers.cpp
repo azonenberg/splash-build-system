@@ -34,9 +34,11 @@ using namespace std;
 /**
 	@brief Do something when a file changes
  */
-void WatchedFileChanged(int type, string fname)
+void WatchedFileChanged(Socket& s, int type, string fname)
 {
 	LogNotice("Watched file %s changed\n", fname.c_str());
 	string hash = sha256_file(fname);
 	LogDebug("    New hash: %s\n", hash.c_str());
+	
+	//TODO: Report the status to the server
 }

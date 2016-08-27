@@ -32,6 +32,9 @@
 
 #include "../splashcore/splashcore.h"
 #include "../log/log.h"
+#include "../xptools/Socket.h"
+
+#include "../splashctl/protocol.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +44,6 @@
 #include <sys/inotify.h>
 
 void WatchDirRecursively(int hnotify, std::string dir);
-void WatchedFileChanged(int type, std::string str);
+void WatchedFileChanged(Socket& s, int type, std::string str);
 
 #endif

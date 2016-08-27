@@ -126,16 +126,16 @@ public:
 class msgClientHello : public msg
 {
 public:
-	msgClientHello(uint8_t ctype)
+	msgClientHello(uint8_t ctp)
 		: msg(MSG_TYPE_CLIENTHELLO)
 		, magic(0x444c4942)	//"BILD"
 		, clientVersion(1)
-		, type(ctype)
+		, ctype(ctp)
 	{}
 	
 	uint32_t magic;			//magic number
 	uint16_t clientVersion;	//protocol version supported by server (always 1 for now)
-	uint8_t type;			//clientType
+	uint8_t ctype;			//clientType
 	
 	//followed by hostname as Pascal string
 	
