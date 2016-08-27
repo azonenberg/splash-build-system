@@ -38,10 +38,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <map>
+#include <mutex>
 #include <string>
 #include <thread>
-#include <map>
 #include <unordered_set>
+#include <vector>
 
 #include "protocol.h"
 
@@ -57,6 +59,7 @@ typedef std::unordered_set<std::string> vnode;
 //(language, target arch) tuple
 typedef std::pair<Toolchain::Language, std::string> larch;
 
+extern std::mutex g_toolchainListMutex;
 extern std::unordered_set<std::string> g_activeClients;
 extern std::map<std::string, vtool> g_toolchainsByNode;
 extern std::map<larch, vnode> g_nodesByLanguage;

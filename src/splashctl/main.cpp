@@ -34,6 +34,9 @@ using namespace std;
 void ShowUsage();
 void ShowVersion();
 
+//Mutex to control access to all global node lists
+mutex g_toolchainListMutex;
+
 //List of nodes (eliminate multiple splashbuild instances)
 unordered_set<string> g_activeClients;
 

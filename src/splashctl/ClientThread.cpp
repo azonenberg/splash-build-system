@@ -91,9 +91,13 @@ void ClientThread(ZSOCKET sock)
 			break;
 			
 		case CLIENT_BUILD:
+			
+			//Process client traffic
+			BuildClientThread(s, client_hostname);
+			
+			//Clean up
+			g_toolchainListMutex.lock();
 			{
-				BuildClientThread(s, client_hostname);
-				
 				//Delete any toolchains registered to this node after the build thread terminates
 				auto chains = g_toolchainsByNode[client_hostname];
 				for(auto x : chains)
@@ -107,6 +111,7 @@ void ClientThread(ZSOCKET sock)
 				//Remove the toolchain itself from the active list
 				g_activeClients.erase(client_hostname);
 			}
+			g_toolchainListMutex.unlock();
 			
 			break;
 		

@@ -68,7 +68,9 @@ void BuildClientThread(Socket& s, string& hostname)
 	}
 	
 	//Register this toolchain
-	g_activeClients.emplace(hostname);
+	g_toolchainListMutex.lock();
+		g_activeClients.emplace(hostname);
+	g_toolchainListMutex.unlock();
 		
 	//Read the toolchains
 	for(unsigned int i=0; i<binfo.toolchainCount; i++)
@@ -135,12 +137,14 @@ void BuildClientThread(Socket& s, string& hostname)
 		}
 		
 		//Register the toolchain in the global indexes
-		g_toolchainsByNode[hostname].emplace(toolchain);
-		auto langs = toolchain->GetSupportedLanguages();
-		auto triplets = toolchain->GetTargetTriplets();
-		for(auto l : langs)
-			for(auto t : triplets)
-				g_nodesByLanguage[larch(l, t)].emplace(hostname);
-		g_nodesByCompiler[hash].emplace(hostname);
+		g_toolchainListMutex.lock();
+			g_toolchainsByNode[hostname].emplace(toolchain);
+			auto langs = toolchain->GetSupportedLanguages();
+			auto triplets = toolchain->GetTargetTriplets();
+			for(auto l : langs)
+				for(auto t : triplets)
+					g_nodesByLanguage[larch(l, t)].emplace(hostname);
+			g_nodesByCompiler[hash].emplace(hostname);
+		g_toolchainListMutex.unlock();
 	}
 }
