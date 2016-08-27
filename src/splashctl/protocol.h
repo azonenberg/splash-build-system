@@ -208,9 +208,5 @@ public:
 	//arch			string		Client OS architecture triplet
 };
 
-//MSG_TYPE_DEV_INFO
-
-//Report a changed file on a client
-
 #endif
 
