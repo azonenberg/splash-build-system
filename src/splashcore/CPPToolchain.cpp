@@ -37,17 +37,9 @@ using namespace std;
 CPPToolchain::CPPToolchain(string basepath, ToolchainType type)
 	: CToolchain(basepath, type)
 {
+	m_langs.push_back(LANG_CPP);
 }
 
 CPPToolchain::~CPPToolchain()
 {
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Toolchain properties
-
-void CPPToolchain::GetSupportedLanguages(vector<Language>& langs)
-{
-	CToolchain::GetSupportedLanguages(langs);
-	langs.push_back(LANG_CPP);
 }

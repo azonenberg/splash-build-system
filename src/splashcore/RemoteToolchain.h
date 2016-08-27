@@ -27,18 +27,18 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef FPGAToolchain_h
-#define FPGAToolchain_h
+#ifndef RemoteToolchain_h
+#define RemoteToolchain_h
 
 /**
-	@brief A toolchain for compiling FPGA source code.
+	@brief A toolchain present on a remote build server
  */
-class FPGAToolchain : public Toolchain
+class RemoteToolchain : public Toolchain
 {
 public:
-	FPGAToolchain(std::string basepath, ToolchainType type);
-	virtual ~FPGAToolchain();
-	
+	RemoteToolchain(ToolchainType type);
+	virtual ~RemoteToolchain();
+
 protected:
 };
 

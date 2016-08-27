@@ -76,6 +76,7 @@
 #include "GNUCPPToolchain.h"
 #include "GNULinkerToolchain.h"
 #include "LinkerToolchain.h"
+#include "RemoteToolchain.h"
 #include "XilinxISEToolchain.h"
 #include "XilinxVivadoToolchain.h"
 

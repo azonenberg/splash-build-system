@@ -39,11 +39,6 @@ public:
 	CToolchain(std::string basepath, ToolchainType type);
 	virtual ~CToolchain();
 
-	/**
-		@brief Get the list of languages that we can compile.
-	 */
-	virtual void GetSupportedLanguages(std::vector<Language>& langs);
-
 protected:
 };
 

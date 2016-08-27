@@ -7,6 +7,7 @@ ADD_LIBRARY(splashcore SHARED
 	GNUCPPToolchain.cpp
 	GNULinkerToolchain.cpp
 	LinkerToolchain.cpp
+	RemoteToolchain.cpp
 	Toolchain.cpp
 	XilinxISEToolchain.cpp
 	XilinxVivadoToolchain.cpp

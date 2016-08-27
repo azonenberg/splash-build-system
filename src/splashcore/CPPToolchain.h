@@ -38,12 +38,7 @@ class CPPToolchain : public CToolchain
 public:
 	CPPToolchain(std::string basepath, ToolchainType type);
 	virtual ~CPPToolchain();
-	
-	/**
-		@brief Get the list of languages that we can compile.
-	 */
-	virtual void GetSupportedLanguages(std::vector<Language>& langs);
-	
+
 protected:
 };
 

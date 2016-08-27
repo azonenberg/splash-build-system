@@ -27,20 +27,18 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef FPGAToolchain_h
-#define FPGAToolchain_h
+#include "splashcore.h"
 
-/**
-	@brief A toolchain for compiling FPGA source code.
- */
-class FPGAToolchain : public Toolchain
+using namespace std;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+RemoteToolchain::RemoteToolchain(ToolchainType type)
+	: Toolchain("", type)
 {
-public:
-	FPGAToolchain(std::string basepath, ToolchainType type);
-	virtual ~FPGAToolchain();
-	
-protected:
-};
+}
 
-#endif
-
+RemoteToolchain::~RemoteToolchain()
+{
+}

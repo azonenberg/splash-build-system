@@ -53,6 +53,11 @@ public:
 	
 	Toolchain(std::string basepath, ToolchainType type);
 	virtual ~Toolchain();
+	
+	/**
+		@brief Print all of our configuration for debugging
+	 */
+	void DebugPrint();
 
 	//IDs for all supported languages in Splash (add more here as necessary)
 	enum Language
@@ -77,12 +82,13 @@ public:
 	/**
 		@brief Get the list of languages that we can compile.
 	 */
-	virtual void GetSupportedLanguages(std::vector<Language>& langs) =0;
+	const std::vector<Language>& GetSupportedLanguages()
+	{ return m_langs; }
 	
 	/**
 		@brief Get the list of languages that we can compile, as strings (for debug)
 	 */
-	virtual void GetSupportedLanguages(std::vector<std::string>& langs);
+	void GetSupportedLanguages(std::vector<std::string>& langs);
 	
 	/**
 		@brief Get the type of the toolchain as a string (one word)
@@ -159,6 +165,12 @@ protected:
 		Must be set in the constructor.
 	 */
 	std::vector<std::string> m_triplets;
+	
+	/**
+		@brief List of languages we support
+		
+		Must be set in the constructor.	 */
+	std::vector<Language> m_langs;
 	
 	/**
 		@brief Toolchain major version

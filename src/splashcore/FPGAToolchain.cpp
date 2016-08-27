@@ -37,17 +37,10 @@ using namespace std;
 FPGAToolchain::FPGAToolchain(string basepath, ToolchainType type)
 	: Toolchain(basepath, type)
 {
+	m_langs.push_back(LANG_VERILOG);
+	//TODO: VHDL?
 }
 
 FPGAToolchain::~FPGAToolchain()
 {
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Toolchain properties
-
-void FPGAToolchain::GetSupportedLanguages(vector<Language>& langs)
-{
-	langs.push_back(LANG_VERILOG);
-	//TODO: VHDL?
 }

@@ -45,6 +45,31 @@ Toolchain::~Toolchain()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Debug helpers
+
+void Toolchain::DebugPrint()
+{
+	vector<string> langs;
+	GetSupportedLanguages(langs);
+	vector<string> triplets;
+	GetTargetTriplets(triplets);
+	
+	LogVerbose("Toolchain %s:\n", GetHash().c_str());
+	LogVerbose("    Type:        %s\n", GetToolchainType().c_str());
+	if(GetPatchVersion() != 0)
+		LogVerbose("    Version:     %d.%d.%d\n", GetMajorVersion(), GetMinorVersion(), GetPatchVersion());
+	else
+		LogVerbose("    Version:     %d.%d\n", GetMajorVersion(), GetMinorVersion());
+	LogVerbose("    Path:        %s\n", GetBasePath().c_str());
+	LogVerbose("    Source languages:\n");
+	for(auto x : langs)
+		LogVerbose("        %s\n", x.c_str());
+	LogVerbose("    Target triplets:\n");
+	for(auto x : triplets)
+		LogVerbose("        %s\n", x.c_str());
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 
 string Toolchain::GetToolchainType()
@@ -70,10 +95,7 @@ string Toolchain::GetToolchainType()
 
 void Toolchain::GetSupportedLanguages(vector<string>& langs)
 {
-	vector<Language> v;
-	GetSupportedLanguages(v);
-	
-	for(auto x : v)
+	for(auto x : m_langs)
 	{
 		switch(x)
 		{

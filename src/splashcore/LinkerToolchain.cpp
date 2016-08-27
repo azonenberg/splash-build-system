@@ -37,16 +37,9 @@ using namespace std;
 LinkerToolchain::LinkerToolchain(string basepath, ToolchainType type)
 	: Toolchain(basepath, type)
 {
+	m_langs.push_back(LANG_OBJECT);
 }
 
 LinkerToolchain::~LinkerToolchain()
 {
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Toolchain properties
-
-void LinkerToolchain::GetSupportedLanguages(vector<Language>& langs)
-{
-	langs.push_back(LANG_OBJECT);
 }
