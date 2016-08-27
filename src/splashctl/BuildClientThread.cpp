@@ -54,7 +54,7 @@ void BuildClientThread(Socket& s, string& hostname)
 		
 	//Read the toolchains
 	for(unsigned int i=0; i<binfo.toolchainCount; i++)
-	{
+	{	
 		//Get the header
 		msgAddCompiler tadd;
 		if(!s.RecvLooped((unsigned char*)&tadd, sizeof(tadd)))
@@ -78,6 +78,12 @@ void BuildClientThread(Socket& s, string& hostname)
 			LogWarning("Connection from %s dropped (while getting addCompiler ver)\n", hostname.c_str());
 			return;
 		}
+		
+		//Create and initialize the toolchain object
+		RemoteToolchain* toolchain = new RemoteToolchain(
+			static_cast<RemoteToolchain::ToolchainType>(tadd.compilerType));
+			
+		//TODO: Finish filling it out
 		
 		//Languages
 		for(unsigned int j=0; j<tadd.numLangs; j++)

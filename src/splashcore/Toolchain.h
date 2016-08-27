@@ -169,7 +169,8 @@ protected:
 	/**
 		@brief List of languages we support
 		
-		Must be set in the constructor.	 */
+		Must be set in the constructor.
+	 */
 	std::vector<Language> m_langs;
 	
 	/**

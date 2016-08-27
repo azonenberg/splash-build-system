@@ -184,7 +184,7 @@ public:
 		: msg(MSG_TYPE_ADD_COMPILER)
 	{}
 	
-	uint8_t compilerType;			//Type of compiler (CToolchain::CompilerType)
+	uint8_t compilerType;			//Type of compiler (Toolchain::CompilerType)
 	uint32_t versionNum;			//Machine-readable version number of compiler, left justified hex
 									//4.9.2 is encoded as 0x04090200
 									//This coding is easier to quickly compare greater/less than loose ints

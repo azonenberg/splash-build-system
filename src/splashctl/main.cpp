@@ -34,6 +34,10 @@ using namespace std;
 void ShowUsage();
 void ShowVersion();
 
+/*
+	Global toolchain metadata
+ */
+
 /**
 	@brief Program entry point
  */
