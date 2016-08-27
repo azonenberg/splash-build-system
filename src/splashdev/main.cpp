@@ -34,12 +34,14 @@ using namespace std;
 void ShowUsage();
 void ShowVersion();
 
+//Project root directory
+string g_rootDir;
+
 /**
 	@brief Program entry point
  */
 int main(int argc, char* argv[])
 {
-	string source_dir;
 	string ctl_server;
 	
 	LogSink::Severity console_verbosity = LogSink::NOTICE;
@@ -70,8 +72,8 @@ int main(int argc, char* argv[])
 		
 		//Last two args without switches are source dir and control server.
 		//TODO: mandatory arguments to introduce these?		
-		else if(source_dir == "")				
-			source_dir = argv[i];
+		else if(g_rootDir == "")				
+			g_rootDir = argv[i];
 		
 		else	
 			ctl_server = argv[i];
@@ -132,13 +134,33 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	
+	//Send the developer node info
+	//TODO: Make this work on non-Debian systems!
+	msgDevInfo dinfo;
+	if(!sock.SendLooped((unsigned char*)&dinfo, sizeof(dinfo)))
+	{
+		LogWarning("Connection dropped (while sending devInfo)\n");
+		return 1;
+	}
+	string arch = ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true);
+	if(!sock.SendPascalString(arch))
+	{
+		LogWarning("Connection dropped (while sending devInfo.arch)\n");
+		return 1;
+	}
+	
+	//Recursively send file-changed notifications for everything in our working directory
+	//(in case anything changed while we weren't running)
+	LogVerbose("Sending initial change notifications...\n");
+	g_rootDir = CanonicalizePath(g_rootDir);
+	SendChangeNotification(sock, g_rootDir);
+	
 	//Open the source directory and start an inotify watcher on it and all subdirectories
-	source_dir = CanonicalizePath(source_dir);
 	int hnotify = inotify_init();
 	if(hnotify < 0)
 		LogFatal("Couldn't start inotify\n");
-	LogNotice("Working copy root directory: %s\n", source_dir.c_str());
-	WatchDirRecursively(hnotify, source_dir);
+	LogNotice("Working copy root directory: %s\n", g_rootDir.c_str());
+	WatchDirRecursively(hnotify, g_rootDir);
 
 	//TODO: signal handler so we can quit gracefully
 
@@ -159,7 +181,7 @@ int main(int argc, char* argv[])
 			
 			//Skip events without a filename, or hidden files
 			if( (evt->len != 0) && (evt->name[0] != '.') )
-				WatchedFileChanged(sock, evt->mask, CanonicalizePath(source_dir + "/" + evt->name));
+				WatchedFileChanged(sock, evt->mask, CanonicalizePath(g_rootDir + "/" + evt->name));
 			
 			//Go on to the next one
 			offset += sizeof(inotify_event) + evt->len;

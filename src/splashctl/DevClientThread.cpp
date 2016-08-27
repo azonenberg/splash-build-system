@@ -27,15 +27,52 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashdev.h"
+#include "splashctl.h"
 
 using namespace std;
 
-/**
-	@brief Do something when a file changes
- */
-void WatchedFileChanged(Socket& s, int /*type*/, string fname)
+void DevClientThread(Socket& s, string& hostname)
 {
-	//TODO: switch on type?
-	SendChangeNotification(s, fname);
+	LogNotice("Developer workstation %s connected\n", hostname.c_str());
+	
+	//Expect a DevInfo message
+	msgDevInfo dinfo;
+	if(!s.RecvLooped((unsigned char*)&dinfo, sizeof(dinfo)))
+	{
+		LogWarning("Connection from %s dropped (while getting devInfo)\n", hostname.c_str());
+		return;
+	}
+	if(dinfo.type != MSG_TYPE_DEV_INFO)
+	{
+		LogWarning("Connection from %s dropped (bad message type in devInfo)\n", hostname.c_str());
+		return;
+	}
+	string arch;
+	if(!s.RecvPascalString(arch))
+	{
+		LogWarning("Connection from %s dropped (while getting devInfo arch)\n", arch.c_str());
+		return;
+	}
+	LogVerbose("    (architecture is %s)\n", arch.c_str());
+	
+	/*
+	//Print stats
+	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
+		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize, binfo.toolchainCount);
+		
+	//If we already have this node registered, complain and drop it
+	//TODO: drop the old node instead?
+	if(g_activeClients.find(hostname) != g_activeClients.end())
+	{
+		LogWarning("Connection from %s dropped (already connected)\n", hostname.c_str());
+		return;
+	}
+		
+	//If no toolchains, just quit now
+	if(binfo.toolchainCount == 0)
+	{
+		LogWarning("Connection from %s dropped (no toolchains found)\n", hostname.c_str());
+		return;
+	}
+	*/
 }

@@ -207,6 +207,37 @@ string GetBasenameOfFileWithoutExt(string fname)
 }
 
 /**
+	@brief Find all regular files in a given directory.
+ */
+void FindFiles(string dir, vector<string>& files)
+{
+	DIR* hdir = opendir(dir.c_str());
+	if(!hdir)
+		LogFatal("Directory %s could not be opened\n", dir.c_str());
+	
+	dirent ent;
+	dirent* pent;
+	while(0 == readdir_r(hdir, &ent, &pent))
+	{
+		if(pent == NULL)
+			break;
+		if(ent.d_name[0] == '.')
+			continue;
+		
+		string fname = dir + "/" + ent.d_name;
+		if(DoesDirectoryExist(fname))
+			continue;
+			
+		files.push_back(fname);
+	}
+	
+	//Sort the list of files to ensure determinism
+	sort(files.begin(), files.end());
+	
+	closedir(hdir);
+}
+
+/**
 	@brief Find all files with the specified extension in a given directory.
 	
 	The supplied extension must include the leading dot.

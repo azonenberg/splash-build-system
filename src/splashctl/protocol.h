@@ -76,9 +76,6 @@ enum msgType
 	MSG_TYPE_SERVERHELLO,
 	MSG_TYPE_BUILD_INFO,
 	MSG_TYPE_ADD_COMPILER,
-	
-	//Report basic information about a developer client
-	//arch				string		Client OS architecture triplet
 	MSG_TYPE_DEV_INFO,
 	
 	//Report that a file changed clientside
@@ -137,7 +134,8 @@ public:
 	uint16_t clientVersion;	//protocol version supported by server (always 1 for now)
 	uint8_t ctype;			//clientType
 	
-	//followed by hostname as Pascal string
+	//After this struct:
+	//hostname		string
 	
 } __attribute__ ((packed)); 
 
@@ -197,6 +195,22 @@ public:
 	//uint8[]		langs
 	//string[]		triplets
 } __attribute__ ((packed));
+
+//Report basic information about a developer client
+class msgDevInfo : public msg
+{
+public:
+	msgDevInfo()
+		: msg(MSG_TYPE_DEV_INFO)
+	{}
+	
+	//After this struct:
+	//arch			string		Client OS architecture triplet
+};
+
+//MSG_TYPE_DEV_INFO
+
+//Report a changed file on a client
 
 #endif
 

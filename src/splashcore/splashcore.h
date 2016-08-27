@@ -100,6 +100,7 @@ std::string GetDirOfFile(std::string fname);
 std::string GetBasenameOfFile(std::string fname);
 std::string GetBasenameOfFileWithoutExt(std::string fname);
 
+void FindFiles(std::string dir, std::vector<std::string>& files);
 void FindFilesBySubstring(std::string dir, std::string sub, std::vector<std::string>& files);
 void FindFilesByExtension(std::string dir, std::string ext, std::vector<std::string>& files);
 void FindSubdirs(std::string dir, std::vector<std::string>& subdirs);

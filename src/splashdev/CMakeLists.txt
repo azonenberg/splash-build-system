@@ -1,4 +1,5 @@
 add_executable(splashdev
+	ChangeNotifier.cpp
 	FileEventHandlers.cpp
 
 	main.cpp

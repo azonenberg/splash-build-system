@@ -49,6 +49,7 @@
 
 void ClientThread(ZSOCKET sock);
 void BuildClientThread(Socket& s, std::string& hostname);
+void DevClientThread(Socket& s, std::string& hostname);
 
 //set of toolchains
 typedef std::unordered_set<Toolchain*> vtool;

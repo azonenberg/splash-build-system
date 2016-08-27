@@ -31,11 +31,37 @@
 
 using namespace std;
 
-/**
-	@brief Do something when a file changes
- */
-void WatchedFileChanged(Socket& s, int /*type*/, string fname)
+void SendChangeNotification(Socket& s, string path)
 {
-	//TODO: switch on type?
-	SendChangeNotification(s, fname);
+	//Stop if it doesn't exist
+	if(!DoesDirectoryExist(path))
+		return;
+	
+	//Don't send anything for the dir itself... directories have no importance server side.
+	//Just send recursive change notices for children
+			
+	//Send change notices for our subdirectories
+	vector<string> children;
+	FindSubdirs(path, children);
+	for(auto x : children)
+		SendChangeNotification(s, x);
+	
+	//Send change notices for our files
+	vector<string> files;
+	FindFiles(path, files);
+	for(auto x : files)
+	{
+		//Hash the file
+		string hash = sha256_file(x);
+		
+		//Get path relative to project root
+		string fname = x;
+		if(fname.find(g_rootDir) == 0)
+			fname = fname.substr(g_rootDir.length() + 1);	//add 1 to trim trailing /
+		else
+			LogWarning("Changed file %s is not within project root\n", x.c_str());
+		
+		//Send the change
+		LogDebug("Sending change notice for %s, hash %s\n", fname.c_str(), hash.c_str());
+	}
 }

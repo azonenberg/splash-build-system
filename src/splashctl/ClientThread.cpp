@@ -88,8 +88,11 @@ void ClientThread(ZSOCKET sock)
 	switch(chi.ctype)
 	{
 		case CLIENT_DEVELOPER:
-			LogError("Developer clients not implemented\n");
 			
+			//Process client traffic
+			DevClientThread(s, client_hostname);
+			
+			//Clean up
 			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
 			break;
 			
