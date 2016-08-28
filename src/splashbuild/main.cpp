@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 {
 	string ctl_server;
 	
-	LogSink::Severity console_verbosity = LogSink::NOTICE;
+	Severity console_verbosity = Severity::NOTICE;
 	
 	//TODO: argument for this?
 	int port = 49000;
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
 	//Print header
-	if(console_verbosity >= LogSink::NOTICE)
+	if(console_verbosity >= Severity::NOTICE)
 	{
 		ShowVersion();
 		printf("\n");
