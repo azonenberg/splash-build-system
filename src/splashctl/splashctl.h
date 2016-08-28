@@ -47,22 +47,24 @@
 
 #include "protocol.h"
 
-void ClientThread(ZSOCKET sock);
-void BuildClientThread(Socket& s, std::string& hostname);
-void DevClientThread(Socket& s, std::string& hostname);
-
 //set of toolchains
 typedef std::unordered_set<Toolchain*> vtool;
 
-//set of node names
-typedef std::unordered_set<std::string> vnode;
+//unique ID for a client
+typedef uint64_t clientID;
+
+//set of node IDs
+typedef std::unordered_set<clientID> vnode;
 
 //(language, target arch) tuple
 typedef std::pair<Toolchain::Language, std::string> larch;
 
+void ClientThread(ZSOCKET sock);
+void BuildClientThread(Socket& s, std::string& hostname, clientID id);
+void DevClientThread(Socket& s, std::string& hostname, clientID id);
+
 extern std::mutex g_toolchainListMutex;
-extern std::unordered_set<std::string> g_activeClients;
-extern std::map<std::string, vtool> g_toolchainsByNode;
+extern std::map<clientID, vtool> g_toolchainsByNode;
 extern std::map<larch, vnode> g_nodesByLanguage;
 extern std::map<std::string, vnode> g_nodesByCompiler;
 

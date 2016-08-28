@@ -31,7 +31,7 @@
 
 using namespace std;
 
-void DevClientThread(Socket& s, string& hostname)
+void DevClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer workstation %s connected\n", hostname.c_str());
 	

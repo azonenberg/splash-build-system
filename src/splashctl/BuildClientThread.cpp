@@ -31,7 +31,7 @@
 
 using namespace std;
 
-void BuildClientThread(Socket& s, string& hostname)
+void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Build server %s connected\n", hostname.c_str());
 	
@@ -52,25 +52,12 @@ void BuildClientThread(Socket& s, string& hostname)
 	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
 		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize, binfo.toolchainCount);
 		
-	//If we already have this node registered, complain and drop it
-	//TODO: drop the old node instead?
-	if(g_activeClients.find(hostname) != g_activeClients.end())
-	{
-		LogWarning("Connection from %s dropped (already connected)\n", hostname.c_str());
-		return;
-	}
-		
 	//If no toolchains, just quit now
 	if(binfo.toolchainCount == 0)
 	{
 		LogWarning("Connection from %s dropped (no toolchains found)\n", hostname.c_str());
 		return;
 	}
-	
-	//Register this toolchain
-	g_toolchainListMutex.lock();
-		g_activeClients.emplace(hostname);
-	g_toolchainListMutex.unlock();
 		
 	//Read the toolchains
 	for(unsigned int i=0; i<binfo.toolchainCount; i++)
@@ -138,13 +125,13 @@ void BuildClientThread(Socket& s, string& hostname)
 		
 		//Register the toolchain in the global indexes
 		g_toolchainListMutex.lock();
-			g_toolchainsByNode[hostname].emplace(toolchain);
+			g_toolchainsByNode[id].emplace(toolchain);
 			auto langs = toolchain->GetSupportedLanguages();
 			auto triplets = toolchain->GetTargetTriplets();
 			for(auto l : langs)
 				for(auto t : triplets)
-					g_nodesByLanguage[larch(l, t)].emplace(hostname);
-			g_nodesByCompiler[hash].emplace(hostname);
+					g_nodesByLanguage[larch(l, t)].emplace(id);
+			g_nodesByCompiler[hash].emplace(id);
 		g_toolchainListMutex.unlock();
 	}
 }

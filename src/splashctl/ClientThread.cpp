@@ -31,6 +31,8 @@
 
 using namespace std;
 
+clientID g_nextClientID = 0;
+
 void ClientThread(ZSOCKET sock)
 {
 	Socket s(sock);
@@ -84,13 +86,16 @@ void ClientThread(ZSOCKET sock)
 		return;
 	}
 	
+	//Assign a unique ID to the client
+	clientID id = g_nextClientID ++;
+	
 	//Protocol-specific processing
 	switch(chi.ctype)
 	{
 		case CLIENT_DEVELOPER:
 			
 			//Process client traffic
-			DevClientThread(s, client_hostname);
+			DevClientThread(s, client_hostname, id);
 			
 			//Clean up
 			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
@@ -99,23 +104,20 @@ void ClientThread(ZSOCKET sock)
 		case CLIENT_BUILD:
 			
 			//Process client traffic
-			BuildClientThread(s, client_hostname);
+			BuildClientThread(s, client_hostname, id);
 			
 			//Clean up
 			g_toolchainListMutex.lock();
 			{
 				//Delete any toolchains registered to this node after the build thread terminates
-				auto chains = g_toolchainsByNode[client_hostname];
+				auto chains = g_toolchainsByNode[id];
 				for(auto x : chains)
 					delete x;
-				g_toolchainsByNode.erase(client_hostname);
+				g_toolchainsByNode.erase(id);
 				for(auto x : g_nodesByLanguage)
-					x.second.erase(client_hostname);
+					x.second.erase(id);
 				for(auto x : g_nodesByCompiler)
-					x.second.erase(client_hostname);
-				
-				//Remove the toolchain itself from the active list
-				g_activeClients.erase(client_hostname);
+					x.second.erase(id);
 			}
 			g_toolchainListMutex.unlock();
 			

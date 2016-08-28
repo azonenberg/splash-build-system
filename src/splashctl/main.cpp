@@ -40,12 +40,14 @@ void ShowVersion();
 //Mutex to control access to all global node lists
 mutex g_toolchainListMutex;
 
+//TODO: start using client IDs for this instead
+
 //List of nodes (eliminate multiple splashbuild instances)
 unordered_set<string> g_activeClients;
 
 //List of compilers available on each node
 //This is the authoritative pointer to nodes
-map<string, vtool> g_toolchainsByNode;
+map<clientID, vtool> g_toolchainsByNode;
 
 //List of nodes with any compiler for a given language and target architecture
 map<larch, vnode> g_nodesByLanguage;
@@ -73,6 +75,7 @@ map<string, vnode> g_nodesByCompiler;
 	map<string, time_t>		mapping hashes to last-used times
 
 	Client state:
+		
  */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
