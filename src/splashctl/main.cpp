@@ -34,6 +34,9 @@ using namespace std;
 void ShowUsage();
 void ShowVersion();
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Global state: toolchains
+
 //Mutex to control access to all global node lists
 mutex g_toolchainListMutex;
 
@@ -49,6 +52,31 @@ map<larch, vnode> g_nodesByLanguage;
 
 //List of nodes with a specific compiler (by hash)
 map<string, vnode> g_nodesByCompiler;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Global state: files on clients
+
+/*
+	Set of hashes for source/object files we have in the cache (need to read at app startup)
+
+	Directory structure:
+	$CACHE/
+		xx/				first octet of hash, as hex
+			hash/		hash of file object (may not actually be the hash of the file, includes flags etc)
+				xx		the file itself (original filename)
+				.hash	sha256 of the file itself (for load-time integrity checking)
+				.atime	last-accessed time of the file
+						We don't use filesystem atime as that's way too easy to set by accident
+
+	Global cache:
+	unordered_set<string> 	listing which hashes we have in the cache
+	map<string, time_t>		mapping hashes to last-used times
+
+	Client state:
+ */
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// App code
 
 /**
 	@brief Program entry point
