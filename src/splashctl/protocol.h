@@ -65,6 +65,9 @@
 		
 		If file isn't in cache:
 			client: MSG_TYPE_FILE_DATA
+
+		File removed
+			client: MSG_TYPE_FILE_REMOVED
 			
 		TODO: File moved/deleted
  */
@@ -80,6 +83,7 @@ enum msgType
 	MSG_TYPE_FILE_CHANGED,
 	MSG_TYPE_FILE_ACK,
 	MSG_TYPE_FILE_DATA,
+	MSG_TYPE_FILE_REMOVED,
 	
 	//all types beyond here reserved for expansion
 	MSG_TYPE_LAST
@@ -208,9 +212,9 @@ public:
 };
 
 //TODO: Decide how to do the rest of this... old notes
-//Note that we do not report file deletion; deleted files stay in cache until evicted.
-//TODO: immediate report for deletion of build scripts? Are those parsed client or server side?
-//Directory creation/destruction is also irrelevant to the build, as is file moving.
+//TODO: deletion of build scripts? Are those parsed client or server side?
+//Directory creation/destruction is irrelevant to the build
+//TODO: file moves
 
 //Tell the client whether the most recently changed file is in cache or not
 class msgFileAck : public msg
@@ -237,6 +241,17 @@ public:
 	//data[]						Content of file
 };
 
+//Report that a file was deleted clientside
+class msgFileRemoved : public msg
+{
+public:
+	msgFileRemoved()
+		: msg(MSG_TYPE_FILE_REMOVED)
+	{}
+	
+	//After this struct:
+	//fname				string		Path of changed file
+};
 
 #endif
 

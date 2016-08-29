@@ -31,6 +31,9 @@
 
 using namespace std;
 
+bool OnFileChanged(Socket& s, string& hostname, clientID id);
+bool OnFileRemoved(Socket& s, string& hostname, clientID id);
+
 void DevClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer workstation %s connected\n", hostname.c_str());
@@ -57,91 +60,133 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 	
 	while(true)
 	{
-		//Expect fileChanged messages (all build requests etc will come through from a "splash" client)
+		//Expect fileChanged or fileRemoved messages
+		//These both have identical headers (just the type) so read that first
 		msgFileChanged mfc;
 		if(!s.RecvLooped((unsigned char*)&mfc, sizeof(mfc)))
 			break;
-		if(mfc.type != MSG_TYPE_FILE_CHANGED)
-		{
-			LogWarning("Connection from %s dropped (bad message type in fileChanged)\n", hostname.c_str());
-			return;
-		}
-		string fname;
-		if(!s.RecvPascalString(fname))
-		{
-			LogWarning("Connection from %s dropped (while getting fileChanged.fname)\n", hostname.c_str());
-			return;
-		}
-		string hash;
-		if(!s.RecvPascalString(hash))
-		{
-			LogWarning("Connection from %s dropped (while getting fileChanged.hash)\n", hostname.c_str());
-			return;
-		}
-				
-		//See if we have the file in the global cache
-		//This is a source file since it's in a client's working copy.
-		//As a result, the object ID is just the sha256sum of the file itself
-		bool hit = g_cache->IsCached(hash);
 		
-		//Debug print
-		if(hit)
+		switch(mfc.type)
 		{
-			LogVerbose("File %s on node %s changed (new version already in cache)\n",
-				fname.c_str(),
-				hostname.c_str());
+			case MSG_TYPE_FILE_CHANGED:
+				if(!OnFileChanged(s, hostname, id))
+					return;
+				break;
+					
+			case MSG_TYPE_FILE_REMOVED:
+				if(!OnFileRemoved(s, hostname, id))
+					return;
+				break;
+					
+			default:
+				LogWarning("Connection from %s dropped (bad message type in event header)\n", hostname.c_str());
+				return;
 		}
-		else
-		{
-			LogVerbose("File %s on node %s changed (fetching content from client)\n",
-				fname.c_str(),
-				hostname.c_str());
-		}
-		
-		//Report status to the client
-		msgFileAck ack;
-		ack.fileCached = hit;
-		if(!s.SendLooped((unsigned char*)&ack, sizeof(ack)))
-		{
-			LogWarning("Connection from %s dropped (while sending fileAck)\n", hostname.c_str());
-			return;
-		}
-		
-		//If it's cached we don't have to do anything more now
-		if(hit)
-			continue;
-
-		//Get the file contents
-		msgFileData data;
-		if(!s.RecvLooped((unsigned char*)&data, sizeof(data)))
-		{
-			LogWarning("Connection from %s dropped while reading fileData\n", hostname.c_str());
-			return;
-		}
-		if(data.type != MSG_TYPE_FILE_DATA)
-		{
-			LogWarning("Connection from %s dropped (bad message type in fileData)\n", hostname.c_str());
-			return;
-		}
-		if(data.fileLen > INT_MAX)
-		{
-			LogWarning("Connection from %s dropped (bad file length in fileData)\n", hostname.c_str());
-			return;
-		}
-		unsigned char* buf = new unsigned char[data.fileLen];
-		if(!s.RecvLooped(buf, data.fileLen))
-		{
-			LogWarning("Connection from %s dropped while reading fileData.data\n", hostname.c_str());
-			return;
-		}
-				
-		//Write the file to cache
-		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, data.fileLen);
-		
-		//Update the file's status in our working copy
-		g_nodeManager->GetWorkingCopy(id).UpdateFile(fname, hash);
-		
-		//Clean up
-		delete[] buf;
 	}
+}
+
+/**
+	@brief Process a msgFileRemoved
+ */
+bool OnFileRemoved(Socket& s, string& hostname, clientID id)
+{
+	string fname;
+	if(!s.RecvPascalString(fname))
+	{
+		LogWarning("Connection from %s dropped (while getting fileRemoved.fname)\n", hostname.c_str());
+		return false;
+	}
+	
+	LogVerbose("File %s on node %s deleted\n",
+		fname.c_str(),
+		hostname.c_str());
+	
+	//Update the file's status in our working copy
+	g_nodeManager->GetWorkingCopy(id).RemoveFile(fname);
+	return true;
+}
+
+/**
+	@brief Process a msgFileChanged
+ */
+bool OnFileChanged(Socket& s, string& hostname, clientID id)
+{
+	string fname;
+	if(!s.RecvPascalString(fname))
+	{
+		LogWarning("Connection from %s dropped (while getting fileChanged.fname)\n", hostname.c_str());
+		return false;
+	}
+	string hash;
+	if(!s.RecvPascalString(hash))
+	{
+		LogWarning("Connection from %s dropped (while getting fileChanged.hash)\n", hostname.c_str());
+		return false;
+	}
+			
+	//See if we have the file in the global cache
+	//This is a source file since it's in a client's working copy.
+	//As a result, the object ID is just the sha256sum of the file itself
+	bool hit = g_cache->IsCached(hash);
+	
+	//Debug print
+	if(hit)
+	{
+		LogVerbose("File %s on node %s changed (new version already in cache)\n",
+			fname.c_str(),
+			hostname.c_str());
+	}
+	else
+	{
+		LogVerbose("File %s on node %s changed (fetching content from client)\n",
+			fname.c_str(),
+			hostname.c_str());
+	}
+	
+	//Report status to the client
+	msgFileAck ack;
+	ack.fileCached = hit;
+	if(!s.SendLooped((unsigned char*)&ack, sizeof(ack)))
+	{
+		LogWarning("Connection from %s dropped (while sending fileAck)\n", hostname.c_str());
+		return false;
+	}
+	
+	//If it's cached we don't have to do anything more now
+	if(hit)
+		return true;
+
+	//Get the file contents
+	msgFileData data;
+	if(!s.RecvLooped((unsigned char*)&data, sizeof(data)))
+	{
+		LogWarning("Connection from %s dropped while reading fileData\n", hostname.c_str());
+		return false;
+	}
+	if(data.type != MSG_TYPE_FILE_DATA)
+	{
+		LogWarning("Connection from %s dropped (bad message type in fileData)\n", hostname.c_str());
+		return false;
+	}
+	if(data.fileLen > INT_MAX)
+	{
+		LogWarning("Connection from %s dropped (bad file length in fileData)\n", hostname.c_str());
+		return false;
+	}
+	unsigned char* buf = new unsigned char[data.fileLen];
+	if(!s.RecvLooped(buf, data.fileLen))
+	{
+		LogWarning("Connection from %s dropped while reading fileData.data\n", hostname.c_str());
+		return false;
+	}
+			
+	//Write the file to cache
+	g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, data.fileLen);
+	
+	//Update the file's status in our working copy
+	g_nodeManager->GetWorkingCopy(id).UpdateFile(fname, hash);
+	
+	//Clean up
+	delete[] buf;
+	return true;
 }

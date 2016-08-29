@@ -45,10 +45,13 @@
 #include <unordered_set>
 #include <vector>
 
+//unique ID for a client
+typedef uint64_t clientID;
+
 #include "protocol.h"
 #include "Cache.h"
-#include "NodeManager.h"
 #include "WorkingCopy.h"
+#include "NodeManager.h"
 
 void ClientThread(ZSOCKET sock);
 void BuildClientThread(Socket& s, std::string& hostname, clientID id);

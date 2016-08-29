@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
 	int hnotify = inotify_init();
 	if(hnotify < 0)
 		LogFatal("Couldn't start inotify\n");
-	LogNotice("Working copy root directory: %s\n", g_rootDir.c_str());
+	LogNotice("Watching for changes to source files in: %s\n", g_rootDir.c_str());
 	WatchDirRecursively(hnotify, g_rootDir);
 
 	//TODO: signal handler so we can quit gracefully
@@ -181,7 +181,7 @@ int main(int argc, char* argv[])
 			
 			//Skip events without a filename, or hidden files
 			if( (evt->len != 0) && (evt->name[0] != '.') )
-				WatchedFileChanged(sock, evt->mask, CanonicalizePath(g_rootDir + "/" + evt->name));
+				WatchedFileChanged(sock, evt->mask, g_rootDir + "/" + evt->name);
 			
 			//Go on to the next one
 			offset += sizeof(inotify_event) + evt->len;
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
  */
 void WatchDirRecursively(int hnotify, string dir)
 {
-	LogDebug("    Recursively watching directory %s\n", dir.c_str());
+	//LogDebug("    Recursively watching directory %s\n", dir.c_str());
 	
 	//Watch changes to the directory
 	if(0 > inotify_add_watch(

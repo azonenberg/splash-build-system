@@ -33,9 +33,6 @@
 //set of toolchains
 typedef std::unordered_set<Toolchain*> vtool;
 
-//unique ID for a client
-typedef uint64_t clientID;
-
 //set of node IDs
 typedef std::unordered_set<clientID> vnode;
 

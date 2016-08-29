@@ -66,3 +66,13 @@ void WorkingCopy::UpdateFile(string path, string hash)
 {
 	m_fileMap[path] = hash;
 }
+
+/**
+	@brief Removes a file in the current working copy
+
+	@param path		Relative path of the file
+ */
+void WorkingCopy::RemoveFile(string path)
+{
+	m_fileMap.erase(path);
+}

@@ -36,32 +36,29 @@ using namespace std;
  */
 void WatchedFileChanged(Socket& s, int type, string fname)
 {
+	LogDebug("message of type %x for %s\n", type, fname.c_str());
+
 	//TODO: handle moving/deletion of a whole directory
 	if( (type & IN_MOVE_SELF) == IN_MOVE_SELF )
 		LogWarning("Source directory moved - not implemented\n");
 	if( (type & IN_DELETE_SELF) == IN_DELETE_SELF )
 		LogWarning("Source directory deleted - not implemented\n");
-		
+
 	//Unused/ignored events:
 	//IN_ACCESS
 	//IN_ATTRIB
-	//IN_CLOSE_WRITE 
+	//IN_CLOSE_WRITE
 	//IN_CLOSE_NOWRITE
 	//IN_OPEN
-	
-	//TODO: handle creation of new files
-	if( (type & IN_CREATE) == IN_CREATE )
-		LogWarning("Source file created - not implemented\n");
-		
-	//TODO: handle deletion of files
-	if( (type & IN_DELETE) == IN_DELETE )
-		LogWarning("Source file deleted - not implemented\n");
-	
-	//File moved from old location
-	if( (type & IN_MOVED_FROM) == IN_MOVED_FROM )
-		LogWarning("Source file moved (old location) - not implemented\n");
-		
+	//IN_CREATE
+
+	//TODO: IN_DELETE_SELF
+
+	//File deleted or moved? Delete the old location from the cache
+	if( ( (type & IN_DELETE) == IN_DELETE ) || ( (type & IN_MOVED_FROM) == IN_MOVED_FROM ) )
+		SendDeletionNotificationForFile(s, fname);
+
 	//File modified or moved? Send the new status
 	if( ( (type & IN_MODIFY) == IN_MODIFY ) || ( (type & IN_MOVED_TO) == IN_MOVED_TO ) )
-		SendChangeNotificationForFile(s, fname);	
+		SendChangeNotificationForFile(s, fname);
 }

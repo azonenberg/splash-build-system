@@ -69,6 +69,8 @@ void SendChangeNotificationForFile(Socket& s, string path)
 	else
 		LogWarning("Changed file %s is not within project root\n", path.c_str());
 	
+	LogDebug("Sending change notification for %s\n", path.c_str());
+	
 	//Send the change
 	msgFileChanged mcg;
 	if(!s.SendLooped((unsigned char*)&mcg, sizeof(mcg)))
@@ -122,7 +124,38 @@ void SendChangeNotificationForFile(Socket& s, string path)
 	delete[] buf;
 }
 
+void SendDeletionNotificationForFile(Socket& s, std::string path)
+{
+	//Is the file a build.yml? If so, remove its targets and don't tell the server
+	if(GetBasenameOfFile(path) == "build.yml")
+	{
+		ProcessDeletedBuildScript(path);
+		return;
+	}	
+
+	//Get path relative to project root
+	string fname = path;
+	if(fname.find(g_rootDir) == 0)
+		fname = fname.substr(g_rootDir.length() + 1);	//add 1 to trim trailing /
+	else
+		LogWarning("Deleted file %s is not within project root\n", path.c_str());
+	
+	LogDebug("Sending deletion notification for %s\n", path.c_str());
+	
+	//Send the change
+	msgFileRemoved mcg;
+	if(!s.SendLooped((unsigned char*)&mcg, sizeof(mcg)))
+		LogFatal("Connection dropped (while sending fileRemoved)\n");
+	if(!s.SendPascalString(fname))
+		LogFatal("Connection dropped (while sending fileRemoved.fname)\n");
+}
+
 void ProcessChangedBuildScript(string path)
 {
 	LogDebug("Build script %s changed, need to reload\n", path.c_str());
+}
+
+void ProcessDeletedBuildScript(string path)
+{
+	LogDebug("Build script %s deleted, need to remove its targets\n", path.c_str());
 }

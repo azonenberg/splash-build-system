@@ -44,6 +44,7 @@ public:
 	void SetInfo(std::string hostname, clientID id);
 
 	void UpdateFile(std::string path, std::string hash);
+	void RemoveFile(std::string path);
 
 protected:
 
