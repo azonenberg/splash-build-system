@@ -118,16 +118,24 @@ bool Cache::IsCached(string id)
  */
 bool Cache::ValidateCacheEntry(string id)
 {
+	m_mutex.lock();
+	
 	//If the directory doesn't exist, obviously we have nothing useful there
 	string dir = GetStoragePath(id);
 	if(!DoesDirectoryExist(dir))
+	{
+		m_mutex.unlock();
 		return false;
+	}
 		
 	//If we're missing the file or hash, can't possibly be valid
 	string fpath = dir + "/data";
 	string hpath = dir + "/hash";
 	if( !DoesFileExist(fpath) || !DoesFileExist(hpath) )
+	{
+		m_mutex.unlock();
 		return false;
+	}
 		
 	//Get the expected hash and compare to the real one
 	//If it's invalid, just get rid of the junk
@@ -138,9 +146,11 @@ bool Cache::ValidateCacheEntry(string id)
 		LogWarning("Cache directory %s is corrupted (hash match failed)\n", id.c_str());
 		ShellCommand(string("rm -I ") + dir + "/*");
 		ShellCommand(string("rm -r ") + dir);
+		m_mutex.unlock();
 		return false;
 	}
 	
+	m_mutex.unlock();
 	return true;
 }
 
