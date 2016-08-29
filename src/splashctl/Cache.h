@@ -47,8 +47,6 @@
 				atime	last-accessed time of the file
 						We don't use filesystem atime as that's way too easy to set by accident
 						
-	Map of clientID's to filesystem objects
-	
 	What does a single filesystem look like?
 		map<string, hash>?
 		
