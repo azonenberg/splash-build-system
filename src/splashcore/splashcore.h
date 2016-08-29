@@ -112,6 +112,8 @@ void MakeDirectoryRecursive(std::string path, int mode);
 std::string sha256(std::string str);
 std::string sha256_file(std::string path);
 
+std::string GetFileContents(std::string path);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global data
 

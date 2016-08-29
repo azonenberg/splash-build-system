@@ -60,8 +60,31 @@ Cache::Cache()
 	else
 	{
 		LogDebug("Cache directory exists, loading items\n");
+		for(unsigned int i=0; i<256; i++)
+		{
+			//If the cache isn't very full we might not have entries in every bucket
+			char hex[3];
+			snprintf(hex, sizeof(hex), "%02x", i);
+			string dirname = m_cachePath + "/" + hex;
+			if(!DoesDirectoryExist(dirname))
+				continue;
+				
+			//It exists, load whatever is in it
+			vector<string> subdirs;
+			FindSubdirs(dirname, subdirs);
+			for(auto dir : subdirs)
+			{
+				//The object ID is what goes in our table, not the file hash
+				string oid = GetBasenameOfFile(dir);
+				if(!ValidateCacheEntry(oid))
+					continue;
+				
+				//Cache entry is valid, add to the cache table
+				m_cacheIndex.emplace(oid);
+			}
+		}				
 		
-		//TODO: Read cache entries from disk
+		LogVerbose("    %d cache entries loaded\n", (int)m_cacheIndex.size());
 	}
 }
 
@@ -88,6 +111,47 @@ bool Cache::IsCached(string id)
 	return found;
 }
 
+/**
+	@brief Stronger form of IsCached(). Checks if the internal hash is consistent
+	
+	@param id		Object ID hash
+ */
+bool Cache::ValidateCacheEntry(string id)
+{
+	//If the directory doesn't exist, obviously we have nothing useful there
+	string dir = GetStoragePath(id);
+	if(!DoesDirectoryExist(dir))
+		return false;
+		
+	//If we're missing the file or hash, can't possibly be valid
+	string fpath = dir + "/data";
+	string hpath = dir + "/hash";
+	if( !DoesFileExist(fpath) || !DoesFileExist(hpath) )
+		return false;
+		
+	//Get the expected hash and compare to the real one
+	//If it's invalid, just get rid of the junk
+	string expected = GetFileContents(hpath);
+	string found = sha256_file(fpath);
+	if(expected != found)
+	{
+		LogWarning("Cache directory %s is corrupted (hash match failed)\n", id.c_str());
+		ShellCommand(string("rm -I ") + dir + "/*");
+		ShellCommand(string("rm -r ") + dir);
+		return false;
+	}
+	
+	return true;
+}
+
+/**
+	@brief Gets the cache path used for storing a particular object
+ */
+string Cache::GetStoragePath(string id)
+{
+	return m_cachePath + "/" + id.substr(0, 2) + "/" + id;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Cache manipulation
 
@@ -100,12 +164,12 @@ bool Cache::IsCached(string id)
 	@param data				Content of the file
 	@param len				Length of the file
  */
-void Cache::AddFile(string basename, string id, string hash, const unsigned char* data, uint64_t len)
+void Cache::AddFile(string /*basename*/, string id, string hash, const unsigned char* data, uint64_t len)
 {
 	m_mutex.lock();
 	
 		//Create the directory. If it already exists, delete whatever junk was in there
-		string dirname = m_cachePath + "/" + id.substr(0, 2) + "/" + id;
+		string dirname = GetStoragePath(id);
 		if(DoesDirectoryExist(dirname))
 		{
 			LogWarning("Cache directory %s already exists but was not loaded, removing dead files\n", hash.c_str());
@@ -115,7 +179,7 @@ void Cache::AddFile(string basename, string id, string hash, const unsigned char
 			MakeDirectoryRecursive(dirname, 0600);
 			
 		//Write the file data to it
-		string fname = dirname + "/" + basename;
+		string fname = dirname + "/data";
 		FILE* fp = fopen(fname.c_str(), "wb");
 		if(!fp)
 		{
@@ -133,7 +197,7 @@ void Cache::AddFile(string basename, string id, string hash, const unsigned char
 		fclose(fp);
 		
 		//Write the hash
-		fname = dirname + "/.hash";
+		fname = dirname + "/hash";
 		fp = fopen(fname.c_str(), "wb");
 		if(!fp)
 		{
@@ -151,6 +215,11 @@ void Cache::AddFile(string basename, string id, string hash, const unsigned char
 		fclose(fp);
 		
 		//TODO: write the atime file?
+		
+		//Remember that we have this file cached
+		m_cacheIndex.emplace(hash);
+		
+		//TODO: add this file's size to the cache, if we went over the cap delete the LRU file
 	
 	m_mutex.unlock();
 }

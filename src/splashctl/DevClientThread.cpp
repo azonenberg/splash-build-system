@@ -79,8 +79,10 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 			return;
 		}
 				
-		//See if we have the hash in the global cache
-		bool hit = g_cache->IsCached(fname);
+		//See if we have the file in the global cache
+		//This is a source file since it's in a client's working copy.
+		//As a result, the object ID is just the sha256sum of the file itself
+		bool hit = g_cache->IsCached(hash);
 		
 		//Debug print
 		if(hit)

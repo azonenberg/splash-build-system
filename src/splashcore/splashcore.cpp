@@ -301,6 +301,9 @@ void FindFilesBySubstring(string dir, string sub, vector<string>& files)
 
 /**
 	@brief Find all subdirectories in a given directory.
+	
+	@param dir			Directory to look in
+	@param subdirs		Array of absolute paths to located subdirectories
  */
 void FindSubdirs(string dir, vector<string>& subdirs)
 {
@@ -370,6 +373,26 @@ void MakeDirectoryRecursive(string path, int mode)
 				LogFatal("Could not create directory %s (%s)\n", path.c_str(), strerror(errno));
 		}
 	}
+}
+
+string GetFileContents(string path)
+{
+	FILE* fp = fopen(path.c_str(), "rb");
+	if(!fp)
+	{
+		LogWarning("GetFileContents: Could not open file \"%s\"\n", path.c_str());
+		return "";
+	}
+	fseek(fp, 0, SEEK_END);
+	long fsize = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	char* buf = new char[fsize + 1];
+	buf[fsize] = 0;
+	fread(buf, 1, fsize, fp);
+	fclose(fp);
+	string tmp(buf);
+	delete[] buf;
+	return tmp;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
