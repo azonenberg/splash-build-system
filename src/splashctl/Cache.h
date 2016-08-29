@@ -46,7 +46,7 @@
 				hash	sha256 of the file itself (for load-time integrity checking)
 				atime	last-accessed time of the file
 						We don't use filesystem atime as that's way too easy to set by accident
-		
+
 	All functions (aside from constructor/destructor) are thread safe and include locking where necessary.
  */
 class Cache
@@ -55,9 +55,22 @@ public:
 	Cache();
 	virtual ~Cache();
 
+	enum ObjectStates
+	{
+		//Object is not in cache at all
+		STATE_MISSING,
+
+		//Object is in cache and usable
+		STATE_READY,
+
+		//Object was registered with the cache but hasn't been created yet
+		//(probably a compile in progress)
+		STATE_BUILDING
+	};
+
 	bool IsCached(std::string id);
 	bool ValidateCacheEntry(std::string id);
-	
+
 	void AddFile(std::string basename, std::string id, std::string hash, const unsigned char* data, uint64_t len);
 
 protected:
@@ -69,12 +82,12 @@ protected:
 
 	//Set of hashes we have in the cache
 	std::unordered_set<std::string> m_cacheIndex;
-	
+
 	//TODO: map<string, time_t>		mapping hashes to last-used times
-	
+
 	//Directory that the cache is stored in
 	std::string m_cachePath;
-	
+
 	//TODO: total disk space used by cache items
 };
 
