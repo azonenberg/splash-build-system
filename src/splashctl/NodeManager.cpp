@@ -31,87 +31,76 @@
 
 using namespace std;
 
-void ClientThread(ZSOCKET sock)
+NodeManager* g_nodeManager = NULL;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+NodeManager::NodeManager()
 {
-	Socket s(sock);
+	m_nextClientID = 0;
+}
+
+NodeManager::~NodeManager()
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Database manipulation
+
+/**
+	@brief Allocate a new client ID
+ */
+clientID NodeManager::AllocateClient(string /*hostname*/)
+{
+	//TODO: store hostname in database
 	
-	string client_hostname = "[no hostname]";
+	clientID id;
 	
-	//LogDebug("New connection received from %s\n", client_hostname.c_str());
+	m_mutex.lock();
+		id = m_nextClientID ++;
+	m_mutex.unlock();
 	
-	//Send it a server hello
-	msgServerHello shi;
-	if(!s.SendLooped((unsigned char*)&shi, sizeof(shi)))
-	{
-		LogWarning("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
-		return;
-	}
+	return id;
+}
+
+/**
+	@brief Delete any toolchains registered to a node
+ */
+void NodeManager::RemoveClient(clientID id)
+{
+	m_mutex.lock();
 	
-	//Get a client hello
-	msgClientHello chi(CLIENT_LAST);
-	if(!s.RecvLooped((unsigned char*)&chi, sizeof(chi)))
-	{
-		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.type != MSG_TYPE_CLIENTHELLO)
-	{
-		LogWarning("Connection from %s dropped (bad message type %d in clientHello)\n",
-			client_hostname.c_str(), chi.type);
-		return;
-	}
-	if(chi.magic != shi.magic)
-	{
-		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.clientVersion != 1)
-	{
-		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(!s.RecvPascalString(client_hostname))
-		return;
-	
-	//If hostname is alphanumeric or - chars, fail
-	for(size_t i=0; i<client_hostname.length(); i++)
-	{
-		auto c = client_hostname[i];
-		if(isalnum(c) || (c == '-') )
-			continue;
+		auto chains = m_toolchainsByNode[id];
+		for(auto x : chains)
+			delete x;
 		
-		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
-		return;
-	}
-	
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
-	
-	//Protocol-specific processing
-	switch(chi.ctype)
-	{
-		case CLIENT_DEVELOPER:
-			
-			//Process client traffic
-			DevClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
-			break;
-			
-		case CLIENT_BUILD:
-			
-			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
-			break;
+		m_toolchainsByNode.erase(id);
 		
-		default:
-			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
-			break;
-	}
+		for(auto x : m_nodesByLanguage)
+			x.second.erase(id);
+		
+		for(auto x : m_nodesByCompiler)
+			x.second.erase(id);
+
+	m_mutex.unlock();
+}
+
+/**
+	@brief Add a toolchain to a node
+ */
+void NodeManager::AddToolchain(clientID id, Toolchain* chain)
+{
+	m_mutex.lock();
+		
+		string hash = chain->GetHash();
+		m_toolchainsByNode[id].emplace(chain);
+		auto langs = chain->GetSupportedLanguages();
+		auto triplets = chain->GetTargetTriplets();
+		for(auto l : langs)
+			for(auto t : triplets)
+				m_nodesByLanguage[larch(l, t)].emplace(id);
+		m_nodesByCompiler[hash].emplace(id);
+	
+	m_mutex.unlock();
 }

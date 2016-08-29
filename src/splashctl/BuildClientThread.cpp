@@ -124,14 +124,6 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		}
 		
 		//Register the toolchain in the global indexes
-		g_toolchainListMutex.lock();
-			g_toolchainsByNode[id].emplace(toolchain);
-			auto langs = toolchain->GetSupportedLanguages();
-			auto triplets = toolchain->GetTargetTriplets();
-			for(auto l : langs)
-				for(auto t : triplets)
-					g_nodesByLanguage[larch(l, t)].emplace(id);
-			g_nodesByCompiler[hash].emplace(id);
-		g_toolchainListMutex.unlock();
+		g_nodeManager->AddToolchain(id, toolchain);
 	}
 }

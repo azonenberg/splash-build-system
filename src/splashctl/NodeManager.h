@@ -27,91 +27,55 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashctl.h"
+#ifndef NodeManager_h
+#define NodeManager_h
 
-using namespace std;
+//set of toolchains
+typedef std::unordered_set<Toolchain*> vtool;
 
-void ClientThread(ZSOCKET sock)
+//unique ID for a client
+typedef uint64_t clientID;
+
+//set of node IDs
+typedef std::unordered_set<clientID> vnode;
+
+//(language, target arch) tuple
+typedef std::pair<Toolchain::Language, std::string> larch;
+
+/**
+	@brief List of nodes connected to the server, and various info about them
+	
+	All functions except constructor/destructor are thread safe
+ */
+class NodeManager
 {
-	Socket s(sock);
+public:
+	NodeManager();
+	virtual ~NodeManager();
 	
-	string client_hostname = "[no hostname]";
+	clientID AllocateClient(std::string hostname);
+	void RemoveClient(clientID id);
 	
-	//LogDebug("New connection received from %s\n", client_hostname.c_str());
+	void AddToolchain(clientID id, Toolchain* chain);
 	
-	//Send it a server hello
-	msgServerHello shi;
-	if(!s.SendLooped((unsigned char*)&shi, sizeof(shi)))
-	{
-		LogWarning("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
-		return;
-	}
+protected:
+
+	//Mutex to control access to all node lists
+	std::mutex m_mutex;
+
+	//List of compilers available on each node
+	//This is the authoritative pointer to nodes
+	std::map<clientID, vtool> m_toolchainsByNode;
+
+	//List of nodes with any compiler for a given language and target architecture
+	std::map<larch, vnode> m_nodesByLanguage;
+
+	//List of nodes with a specific compiler (by hash)
+	std::map<std::string, vnode> m_nodesByCompiler;
 	
-	//Get a client hello
-	msgClientHello chi(CLIENT_LAST);
-	if(!s.RecvLooped((unsigned char*)&chi, sizeof(chi)))
-	{
-		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.type != MSG_TYPE_CLIENTHELLO)
-	{
-		LogWarning("Connection from %s dropped (bad message type %d in clientHello)\n",
-			client_hostname.c_str(), chi.type);
-		return;
-	}
-	if(chi.magic != shi.magic)
-	{
-		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.clientVersion != 1)
-	{
-		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(!s.RecvPascalString(client_hostname))
-		return;
-	
-	//If hostname is alphanumeric or - chars, fail
-	for(size_t i=0; i<client_hostname.length(); i++)
-	{
-		auto c = client_hostname[i];
-		if(isalnum(c) || (c == '-') )
-			continue;
-		
-		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
-		return;
-	}
-	
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
-	
-	//Protocol-specific processing
-	switch(chi.ctype)
-	{
-		case CLIENT_DEVELOPER:
-			
-			//Process client traffic
-			DevClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
-			break;
-			
-		case CLIENT_BUILD:
-			
-			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
-			break;
-		
-		default:
-			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
-			break;
-	}
-}
+	clientID m_nextClientID;
+};
+
+extern NodeManager* g_nodeManager;
+
+#endif

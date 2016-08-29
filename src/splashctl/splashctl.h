@@ -46,26 +46,11 @@
 #include <vector>
 
 #include "protocol.h"
-
-//set of toolchains
-typedef std::unordered_set<Toolchain*> vtool;
-
-//unique ID for a client
-typedef uint64_t clientID;
-
-//set of node IDs
-typedef std::unordered_set<clientID> vnode;
-
-//(language, target arch) tuple
-typedef std::pair<Toolchain::Language, std::string> larch;
+#include "Cache.h"
+#include "NodeManager.h"
 
 void ClientThread(ZSOCKET sock);
 void BuildClientThread(Socket& s, std::string& hostname, clientID id);
 void DevClientThread(Socket& s, std::string& hostname, clientID id);
-
-extern std::mutex g_toolchainListMutex;
-extern std::map<clientID, vtool> g_toolchainsByNode;
-extern std::map<larch, vnode> g_nodesByLanguage;
-extern std::map<std::string, vnode> g_nodesByCompiler;
 
 #endif

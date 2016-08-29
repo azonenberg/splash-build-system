@@ -31,87 +31,35 @@
 
 using namespace std;
 
-void ClientThread(ZSOCKET sock)
+Cache* g_cache = NULL;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+Cache::Cache()
 {
-	Socket s(sock);
+	//TODO: Read cache entries from disk
+}
+
+Cache::~Cache()
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Status queries
+
+/**
+	@brief Determine if a particular object is in the cache.
 	
-	string client_hostname = "[no hostname]";
+	@param id		Object ID hash
+ */
+bool Cache::IsCached(string id)
+{
+	bool found = false;
+	m_mutex.lock();
+		if(m_cacheIndex.find(id) != m_cacheIndex.end())
+			found = true;
+	m_mutex.unlock();
 	
-	//LogDebug("New connection received from %s\n", client_hostname.c_str());
-	
-	//Send it a server hello
-	msgServerHello shi;
-	if(!s.SendLooped((unsigned char*)&shi, sizeof(shi)))
-	{
-		LogWarning("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
-		return;
-	}
-	
-	//Get a client hello
-	msgClientHello chi(CLIENT_LAST);
-	if(!s.RecvLooped((unsigned char*)&chi, sizeof(chi)))
-	{
-		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.type != MSG_TYPE_CLIENTHELLO)
-	{
-		LogWarning("Connection from %s dropped (bad message type %d in clientHello)\n",
-			client_hostname.c_str(), chi.type);
-		return;
-	}
-	if(chi.magic != shi.magic)
-	{
-		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.clientVersion != 1)
-	{
-		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(!s.RecvPascalString(client_hostname))
-		return;
-	
-	//If hostname is alphanumeric or - chars, fail
-	for(size_t i=0; i<client_hostname.length(); i++)
-	{
-		auto c = client_hostname[i];
-		if(isalnum(c) || (c == '-') )
-			continue;
-		
-		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
-		return;
-	}
-	
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
-	
-	//Protocol-specific processing
-	switch(chi.ctype)
-	{
-		case CLIENT_DEVELOPER:
-			
-			//Process client traffic
-			DevClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
-			break;
-			
-		case CLIENT_BUILD:
-			
-			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
-			break;
-		
-		default:
-			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
-			break;
-	}
+	return found;
 }

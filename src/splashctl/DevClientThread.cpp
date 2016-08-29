@@ -78,6 +78,11 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 			LogWarning("Connection from %s dropped (while getting fileChanged.hash)\n", hostname.c_str());
 			return;
 		}
+				
+		//See if we have the hash in the global cache
+		bool hit = g_cache->IsCached(fname);
+		
+		//If we have the 
 		
 		//TODO: do something with the result
 		
@@ -85,5 +90,9 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 			fname.c_str(),
 			hostname.c_str(),
 			hash.c_str());
+		if(hit)
+			LogVerbose("    file is cached\n");
+		else
+			LogVerbose("    file is not cached, need to fetch\n");
 	}
 }

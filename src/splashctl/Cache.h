@@ -27,91 +27,58 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashctl.h"
+#ifndef cache_h
+#define cache_h
 
-using namespace std;
+/*
+	@brief Set of hashes for source/object files we have in the cache (need to read at app startup)
 
-void ClientThread(ZSOCKET sock)
+	Objects are identified by "object ID" SHA-256 hashes. What goes into the hash varies depending on the type of the
+	object being identified:
+		* For source/input files the object ID is simply the hash of the file contents
+		* For generated files, the object ID is the hash of all inputs, the compiler, flags, etc.
+
+	Directory structure:
+	$CACHE/
+		xx/				first octet of hash, as hex
+			hash/		hash of file object (may not actually be the hash of the file, includes flags etc)
+				xx		the file itself (original filename)
+				.hash	sha256 of the file itself (for load-time integrity checking)
+				.atime	last-accessed time of the file
+						We don't use filesystem atime as that's way too easy to set by accident
+						
+	Map of clientID's to filesystem objects
+	
+	What does a single filesystem look like?
+		map<string, hash>?
+		
+	All functions (aside from constructor/destructor) are thread safe and include locking where necessary.
+ */
+class Cache
 {
-	Socket s(sock);
+public:
+	Cache();
+	virtual ~Cache();
+
+	bool IsCached(std::string id);
+
+protected:
+
+	//Mutex to control access to all global cache state
+	std::mutex m_mutex;
+
+	//Set of hashes we have in the cache
+	std::unordered_set<std::string> m_cacheIndex;
 	
-	string client_hostname = "[no hostname]";
-	
-	//LogDebug("New connection received from %s\n", client_hostname.c_str());
-	
-	//Send it a server hello
-	msgServerHello shi;
-	if(!s.SendLooped((unsigned char*)&shi, sizeof(shi)))
-	{
-		LogWarning("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
-		return;
-	}
-	
-	//Get a client hello
-	msgClientHello chi(CLIENT_LAST);
-	if(!s.RecvLooped((unsigned char*)&chi, sizeof(chi)))
-	{
-		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.type != MSG_TYPE_CLIENTHELLO)
-	{
-		LogWarning("Connection from %s dropped (bad message type %d in clientHello)\n",
-			client_hostname.c_str(), chi.type);
-		return;
-	}
-	if(chi.magic != shi.magic)
-	{
-		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chi.clientVersion != 1)
-	{
-		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(!s.RecvPascalString(client_hostname))
-		return;
-	
-	//If hostname is alphanumeric or - chars, fail
-	for(size_t i=0; i<client_hostname.length(); i++)
-	{
-		auto c = client_hostname[i];
-		if(isalnum(c) || (c == '-') )
-			continue;
-		
-		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
-		return;
-	}
-	
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
-	
-	//Protocol-specific processing
-	switch(chi.ctype)
-	{
-		case CLIENT_DEVELOPER:
-			
-			//Process client traffic
-			DevClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
-			break;
-			
-		case CLIENT_BUILD:
-			
-			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
-			
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
-			break;
-		
-		default:
-			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
-			break;
-	}
-}
+	//TODO: map<string, time_t>		mapping hashes to last-used times
+};
+
+extern Cache* g_cache;
+
+#endif
+
+
+/*
+extern std::mutex g_cacheMutex;
+extern std::unordered_set<std::string> g_cacheIndex;
+*/
