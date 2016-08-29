@@ -27,31 +27,25 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashctl_h
-#define splashctl_h
+#ifndef WorkingCopy_h
+#define WorkingCopy_h
 
-#include "../splashcore/splashcore.h"
-#include "../log/log.h"
+/**
+	@brief An individual client's working copy
+	
+	NOT thread safe
+ */
+class WorkingCopy
+{
+public:
+	WorkingCopy();
+	virtual ~WorkingCopy();
+		
+protected:
 
-#include "../xptools/Socket.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <map>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <unordered_set>
-#include <vector>
-
-#include "protocol.h"
-#include "Cache.h"
-#include "NodeManager.h"
-#include "WorkingCopy.h"
-
-void ClientThread(ZSOCKET sock);
-void BuildClientThread(Socket& s, std::string& hostname, clientID id);
-void DevClientThread(Socket& s, std::string& hostname, clientID id);
+	//Mutex to control access to all node lists
+	//std::mutex m_mutex;	
+};
 
 #endif
+

@@ -27,31 +27,19 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashctl_h
-#define splashctl_h
+#include "splashctl.h"
 
-#include "../splashcore/splashcore.h"
-#include "../log/log.h"
+using namespace std;
 
-#include "../xptools/Socket.h"
+//Global map<clientID, WorkingCopy*>?
 
-#include <stdio.h>
-#include <stdlib.h>
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
 
-#include <map>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <unordered_set>
-#include <vector>
+WorkingCopy::WorkingCopy()
+{
+}
 
-#include "protocol.h"
-#include "Cache.h"
-#include "NodeManager.h"
-#include "WorkingCopy.h"
-
-void ClientThread(ZSOCKET sock);
-void BuildClientThread(Socket& s, std::string& hostname, clientID id);
-void DevClientThread(Socket& s, std::string& hostname, clientID id);
-
-#endif
+WorkingCopy::~WorkingCopy()
+{
+}
