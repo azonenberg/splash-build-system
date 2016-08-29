@@ -46,9 +46,6 @@
 				hash	sha256 of the file itself (for load-time integrity checking)
 				atime	last-accessed time of the file
 						We don't use filesystem atime as that's way too easy to set by accident
-						
-	What does a single filesystem look like?
-		map<string, hash>?
 		
 	All functions (aside from constructor/destructor) are thread safe and include locking where necessary.
  */
