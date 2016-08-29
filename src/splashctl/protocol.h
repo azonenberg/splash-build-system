@@ -61,12 +61,12 @@
 			
 		File changed
 			client: MSG_TYPE_FILE_CHANGED
+			server: MSG_TYPE_FILE_ACK
+		
+		If file isn't in cache:
+			client: MSG_TYPE_FILE_DATA
 			
 		TODO: File moved/deleted
-			
-		File needed server side
-			server: MSG_TYPE_FILE_REQUEST
-			client: MSG_TYPE_FILE_DATA
  */
 
 //Message type (first 2 bytes of every message)
@@ -78,14 +78,7 @@ enum msgType
 	MSG_TYPE_ADD_COMPILER,
 	MSG_TYPE_DEV_INFO,
 	MSG_TYPE_FILE_CHANGED,
-	
-	//Server requests the contents of a file from the client
-	//fname				string		Path of changed file
-	MSG_TYPE_FILE_REQUEST,
-	
-	//Client sends the contents of a file to the server
-	//fname				string		Path of changed file
-	//data				uint8 arr	Contents of file
+	MSG_TYPE_FILE_ACK,
 	MSG_TYPE_FILE_DATA,
 	
 	//all types beyond here reserved for expansion
@@ -218,6 +211,32 @@ public:
 //Note that we do not report file deletion; deleted files stay in cache until evicted.
 //TODO: immediate report for deletion of build scripts? Are those parsed client or server side?
 //Directory creation/destruction is also irrelevant to the build, as is file moving.
+
+//Tell the client whether the most recently changed file is in cache or not
+class msgFileAck : public msg
+{
+public:
+	msgFileAck()
+		: msg(MSG_TYPE_FILE_ACK)
+	{}
+	
+	uint8_t		fileCached;			//1 if file is in cache, 0 if we have to send it
+};
+
+//Client sends file content to server
+class msgFileData : public msg
+{
+public:
+	msgFileData()
+		: msg(MSG_TYPE_FILE_DATA)
+	{}
+	
+	uint64_t	fileLen;			//length of file
+	
+	//After this struct:
+	//data[]						Content of file
+};
+
 
 #endif
 

@@ -78,7 +78,48 @@ void SendChangeNotificationForFile(Socket& s, string path)
 	if(!s.SendPascalString(hash))
 		LogFatal("Connection dropped (while sending fileChanged.hash)\n");
 	
-	//TODO: wait for server to respond "I have it" or "send me the updated version"?
+	//Ask the server if they need content of the file
+	msgFileAck ack;
+	if(!s.RecvLooped((unsigned char*)&ack, sizeof(ack)))
+		LogFatal("Connection dropped (while receiving fileAck)\n");
+	
+	//Don't send the file if the server already in the cache
+	if(ack.fileCached)
+	{
+		LogDebug("    new content is already cached, no action required\n");
+		return;
+	}
+	
+	LogDebug("    new content is not in cache, sending file to server\n");
+	
+	//Read the file into RAM
+	//TODO: cap for HUGE files, don't send them to the server by default
+	FILE* fp = fopen(path.c_str(), "rb");
+	if(!fp)
+		LogFatal("Changed file %s couldn't be opened\n", fname.c_str());
+	fseek(fp, 0, SEEK_END);
+	long len = ftell(fp);
+	if(len < 0)
+		LogFatal("Couldn't get length of file %s (too big?)\n", fname.c_str());
+	if(len > INT_MAX)
+		LogFatal("File %s is too big, can't send it\n", fname.c_str());
+	size_t slen = len;	//TODO: read length as 64 bit in the first place
+	fseek(fp, 0, SEEK_SET);
+	unsigned char* buf = new unsigned char[len];
+	if(slen != fread(buf, 1, slen, fp))
+		LogFatal("Couldn't read file %s\n", fname.c_str());
+	fclose(fp);
+	
+	//Send the content
+	msgFileData data;
+	data.fileLen = len;
+	if(!s.SendLooped((unsigned char*)&data, sizeof(data)))
+		LogFatal("Connection dropped (while sending msgFileData)\n");
+	if(!s.SendLooped(buf, len))
+		LogFatal("Connection dropped (while sending msgFileData.data)\n");
+	
+	//Clean up
+	delete[] buf;
 }
 
 void ProcessChangedBuildScript(string path)

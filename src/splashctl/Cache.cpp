@@ -38,7 +38,31 @@ Cache* g_cache = NULL;
 
 Cache::Cache()
 {
-	//TODO: Read cache entries from disk
+	LogVerbose("Initializing cache subsystem...\n");
+	
+	//TODO: get cache path from command line arg or something?
+	//Hard-coding the path prevents more than one splashctl instance from running on a given server.
+	//This may or may not be what we want. If we DO want to limit to one instance, we need a way for multiple distinct
+	//projects to share the splashctl/splashbuild back end.
+	string home = getenv("HOME");
+	if(!DoesDirectoryExist(home))
+		LogFatal("home dir does not exist\n");
+	m_cachePath = home + "/.splash/splashctl-cache";
+	
+	//If the cache directory does not exist, create it
+	if(!DoesDirectoryExist(m_cachePath))
+	{
+		LogDebug("Cache directory does not exist, creating it\n");
+		MakeDirectoryRecursive(m_cachePath, 0600);
+	}
+	
+	//It exists, load existing entries
+	else
+	{
+		LogDebug("Cache directory exists, loading items\n");
+		
+		//TODO: Read cache entries from disk
+	}
 }
 
 Cache::~Cache()
@@ -62,4 +86,71 @@ bool Cache::IsCached(string id)
 	m_mutex.unlock();
 	
 	return found;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Cache manipulation
+
+/**
+	@brief Adds a file to the cache
+	
+	@param basename			Name of the file without directory information
+	@param id				Object ID hash
+	@param hash				SHA-256 sum of the file
+	@param data				Content of the file
+	@param len				Length of the file
+ */
+void Cache::AddFile(string basename, string id, string hash, const unsigned char* data, uint64_t len)
+{
+	m_mutex.lock();
+	
+		//Create the directory. If it already exists, delete whatever junk was in there
+		string dirname = m_cachePath + "/" + id.substr(0, 2) + "/" + id;
+		if(DoesDirectoryExist(dirname))
+		{
+			LogWarning("Cache directory %s already exists but was not loaded, removing dead files\n", hash.c_str());
+			ShellCommand(string("rm -I ") + dirname + "/*");
+		}
+		else
+			MakeDirectoryRecursive(dirname, 0600);
+			
+		//Write the file data to it
+		string fname = dirname + "/" + basename;
+		FILE* fp = fopen(fname.c_str(), "wb");
+		if(!fp)
+		{
+			m_mutex.unlock();
+			LogWarning("Couldn't create cache file %s\n", fname.c_str());
+			return;
+		}
+		if(len != fwrite(data, 1, len, fp))
+		{
+			fclose(fp);
+			m_mutex.unlock();
+			LogWarning("Couldn't write cache file %s\n", fname.c_str());
+			return;
+		}
+		fclose(fp);
+		
+		//Write the hash
+		fname = dirname + "/.hash";
+		fp = fopen(fname.c_str(), "wb");
+		if(!fp)
+		{
+			m_mutex.unlock();
+			LogWarning("Couldn't create cache file %s\n", fname.c_str());
+			return;
+		}
+		if(64 != fwrite(hash.c_str(), 1, 64, fp))
+		{
+			fclose(fp);
+			m_mutex.unlock();
+			LogWarning("Couldn't write cache file %s\n", fname.c_str());
+			return;
+		}
+		fclose(fp);
+		
+		//TODO: write the atime file?
+	
+	m_mutex.unlock();
 }

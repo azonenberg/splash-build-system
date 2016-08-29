@@ -82,17 +82,63 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 		//See if we have the hash in the global cache
 		bool hit = g_cache->IsCached(fname);
 		
-		//If we have the 
-		
-		//TODO: do something with the result
-		
-		LogVerbose("File %s on node %s changed\n    new hash is %s\n",
-			fname.c_str(),
-			hostname.c_str(),
-			hash.c_str());
+		//Debug print
 		if(hit)
-			LogVerbose("    file is cached\n");
+		{
+			LogVerbose("File %s on node %s changed (new version already in cache)\n",
+				fname.c_str(),
+				hostname.c_str());
+		}
 		else
-			LogVerbose("    file is not cached, need to fetch\n");
+		{
+			LogVerbose("File %s on node %s changed (fetching content from client)\n",
+				fname.c_str(),
+				hostname.c_str());
+		}
+		
+		//Report status to the client
+		msgFileAck ack;
+		ack.fileCached = hit;
+		if(!s.SendLooped((unsigned char*)&ack, sizeof(ack)))
+		{
+			LogWarning("Connection from %s dropped (while sending fileAck)\n", hostname.c_str());
+			return;
+		}
+		
+		//If it's cached we don't have to do anything more now
+		if(hit)
+			continue;
+
+		//Get the file contents
+		msgFileData data;
+		if(!s.RecvLooped((unsigned char*)&data, sizeof(data)))
+		{
+			LogWarning("Connection from %s dropped while reading fileData\n", hostname.c_str());
+			return;
+		}
+		if(data.type != MSG_TYPE_FILE_DATA)
+		{
+			LogWarning("Connection from %s dropped (bad message type in fileData)\n", hostname.c_str());
+			return;
+		}
+		if(data.fileLen > INT_MAX)
+		{
+			LogWarning("Connection from %s dropped (bad file length in fileData)\n", hostname.c_str());
+			return;
+		}
+		unsigned char* buf = new unsigned char[data.fileLen];
+		if(!s.RecvLooped(buf, data.fileLen))
+		{
+			LogWarning("Connection from %s dropped while reading fileData.data\n", hostname.c_str());
+			return;
+		}
+				
+		//Write the file to cache
+		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, data.fileLen);
+		
+		//Update the file's status in our working copy
+		
+		//Clean up
+		delete[] buf;
 	}
 }

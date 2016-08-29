@@ -61,6 +61,8 @@ public:
 	virtual ~Cache();
 
 	bool IsCached(std::string id);
+	
+	void AddFile(std::string basename, std::string id, std::string hash, const unsigned char* data, uint64_t len);
 
 protected:
 
@@ -71,14 +73,10 @@ protected:
 	std::unordered_set<std::string> m_cacheIndex;
 	
 	//TODO: map<string, time_t>		mapping hashes to last-used times
+	
+	std::string m_cachePath;
 };
 
 extern Cache* g_cache;
 
 #endif
-
-
-/*
-extern std::mutex g_cacheMutex;
-extern std::unordered_set<std::string> g_cacheIndex;
-*/
