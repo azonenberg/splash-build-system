@@ -32,7 +32,7 @@
 
 /**
 	@brief An individual client's working copy
-	
+
 	NOT thread safe
  */
 class WorkingCopy
@@ -40,11 +40,22 @@ class WorkingCopy
 public:
 	WorkingCopy();
 	virtual ~WorkingCopy();
-		
+
+	void SetInfo(std::string hostname, clientID id);
+
+	void UpdateFile(std::string path, std::string hash);
+
 protected:
 
 	//Mutex to control access to all node lists
-	//std::mutex m_mutex;	
+	//std::mutex m_mutex;
+
+	//Map of relative paths to hashes
+	std::map<std::string, std::string> m_fileMap;
+
+	//Info about this working copy
+	std::string m_hostname;
+	clientID m_id;
 };
 
 #endif

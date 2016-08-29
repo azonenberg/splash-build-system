@@ -51,16 +51,15 @@ NodeManager::~NodeManager()
 /**
 	@brief Allocate a new client ID
  */
-clientID NodeManager::AllocateClient(string /*hostname*/)
+clientID NodeManager::AllocateClient(string hostname)
 {
-	//TODO: store hostname in database
-	
 	clientID id;
-	
+
 	m_mutex.lock();
 		id = m_nextClientID ++;
+		m_workingCopies[id].SetInfo(hostname, id);
 	m_mutex.unlock();
-	
+
 	return id;
 }
 
@@ -70,18 +69,20 @@ clientID NodeManager::AllocateClient(string /*hostname*/)
 void NodeManager::RemoveClient(clientID id)
 {
 	m_mutex.lock();
-	
+
 		auto chains = m_toolchainsByNode[id];
 		for(auto x : chains)
 			delete x;
-		
+
 		m_toolchainsByNode.erase(id);
-		
+
 		for(auto x : m_nodesByLanguage)
 			x.second.erase(id);
-		
+
 		for(auto x : m_nodesByCompiler)
 			x.second.erase(id);
+
+		m_workingCopies.erase(id);
 
 	m_mutex.unlock();
 }
@@ -92,7 +93,7 @@ void NodeManager::RemoveClient(clientID id)
 void NodeManager::AddToolchain(clientID id, Toolchain* chain)
 {
 	m_mutex.lock();
-		
+
 		string hash = chain->GetHash();
 		m_toolchainsByNode[id].emplace(chain);
 		auto langs = chain->GetSupportedLanguages();
@@ -101,6 +102,6 @@ void NodeManager::AddToolchain(clientID id, Toolchain* chain)
 			for(auto t : triplets)
 				m_nodesByLanguage[larch(l, t)].emplace(id);
 		m_nodesByCompiler[hash].emplace(id);
-	
+
 	m_mutex.unlock();
 }

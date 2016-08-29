@@ -139,6 +139,7 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, data.fileLen);
 		
 		//Update the file's status in our working copy
+		g_nodeManager->GetWorkingCopy(id).UpdateFile(fname, hash);
 		
 		//Clean up
 		delete[] buf;

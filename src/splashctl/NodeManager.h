@@ -44,7 +44,7 @@ typedef std::pair<Toolchain::Language, std::string> larch;
 
 /**
 	@brief List of nodes connected to the server, and various info about them
-	
+
 	All functions except constructor/destructor are thread safe
  */
 class NodeManager
@@ -52,12 +52,15 @@ class NodeManager
 public:
 	NodeManager();
 	virtual ~NodeManager();
-	
+
 	clientID AllocateClient(std::string hostname);
 	void RemoveClient(clientID id);
-	
+
 	void AddToolchain(clientID id, Toolchain* chain);
-	
+
+	WorkingCopy& GetWorkingCopy(clientID id)
+	{ return m_workingCopies[id]; }
+
 protected:
 
 	//Mutex to control access to all node lists
@@ -72,7 +75,10 @@ protected:
 
 	//List of nodes with a specific compiler (by hash)
 	std::map<std::string, vnode> m_nodesByCompiler;
-	
+
+	//The working copies of the repository for each client
+	std::map<clientID, WorkingCopy> m_workingCopies;
+
 	clientID m_nextClientID;
 };
 

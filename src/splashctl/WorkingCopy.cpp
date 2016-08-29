@@ -43,3 +43,26 @@ WorkingCopy::WorkingCopy()
 WorkingCopy::~WorkingCopy()
 {
 }
+
+/**
+	@brief Save info about the working copy, mostly for debug logging
+ */
+void WorkingCopy::SetInfo(string hostname, clientID id)
+{
+	m_hostname = hostname;
+	m_id = id;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Directory structure manipulation
+
+/**
+	@brief Updates a file in the current working copy
+
+	@param path		Relative path of the file
+	@param hash		SHA-256 hash of the file
+ */
+void WorkingCopy::UpdateFile(string path, string hash)
+{
+	m_fileMap[path] = hash;
+}
