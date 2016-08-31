@@ -73,6 +73,8 @@ public:
 
 	void AddFile(std::string basename, std::string id, std::string hash, const unsigned char* data, uint64_t len);
 
+	std::string ReadCachedFile(std::string id);
+
 protected:
 
 	std::string GetStoragePath(std::string id);

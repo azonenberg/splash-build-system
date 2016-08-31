@@ -166,6 +166,29 @@ string Cache::GetStoragePath(string id)
 // Cache manipulation
 
 /**
+	@brief Reads a file from the cache
+ */
+string Cache::ReadCachedFile(string id)
+{
+	m_mutex.lock();
+
+		//Sanity check
+		if(!IsCached(id))
+		{
+			m_mutex.unlock();
+			LogError("WARNING: requested file %s is not in cache\n", id.c_str());
+			return "";
+		}
+
+		//Read the file
+		string ret = GetFileContents(GetStoragePath(id));
+
+	m_mutex.unlock();
+
+	return ret;
+}
+
+/**
 	@brief Adds a file to the cache
 
 	@param basename			Name of the file without directory information
