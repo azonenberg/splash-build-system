@@ -181,7 +181,7 @@ string Cache::ReadCachedFile(string id)
 		}
 
 		//Read the file
-		string ret = GetFileContents(GetStoragePath(id));
+		string ret = GetFileContents(GetStoragePath(id) + "/data");
 
 	m_mutex.unlock();
 
