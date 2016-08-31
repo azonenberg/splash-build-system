@@ -31,13 +31,47 @@
 #define BuildGraphNode_h
 
 /**
-	@brief A DAG of buildable objects
+	@brief A single node in the build graph
  */
 class BuildGraphNode
 {
 public:
 	BuildGraphNode();
 	virtual ~BuildGraphNode();
+	
+	/// @brief Get the hash of the node
+	std::string GetHash()
+	{ return m_hash; }
+	
+	/// @brief Get the script of the node
+	std::string GetScript()
+	{ return m_script; }
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Garbage collection during graph rebuilds
+
+	/// @brief Mark the node as referenced
+	void SetRef()
+	{ m_ref = true; }
+	
+	/// @brief Mark the node as unreferenced
+	void SetUnref()
+	{ m_ref = false; }
+	
+	/// @brief Checks if the node is referenced
+	bool IsReferenced()
+	{ return m_ref; }
+	
+protected:
+
+	/// @brief Indicates if the node is referenced
+	bool m_ref;
+
+	/// @brief The hash of this node (must be set in constructor; immutable)
+	std::string m_hash;
+	
+	/// @brief Path to the build script this node was declared in
+	std::string m_script;
 };
 
 #endif

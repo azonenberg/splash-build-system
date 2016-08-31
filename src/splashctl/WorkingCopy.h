@@ -48,8 +48,6 @@ public:
 
 protected:
 
-	void ReloadBuildScript(std::string path);
-
 	//Map of relative paths to hashes
 	std::map<std::string, std::string> m_fileMap;
 

@@ -41,7 +41,14 @@ public:
 	BuildGraph();
 	virtual ~BuildGraph();
 
+	void UpdateScript(std::string path, std::string hash);
+	void RemoveScript(std::string path);
+
 protected:
+	void Rebuild();
+	void InternalRemove(std::string path);
+
+	//Our targets
 
 	//The nodes
 	std::unordered_set<BuildGraphNode*> m_nodes;
