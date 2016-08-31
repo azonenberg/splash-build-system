@@ -12,6 +12,9 @@ ADD_LIBRARY(splashcore SHARED
 	XilinxISEToolchain.cpp
 	XilinxVivadoToolchain.cpp
 
+	BuildGraph.cpp
+	BuildGraphNode.cpp
+
 	splashcore.cpp
 )
 

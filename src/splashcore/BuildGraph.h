@@ -27,100 +27,24 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashcore_h
-#define splashcore_h
+#ifndef BuildGraph_h
+#define BuildGraph_h
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Platform includes
+class BuildGraphNode;
 
-#include <unistd.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+/**
+	@brief A DAG of buildable objects
+ */
+class BuildGraph
+{
+public:
+	BuildGraph();
+	virtual ~BuildGraph();
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libc includes
+protected:
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <string.h>
-#include <stdarg.h>
-#include <typeinfo>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// libstdc++ includes
-
-#include <list>
-#include <string>
-#include <unordered_set>
-#include <vector>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Other library includes
-
-#include <crypto++/sha.h>
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Project includes
-
-#include "../log/log.h"
-
-#include "Toolchain.h"
-
-#include "CToolchain.h"
-
-#include "CPPToolchain.h"
-#include "FPGAToolchain.h"
-#include "GNUCToolchain.h"
-#include "GNUCPPToolchain.h"
-#include "GNULinkerToolchain.h"
-#include "LinkerToolchain.h"
-#include "RemoteToolchain.h"
-#include "XilinxISEToolchain.h"
-#include "XilinxVivadoToolchain.h"
-
-#include "BuildGraph.h"
-#include "BuildGraphNode.h"
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Global functions
-
-double GetTime();
-
-void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false);
-
-std::string ShellCommand(std::string cmd, bool trimNewline = true);
-
-std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
-
-void ParseSearchPath(std::vector<std::string>& dirs);
-
-std::string CanonicalizePath(std::string fname);
-bool DoesDirectoryExist(std::string fname);
-bool DoesFileExist(std::string fname);
-std::string GetDirOfFile(std::string fname);
-std::string GetBasenameOfFile(std::string fname);
-std::string GetBasenameOfFileWithoutExt(std::string fname);
-
-void FindFiles(std::string dir, std::vector<std::string>& files);
-void FindFilesBySubstring(std::string dir, std::string sub, std::vector<std::string>& files);
-void FindFilesByExtension(std::string dir, std::string ext, std::vector<std::string>& files);
-void FindSubdirs(std::string dir, std::vector<std::string>& subdirs);
-
-std::string GetRelativePathOfFile(std::string dir, std::string fname);
-
-void MakeDirectoryRecursive(std::string path, int mode);
-
-std::string sha256(std::string str);
-std::string sha256_file(std::string path);
-
-std::string GetFileContents(std::string path);
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Global data
-
-extern std::map<std::string, Toolchain*> g_toolchains;
+	//The nodes
+	std::unordered_set<BuildGraphNode*> m_nodes;
+};
 
 #endif
