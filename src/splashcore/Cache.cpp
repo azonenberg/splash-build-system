@@ -27,7 +27,7 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashctl.h"
+#include "splashcore.h"
 
 using namespace std;
 
@@ -39,7 +39,7 @@ Cache* g_cache = NULL;
 Cache::Cache()
 {
 	LogVerbose("Initializing cache subsystem...\n");
-	
+
 	//TODO: get cache path from command line arg or something?
 	//Hard-coding the path prevents more than one splashctl instance from running on a given server.
 	//This may or may not be what we want. If we DO want to limit to one instance, we need a way for multiple distinct
@@ -48,14 +48,14 @@ Cache::Cache()
 	if(!DoesDirectoryExist(home))
 		LogFatal("home dir does not exist\n");
 	m_cachePath = home + "/.splash/splashctl-cache";
-	
+
 	//If the cache directory does not exist, create it
 	if(!DoesDirectoryExist(m_cachePath))
 	{
 		LogDebug("Cache directory does not exist, creating it\n");
 		MakeDirectoryRecursive(m_cachePath, 0600);
 	}
-	
+
 	//It exists, load existing entries
 	else
 	{
@@ -68,7 +68,7 @@ Cache::Cache()
 			string dirname = m_cachePath + "/" + hex;
 			if(!DoesDirectoryExist(dirname))
 				continue;
-				
+
 			//It exists, load whatever is in it
 			vector<string> subdirs;
 			FindSubdirs(dirname, subdirs);
@@ -78,12 +78,12 @@ Cache::Cache()
 				string oid = GetBasenameOfFile(dir);
 				if(!ValidateCacheEntry(oid))
 					continue;
-				
+
 				//Cache entry is valid, add to the cache table
 				m_cacheIndex.emplace(oid);
 			}
-		}				
-		
+		}
+
 		LogVerbose("    %d cache entries loaded\n", (int)m_cacheIndex.size());
 	}
 }
@@ -97,7 +97,7 @@ Cache::~Cache()
 
 /**
 	@brief Determine if a particular object is in the cache.
-	
+
 	@param id		Object ID hash
  */
 bool Cache::IsCached(string id)
@@ -107,19 +107,19 @@ bool Cache::IsCached(string id)
 		if(m_cacheIndex.find(id) != m_cacheIndex.end())
 			found = true;
 	m_mutex.unlock();
-	
+
 	return found;
 }
 
 /**
 	@brief Stronger form of IsCached(). Checks if the internal hash is consistent
-	
+
 	@param id		Object ID hash
  */
 bool Cache::ValidateCacheEntry(string id)
 {
 	m_mutex.lock();
-	
+
 	//If the directory doesn't exist, obviously we have nothing useful there
 	string dir = GetStoragePath(id);
 	if(!DoesDirectoryExist(dir))
@@ -127,7 +127,7 @@ bool Cache::ValidateCacheEntry(string id)
 		m_mutex.unlock();
 		return false;
 	}
-		
+
 	//If we're missing the file or hash, can't possibly be valid
 	string fpath = dir + "/data";
 	string hpath = dir + "/hash";
@@ -136,7 +136,7 @@ bool Cache::ValidateCacheEntry(string id)
 		m_mutex.unlock();
 		return false;
 	}
-		
+
 	//Get the expected hash and compare to the real one
 	//If it's invalid, just get rid of the junk
 	string expected = GetFileContents(hpath);
@@ -149,7 +149,7 @@ bool Cache::ValidateCacheEntry(string id)
 		m_mutex.unlock();
 		return false;
 	}
-	
+
 	m_mutex.unlock();
 	return true;
 }
@@ -167,7 +167,7 @@ string Cache::GetStoragePath(string id)
 
 /**
 	@brief Adds a file to the cache
-	
+
 	@param basename			Name of the file without directory information
 	@param id				Object ID hash
 	@param hash				SHA-256 sum of the file
@@ -177,7 +177,7 @@ string Cache::GetStoragePath(string id)
 void Cache::AddFile(string /*basename*/, string id, string hash, const unsigned char* data, uint64_t len)
 {
 	m_mutex.lock();
-	
+
 		//Create the directory. If it already exists, delete whatever junk was in there
 		string dirname = GetStoragePath(id);
 		if(DoesDirectoryExist(dirname))
@@ -187,7 +187,7 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const unsigned 
 		}
 		else
 			MakeDirectoryRecursive(dirname, 0600);
-			
+
 		//Write the file data to it
 		string fname = dirname + "/data";
 		FILE* fp = fopen(fname.c_str(), "wb");
@@ -205,7 +205,7 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const unsigned 
 			return;
 		}
 		fclose(fp);
-		
+
 		//Write the hash
 		fname = dirname + "/hash";
 		fp = fopen(fname.c_str(), "wb");
@@ -223,13 +223,13 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const unsigned 
 			return;
 		}
 		fclose(fp);
-		
+
 		//TODO: write the atime file?
-		
+
 		//Remember that we have this file cached
 		m_cacheIndex.emplace(hash);
-		
+
 		//TODO: add this file's size to the cache, if we went over the cap delete the LRU file
-	
+
 	m_mutex.unlock();
 }

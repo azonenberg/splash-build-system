@@ -49,7 +49,6 @@
 typedef uint64_t clientID;
 
 #include "protocol.h"
-#include "Cache.h"
 #include "WorkingCopy.h"
 #include "NodeManager.h"
 

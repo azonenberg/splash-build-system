@@ -53,6 +53,7 @@
 // libstdc++ includes
 
 #include <list>
+#include <mutex>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -66,6 +67,8 @@
 // Project includes
 
 #include "../log/log.h"
+
+#include "Cache.h"
 
 #include "Toolchain.h"
 
