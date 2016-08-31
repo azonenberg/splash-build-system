@@ -64,6 +64,10 @@ void WorkingCopy::SetInfo(string hostname, clientID id)
  */
 void WorkingCopy::UpdateFile(string path, string hash)
 {
+	//If the file is a build.yml, process it
+	if(GetBasenameOfFile(path) == "build.yml")
+		ReloadBuildScript(path);
+
 	m_fileMap[path] = hash;
 }
 
@@ -74,5 +78,17 @@ void WorkingCopy::UpdateFile(string path, string hash)
  */
 void WorkingCopy::RemoveFile(string path)
 {
+	//If the file is a build.yml, process it
+	if(GetBasenameOfFile(path) == "build.yml")
+		LogWarning("Deletion of build scripts not implemented yet\n");
+
 	m_fileMap.erase(path);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Build script manipulation
+
+void WorkingCopy::ReloadBuildScript(string path)
+{
+	LogDebug("Reloading build script %s\n", path.c_str());
 }

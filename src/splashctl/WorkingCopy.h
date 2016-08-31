@@ -33,7 +33,7 @@
 /**
 	@brief An individual client's working copy
 
-	NOT thread safe
+	NOT thread safe; all accesses must come from the DevClientThread for this object
  */
 class WorkingCopy
 {
@@ -48,8 +48,7 @@ public:
 
 protected:
 
-	//Mutex to control access to all node lists
-	//std::mutex m_mutex;
+	void ReloadBuildScript(std::string path);
 
 	//Map of relative paths to hashes
 	std::map<std::string, std::string> m_fileMap;
@@ -57,6 +56,9 @@ protected:
 	//Info about this working copy
 	std::string m_hostname;
 	clientID m_id;
+	
+	//The parsed build graph for this working copy
+	BuildGraph m_graph;
 };
 
 #endif
