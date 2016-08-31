@@ -173,7 +173,7 @@ string Cache::ReadCachedFile(string id)
 	m_mutex.lock();
 
 		//Sanity check
-		if(!IsCached(id))
+		if(m_cacheIndex.find(id) == m_cacheIndex.end())
 		{
 			m_mutex.unlock();
 			LogError("WARNING: requested file %s is not in cache\n", id.c_str());
