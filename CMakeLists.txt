@@ -9,6 +9,11 @@ set(EXTRA_WARNINGS "${EXTRA_WARNINGS} -Wswitch -Wwrite-strings ")
 set( CMAKE_CXX_FLAGS "-Wall -Wextra ${EXTRA_WARNINGS} -std=c++11 -fPIC -shared-libgcc -ggdb")
 set( CMAKE_LINK_FLAGS "-ggdb")
 
+#Search for Google protocol buffers
+find_package(Protobuf REQUIRED)
+
+include_directories(${PROTOBUF_INCLUDE_DIRS})
+
 #Custom target to run static analysis
 add_custom_target(
 	analysis

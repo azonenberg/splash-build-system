@@ -21,7 +21,7 @@ ADD_LIBRARY(splashcore SHARED
 )
 
 target_link_libraries(splashcore
-	cryptopp rt log yaml-cpp)
+	cryptopp rt log yaml-cpp ${PROTOBUF_LIBRARIES})
 
 #force static analysis to rerun
 #TODO: automate this for every target?
