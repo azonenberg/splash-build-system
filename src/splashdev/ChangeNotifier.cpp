@@ -52,13 +52,6 @@ void SendChangeNotificationForDir(Socket& s, string path)
 
 void SendChangeNotificationForFile(Socket& s, string path)
 {
-	//Is the file a build.yml? If so, re-parse it and don't push it to the server
-	if(GetBasenameOfFile(path) == "build.yml")
-	{
-		ProcessChangedBuildScript(path);
-		return;
-	}	
-	
 	//Hash the file
 	string hash = sha256_file(path);
 	
@@ -126,13 +119,6 @@ void SendChangeNotificationForFile(Socket& s, string path)
 
 void SendDeletionNotificationForFile(Socket& s, std::string path)
 {
-	//Is the file a build.yml? If so, remove its targets and don't tell the server
-	if(GetBasenameOfFile(path) == "build.yml")
-	{
-		ProcessDeletedBuildScript(path);
-		return;
-	}	
-
 	//Get path relative to project root
 	string fname = path;
 	if(fname.find(g_rootDir) == 0)
@@ -148,14 +134,4 @@ void SendDeletionNotificationForFile(Socket& s, std::string path)
 		LogFatal("Connection dropped (while sending fileRemoved)\n");
 	if(!s.SendPascalString(fname))
 		LogFatal("Connection dropped (while sending fileRemoved.fname)\n");
-}
-
-void ProcessChangedBuildScript(string path)
-{
-	LogDebug("Build script %s changed, need to reload\n", path.c_str());
-}
-
-void ProcessDeletedBuildScript(string path)
-{
-	LogDebug("Build script %s deleted, need to remove its targets\n", path.c_str());
 }

@@ -49,8 +49,6 @@ void WatchedFileChanged(Socket& s, int type, std::string str);
 void SendChangeNotificationForDir(Socket& s, std::string path);
 void SendChangeNotificationForFile(Socket& s, std::string path);
 void SendDeletionNotificationForFile(Socket& s, std::string path);
-void ProcessChangedBuildScript(std::string path);
-void ProcessDeletedBuildScript(std::string path);
 
 extern std::string g_rootDir;
 

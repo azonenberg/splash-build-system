@@ -50,7 +50,8 @@ void WatchedFileChanged(Socket& s, int type, string fname)
 	//IN_CLOSE_WRITE
 	//IN_CLOSE_NOWRITE
 	//IN_OPEN
-	//IN_CREATE
+	
+	//TODO: IN_CREATE check if we made a new directory; if so start watching it
 
 	//TODO: IN_DELETE_SELF
 
