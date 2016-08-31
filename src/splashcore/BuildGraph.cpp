@@ -36,7 +36,7 @@ using namespace std;
 
 BuildGraph::BuildGraph()
 {
-	
+
 }
 
 BuildGraph::~BuildGraph()
@@ -52,35 +52,42 @@ BuildGraph::~BuildGraph()
 
 /**
 	@brief Updates a build script
+
+	@param path		Relative path of the script
+	@param hash		Cache ID of the new script content
  */
 void BuildGraph::UpdateScript(string path, string hash)
 {
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
-	
-	//Sanity check that we have the file in the cahce
-	
+
+	//Read the new script and execute it
+	//Don't check if the file is in cache already, it was just updated and is thus LRU
+	ParseScript(g_cache->ReadCachedFile(hash), path);
+
 	//Rebuild the graph to fix up dependencies and delete orphaned nodes
 	Rebuild();
 }
 
 /**
 	@brief Deletes a build script from the working copy
+
+	@param path		Relative path of the script
  */
 void BuildGraph::RemoveScript(string path)
 {
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
-	
+
 	//Rebuild the graph to fix up dependencies and delete orphaned nodes
 	Rebuild();
 }
 
 /**
 	@brief Deletes all targets and tests declared in a given source file
-	
+
 	TODO: Purge recursive configs (if any)
-	
+
 	TODO: index somehow, rather than doing an O(n) scan?
  */
 void BuildGraph::InternalRemove(string path)
@@ -89,19 +96,29 @@ void BuildGraph::InternalRemove(string path)
 	LogWarning("BuildGraph::RemoveScript() not fully implemented\n");
 }
 
+/**
+	@brief Loads and executes the YAML commands in the supplied script
+
+	@param script		Script content
+	@param path			Relative path of the script (for error messages etc)
+ */
+void BuildGraph::ParseScript(const string& script, string path)
+{
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Graph rebuilds
 
 /**
 	@brief Rebuilds all topology
 
-	We need to be able to do incremental rebuilds of the graph to avoid redoing everything when a single build script 
+	We need to be able to do incremental rebuilds of the graph to avoid redoing everything when a single build script
 	changes (like the monstrosity that was Splash v0.1 did).
-	
+
 	Basic rebuild flow is as follows:
-	
+
 	READ SCRIPT
-	
+
 	GARBAGE COLLECT
 	* For all graph nodes
 		* Mark as unreferenced

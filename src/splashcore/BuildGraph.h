@@ -48,6 +48,8 @@ protected:
 	void Rebuild();
 	void InternalRemove(std::string path);
 
+	void ParseScript(const std::string& script, std::string path);
+
 	//Our targets
 
 	//The nodes
