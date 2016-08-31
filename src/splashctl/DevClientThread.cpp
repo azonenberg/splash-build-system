@@ -152,41 +152,42 @@ bool OnFileChanged(Socket& s, string& hostname, clientID id)
 		return false;
 	}
 	
-	//If it's cached we don't have to do anything more now
-	if(hit)
-		return true;
+	//If it's not in the cache, add it
+	if(!hit)
+	{
+		//Get the file contents
+		msgFileData data;
+		if(!s.RecvLooped((unsigned char*)&data, sizeof(data)))
+		{
+			LogWarning("Connection from %s dropped while reading fileData\n", hostname.c_str());
+			return false;
+		}
+		if(data.type != MSG_TYPE_FILE_DATA)
+		{
+			LogWarning("Connection from %s dropped (bad message type in fileData)\n", hostname.c_str());
+			return false;
+		}
+		if(data.fileLen > INT_MAX)
+		{
+			LogWarning("Connection from %s dropped (bad file length in fileData)\n", hostname.c_str());
+			return false;
+		}
+		unsigned char* buf = new unsigned char[data.fileLen];
+		if(!s.RecvLooped(buf, data.fileLen))
+		{
+			LogWarning("Connection from %s dropped while reading fileData.data\n", hostname.c_str());
+			return false;
+		}
 
-	//Get the file contents
-	msgFileData data;
-	if(!s.RecvLooped((unsigned char*)&data, sizeof(data)))
-	{
-		LogWarning("Connection from %s dropped while reading fileData\n", hostname.c_str());
-		return false;
+		//Write the file to cache
+		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, data.fileLen);
+
+		//and clean up
+		delete[] buf;
 	}
-	if(data.type != MSG_TYPE_FILE_DATA)
-	{
-		LogWarning("Connection from %s dropped (bad message type in fileData)\n", hostname.c_str());
-		return false;
-	}
-	if(data.fileLen > INT_MAX)
-	{
-		LogWarning("Connection from %s dropped (bad file length in fileData)\n", hostname.c_str());
-		return false;
-	}
-	unsigned char* buf = new unsigned char[data.fileLen];
-	if(!s.RecvLooped(buf, data.fileLen))
-	{
-		LogWarning("Connection from %s dropped while reading fileData.data\n", hostname.c_str());
-		return false;
-	}
-			
-	//Write the file to cache
-	g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, data.fileLen);
 	
 	//Update the file's status in our working copy
 	g_nodeManager->GetWorkingCopy(id).UpdateFile(fname, hash);
 	
-	//Clean up
-	delete[] buf;
 	return true;
 }
