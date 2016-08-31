@@ -55,6 +55,7 @@
 #include <list>
 #include <mutex>
 #include <string>
+#include <sstream>
 #include <unordered_set>
 #include <vector>
 
@@ -62,6 +63,7 @@
 // Other library includes
 
 #include <crypto++/sha.h>
+#include <yaml-cpp/yaml.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Project includes

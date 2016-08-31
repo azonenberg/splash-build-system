@@ -93,7 +93,7 @@ void BuildGraph::RemoveScript(string path)
 void BuildGraph::InternalRemove(string path)
 {
 	//TODO
-	LogWarning("BuildGraph::RemoveScript() not fully implemented\n");
+	LogWarning("BuildGraph::InternalRemove() not fully implemented\n");
 }
 
 /**
@@ -104,6 +104,21 @@ void BuildGraph::InternalRemove(string path)
  */
 void BuildGraph::ParseScript(const string& script, string path)
 {
+	//Read the root node
+	vector<YAML::Node> nodes = YAML::LoadAll(script);
+	for(auto node : nodes)
+		LoadYAMLDoc(node, path);
+}
+
+/**
+	@brief Loads and executes the YAML commands in a single document within a build script
+	
+	@param doc			The document within the build script
+	@param path			Relative path of the script (for error messages etc)
+ */
+void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
+{
+	LogDebug("Loading YAML doc from %s\n", path.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

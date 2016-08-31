@@ -34,6 +34,7 @@
 
 BuildGraphNode::BuildGraphNode()
 {
+	m_ref = false;
 }
 
 BuildGraphNode::~BuildGraphNode()

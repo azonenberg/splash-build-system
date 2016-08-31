@@ -49,6 +49,7 @@ protected:
 	void InternalRemove(std::string path);
 
 	void ParseScript(const std::string& script, std::string path);
+	void LoadYAMLDoc(YAML::Node& doc, std::string path);
 
 	//Our targets
 
