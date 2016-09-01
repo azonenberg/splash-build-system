@@ -69,6 +69,7 @@
 // Project includes
 
 #include "../log/log.h"
+#include "../xptools/Socket.h"
 
 #include "Cache.h"
 
@@ -88,6 +89,17 @@
 
 #include "BuildGraph.h"
 #include "BuildGraphNode.h"
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Protocol stuff
+
+#define SPLASH_PROTO_MAGIC		0x444c4942
+#define SPLASH_PROTO_VERSION	1
+
+#include <splashcore/SplashNet.pb.h>
+
+bool SendMessage(Socket& s, const SplashMsg& msg, std::string hostname);
+bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global functions
