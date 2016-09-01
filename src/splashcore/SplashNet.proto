@@ -6,23 +6,23 @@ syntax = "proto3";
 //Identify the server to clients
 message ServerHello
 {
-	uint32	magic		= 1;	//magic number, always 0x444c4942 ("BILD")
-	uint32	version		= 2;	//protocol version supported by server (always 1 for now)	
+	uint32	magic		= 1 [default = 0x444c942];	//magic number, always "BILD"
+	uint32	version		= 2 [default = 1];			//protocol version supported by server (always 1 for now)
 };
 
 //Identify the client to the server
 message ClientHello
 {
-	uint32	magic		= 1;	//magic number, always 0x444c4942 ("BILD")
-	uint32	version		= 2;	//protocol version supported by server (always 1 for now)	
-	
+	uint32	magic		= 1 [default = 0x444c942];	//magic number, always ("BILD")
+	uint32	version		= 2 [default = 1];			//protocol version supported by server (always 1 for now)
+
 	enum ClientType
 	{
 		CLIENT_DEVELOPER = 0;
 		CLIENT_BUILD = 1;
 	};
 	uint32	type		= 3;	//type of client
-	
+
 	string	hostname	= 4;	//hostname for debug messages
 };
 
@@ -57,6 +57,32 @@ message FileData
 	bytes	fileData	= 1;	//the contents of the file
 };
 
+//Report basic info about a build server, so we can schedule jobs more effectively
+message BuildInfo
+{
+	uint32	cpuCount	= 1;	//Number of logical CPU cores on the system
+	uint32	cpuSpeed	= 2;	//Processor speed according to some arbitrary benchmark.
+								//Used to prioritize jobs so faster servers get work first
+								//when the cluster is lightly loaded.
+								//For now just use bogomips, TODO something more accurate
+	uint32	ramSize		= 3;	//RAM capacity, in MB
+	//code 4 reserved for RAM speed if we want to add that
+
+	uint32	numchains	= 5;	//Number of toolchains on the node
+};
+
+//Report compilers installed on the build server
+message AddCompiler
+{
+				uint32	compilerType= 1;	//Type of compiler (Toolchain::CompilerType)
+				uint32	versionNum	= 2;	//Machine-readable version number of compiler, left justified hex
+											//4.9.2 is encoded as 0x04090200
+				string	hash		= 3;	//ID hash of the compiler
+				string	versionStr	= 4;	//Human-readable version string
+	repeated	uint32	langs		= 5;	//Array of languages
+	repeated	string	triplets	= 6;
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -71,5 +97,7 @@ message SplashMsg
 		FileRemoved fileRemoved = 5;
 		FileAck		fileAck		= 6;
 		FileData	fileData	= 7;
+		BuildInfo	buildInfo	= 8;
+		AddCompiler	addCompiler = 9;
 	}
 };
