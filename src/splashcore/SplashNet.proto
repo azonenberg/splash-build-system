@@ -79,8 +79,8 @@ message AddCompiler
 											//4.9.2 is encoded as 0x04090200
 				string	hash		= 3;	//ID hash of the compiler
 				string	versionStr	= 4;	//Human-readable version string
-	repeated	uint32	langs		= 5;	//Array of languages
-	repeated	string	triplets	= 6;
+	repeated	uint32	lang		= 5;	//Array of languages
+	repeated	string	triplet		= 6;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
