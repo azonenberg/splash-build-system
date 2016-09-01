@@ -34,8 +34,6 @@
 #include "../log/log.h"
 #include "../xptools/Socket.h"
 
-#include "../splashctl/protocol.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
