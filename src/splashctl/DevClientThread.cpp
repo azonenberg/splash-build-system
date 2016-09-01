@@ -31,55 +31,47 @@
 
 using namespace std;
 
-bool OnFileChanged(Socket& s, string& hostname, clientID id);
-bool OnFileRemoved(Socket& s, string& hostname, clientID id);
+bool OnFileChanged(Socket& s, const FileChanged& msg, string& hostname, clientID id);
+bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id);
 
 void DevClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer workstation %s connected\n", hostname.c_str());
 	
 	//Expect a DevInfo message
-	msgDevInfo dinfo;
-	if(!s.RecvLooped((unsigned char*)&dinfo, sizeof(dinfo)))
+	SplashMsg dinfo;
+	if(!RecvMessage(s, dinfo, hostname))
+		return;
+	if(dinfo.Payload_case() != SplashMsg::kDevInfo)
 	{
-		LogWarning("Connection from %s dropped (while getting devInfo)\n", hostname.c_str());
+		LogWarning("Connection to %s dropped (expected devInfo, got %d instead)\n",
+			hostname.c_str(), dinfo.Payload_case());
 		return;
 	}
-	if(dinfo.type != MSG_TYPE_DEV_INFO)
-	{
-		LogWarning("Connection from %s dropped (bad message type in devInfo)\n", hostname.c_str());
-		return;
-	}
-	string arch;
-	if(!s.RecvPascalString(arch))
-	{
-		LogWarning("Connection from %s dropped (while getting devInfo arch)\n", hostname.c_str());
-		return;
-	}
-	LogVerbose("    (architecture is %s)\n", arch.c_str());
+	auto dinfom = dinfo.devinfo();
+	LogVerbose("    (architecture is %s)\n", dinfom.arch().c_str());
 	
 	while(true)
 	{
 		//Expect fileChanged or fileRemoved messages
-		//These both have identical headers (just the type) so read that first
-		msgFileChanged mfc;
-		if(!s.RecvLooped((unsigned char*)&mfc, sizeof(mfc)))
+		SplashMsg msg;
+		if(!RecvMessage(s, msg, hostname))
 			break;
-		
-		switch(mfc.type)
+
+		switch(msg.Payload_case())
 		{
-			case MSG_TYPE_FILE_CHANGED:
-				if(!OnFileChanged(s, hostname, id))
+			case SplashMsg::kFileChanged:
+				if(!OnFileChanged(s, msg.filechanged(), hostname, id))
 					return;
 				break;
-					
-			case MSG_TYPE_FILE_REMOVED:
-				if(!OnFileRemoved(s, hostname, id))
+
+			case SplashMsg::kFileRemoved:
+				if(!OnFileRemoved(msg.fileremoved(), hostname, id))
 					return;
 				break;
-					
+
 			default:
-				LogWarning("Connection from %s dropped (bad message type in event header)\n", hostname.c_str());
+				LogWarning("Connection to %s dropped (bad message type in event header)\n", hostname.c_str());
 				return;
 		}
 	}
@@ -88,42 +80,25 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 /**
 	@brief Process a msgFileRemoved
  */
-bool OnFileRemoved(Socket& s, string& hostname, clientID id)
+bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id)
 {
-	string fname;
-	if(!s.RecvPascalString(fname))
-	{
-		LogWarning("Connection from %s dropped (while getting fileRemoved.fname)\n", hostname.c_str());
-		return false;
-	}
-	
 	LogVerbose("File %s on node %s deleted\n",
-		fname.c_str(),
+		msg.fname().c_str(),
 		hostname.c_str());
 	
 	//Update the file's status in our working copy
-	g_nodeManager->GetWorkingCopy(id).RemoveFile(fname);
+	g_nodeManager->GetWorkingCopy(id).RemoveFile(msg.fname());
 	return true;
 }
 
 /**
 	@brief Process a msgFileChanged
  */
-bool OnFileChanged(Socket& s, string& hostname, clientID id)
+bool OnFileChanged(Socket& s, const FileChanged& msg, string& hostname, clientID id)
 {
-	string fname;
-	if(!s.RecvPascalString(fname))
-	{
-		LogWarning("Connection from %s dropped (while getting fileChanged.fname)\n", hostname.c_str());
-		return false;
-	}
-	string hash;
-	if(!s.RecvPascalString(hash))
-	{
-		LogWarning("Connection from %s dropped (while getting fileChanged.hash)\n", hostname.c_str());
-		return false;
-	}
-			
+	string fname = msg.fname();
+	string hash = msg.hash();
+
 	//See if we have the file in the global cache
 	//This is a source file since it's in a client's working copy.
 	//As a result, the object ID is just the sha256sum of the file itself
@@ -144,50 +119,33 @@ bool OnFileChanged(Socket& s, string& hostname, clientID id)
 	}
 	
 	//Report status to the client
-	msgFileAck ack;
-	ack.fileCached = hit;
-	if(!s.SendLooped((unsigned char*)&ack, sizeof(ack)))
-	{
-		LogWarning("Connection from %s dropped (while sending fileAck)\n", hostname.c_str());
+	SplashMsg ack;
+	auto ackm = ack.mutable_fileack();
+	ackm->set_filecached(hit);
+	if(!SendMessage(s, ack, hostname))
 		return false;
-	}
 	
 	//If it's not in the cache, add it
 	if(!hit)
 	{
-		//Get the file contents
-		msgFileData data;
-		if(!s.RecvLooped((unsigned char*)&data, sizeof(data)))
+		//Get data from client
+		SplashMsg data;
+		if(!RecvMessage(s, data, hostname))
+			return false;
+		if(data.Payload_case() != SplashMsg::kFileData)
 		{
-			LogWarning("Connection from %s dropped while reading fileData\n", hostname.c_str());
+			LogWarning("Connection from %s dropped (expected fileData, got %d instead)\n",
+				hostname.c_str(), data.Payload_case());
 			return false;
 		}
-		if(data.type != MSG_TYPE_FILE_DATA)
-		{
-			LogWarning("Connection from %s dropped (bad message type in fileData)\n", hostname.c_str());
-			return false;
-		}
-		if(data.fileLen > INT_MAX)
-		{
-			LogWarning("Connection from %s dropped (bad file length in fileData)\n", hostname.c_str());
-			return false;
-		}
-		unsigned char* buf = new unsigned char[data.fileLen];
-		if(!s.RecvLooped(buf, data.fileLen))
-		{
-			LogWarning("Connection from %s dropped while reading fileData.data\n", hostname.c_str());
-			return false;
-		}
-
+		string buf = data.filedata().filedata();
+		
 		//Write the file to cache
-		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, data.fileLen);
-
-		//and clean up
-		delete[] buf;
+		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf.c_str(), buf.length());
 	}
 	
 	//Update the file's status in our working copy
 	g_nodeManager->GetWorkingCopy(id).UpdateFile(fname, hash);
-	
+
 	return true;
 }

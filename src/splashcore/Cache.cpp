@@ -197,7 +197,7 @@ string Cache::ReadCachedFile(string id)
 	@param data				Content of the file
 	@param len				Length of the file
  */
-void Cache::AddFile(string /*basename*/, string id, string hash, const unsigned char* data, uint64_t len)
+void Cache::AddFile(string /*basename*/, string id, string hash, const char* data, uint64_t len)
 {
 	m_mutex.lock();
 

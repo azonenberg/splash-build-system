@@ -64,22 +64,27 @@ void SendChangeNotificationForFile(Socket& s, string path)
 	
 	LogDebug("Sending change notification for %s\n", path.c_str());
 	
-	//Send the change
-	msgFileChanged mcg;
-	if(!s.SendLooped((unsigned char*)&mcg, sizeof(mcg)))
-		LogFatal("Connection dropped (while sending fileChanged)\n");
-	if(!s.SendPascalString(fname))
-		LogFatal("Connection dropped (while sending fileChanged.fname)\n");
-	if(!s.SendPascalString(hash))
-		LogFatal("Connection dropped (while sending fileChanged.hash)\n");
-	
+	//Tell the server it changed
+	SplashMsg change;
+	auto mcg = change.mutable_filechanged();
+	mcg->set_fname(fname);
+	mcg->set_hash(hash);
+	if(!SendMessage(s, change, "server"))
+		return;
+		
 	//Ask the server if they need content of the file
-	msgFileAck ack;
-	if(!s.RecvLooped((unsigned char*)&ack, sizeof(ack)))
-		LogFatal("Connection dropped (while receiving fileAck)\n");
-	
-	//Don't send the file if the server already in the cache
-	if(ack.fileCached)
+	SplashMsg ack;
+	if(!RecvMessage(s, ack, "server"))
+		return;
+	if(ack.Payload_case() != SplashMsg::kFileAck)
+	{
+		LogWarning("Invalid message (expected fileAck, got %d instead)\n",
+			ack.Payload_case());
+		return;
+	}
+
+	//Don't send the file if the server already has it in the cache
+	if(ack.fileack().filecached())
 	{
 		LogDebug("    new content is already cached, no action required\n");
 		return;
@@ -89,32 +94,11 @@ void SendChangeNotificationForFile(Socket& s, string path)
 	
 	//Read the file into RAM
 	//TODO: cap for HUGE files, don't send them to the server by default
-	FILE* fp = fopen(path.c_str(), "rb");
-	if(!fp)
-		LogFatal("Changed file %s couldn't be opened\n", fname.c_str());
-	fseek(fp, 0, SEEK_END);
-	long len = ftell(fp);
-	if(len < 0)
-		LogFatal("Couldn't get length of file %s (too big?)\n", fname.c_str());
-	if(len > INT_MAX)
-		LogFatal("File %s is too big, can't send it\n", fname.c_str());
-	size_t slen = len;	//TODO: read length as 64 bit in the first place
-	fseek(fp, 0, SEEK_SET);
-	unsigned char* buf = new unsigned char[len];
-	if(slen != fread(buf, 1, slen, fp))
-		LogFatal("Couldn't read file %s\n", fname.c_str());
-	fclose(fp);
-	
-	//Send the content
-	msgFileData data;
-	data.fileLen = len;
-	if(!s.SendLooped((unsigned char*)&data, sizeof(data)))
-		LogFatal("Connection dropped (while sending msgFileData)\n");
-	if(!s.SendLooped(buf, len))
-		LogFatal("Connection dropped (while sending msgFileData.data)\n");
-	
-	//Clean up
-	delete[] buf;
+	SplashMsg data;
+	auto mdat = data.mutable_filedata();
+	mdat->set_filedata(GetFileContents(path));
+	if(!SendMessage(s, data, "server"))
+		return;
 }
 
 void SendDeletionNotificationForFile(Socket& s, std::string path)
@@ -128,10 +112,10 @@ void SendDeletionNotificationForFile(Socket& s, std::string path)
 	
 	LogDebug("Sending deletion notification for %s\n", path.c_str());
 	
-	//Send the change
-	msgFileRemoved mcg;
-	if(!s.SendLooped((unsigned char*)&mcg, sizeof(mcg)))
-		LogFatal("Connection dropped (while sending fileRemoved)\n");
-	if(!s.SendPascalString(fname))
-		LogFatal("Connection dropped (while sending fileRemoved.fname)\n");
+	//Tell the server it changed
+	SplashMsg change;
+	auto mcg = change.mutable_fileremoved();
+	mcg->set_fname(fname);
+	if(!SendMessage(s, change, "server"))
+		return;
 }

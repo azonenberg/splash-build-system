@@ -431,7 +431,7 @@ string GetFileContents(string path)
 	buf[fsize] = 0;
 	fread(buf, 1, fsize, fp);
 	fclose(fp);
-	string tmp(buf);
+	string tmp(buf, fsize);		//use range constructor since file may contain null bytes
 	delete[] buf;
 	return tmp;
 }

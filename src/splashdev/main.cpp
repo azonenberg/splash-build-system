@@ -28,6 +28,8 @@
 ***********************************************************************************************************************/
 
 #include "splashdev.h"
+#include <splashcore/SplashNet.pb.h>
+#include <ext/stdio_filebuf.h>
 
 using namespace std;
 
@@ -96,58 +98,43 @@ int main(int argc, char* argv[])
 	sock.Connect(ctl_server, port);
 	
 	//Get the serverHello
-	msgServerHello shi;
-	if(!sock.RecvLooped((unsigned char*)&shi, sizeof(shi)))
+	SplashMsg shi;
+	if(!RecvMessage(sock, shi, ctl_server))
+		return 1;
+	if(shi.Payload_case() != SplashMsg::kServerHello)
 	{
-		LogWarning("Connection dropped (while reading serverHello)\n");
+		LogWarning("Connection dropped (expected serverHello, got %d instead)\n",
+			shi.Payload_case());
 		return 1;
 	}
-	if(shi.serverVersion != 1)
-	{
-		LogWarning("Connection dropped (bad version number in serverHello)\n");
-		return 1;
-	}
-	if(shi.type != MSG_TYPE_SERVERHELLO)
-	{
-		LogWarning("Connection dropped (bad message type in serverHello)\n");
-		return 1;
-	}
-	
-	//Send the clientHello
-	msgClientHello chi(CLIENT_DEVELOPER);
-	if(!sock.SendLooped((unsigned char*)&chi, sizeof(chi)))
-	{
-		LogWarning("Connection dropped (while sending clientHello)\n");
-		return 1;
-	}
-	string hostname = ShellCommand("hostname", true);
-	if(!sock.SendPascalString(hostname))
-	{
-		LogWarning("Connection dropped (while sending clientHello.hostname)\n");
-		return 1;
-	}
-	
-	//Validate the connection
-	if(chi.magic != shi.magic)
+	auto shim = shi.serverhello();
+	if(shim.magic() != SPLASH_PROTO_MAGIC)
 	{
 		LogWarning("Connection dropped (bad magic number in serverHello)\n");
 		return 1;
 	}
-	
-	//Send the developer node info
-	//TODO: Make this work on non-Debian systems!
-	msgDevInfo dinfo;
-	if(!sock.SendLooped((unsigned char*)&dinfo, sizeof(dinfo)))
+	if(shim.version() != SPLASH_PROTO_VERSION)
 	{
-		LogWarning("Connection dropped (while sending devInfo)\n");
+		LogWarning("Connection dropped (bad version number in serverHello)\n");
 		return 1;
 	}
-	string arch = ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true);
-	if(!sock.SendPascalString(arch))
-	{
-		LogWarning("Connection dropped (while sending devInfo.arch)\n");
+
+	//Send the clientHello
+	SplashMsg chi;
+	auto chim = chi.mutable_clienthello();
+	chim->set_magic(SPLASH_PROTO_MAGIC);
+	chim->set_version(SPLASH_PROTO_VERSION);
+	chim->set_type(ClientHello::CLIENT_DEVELOPER);
+	chim->set_hostname(ShellCommand("hostname", true));
+	if(!SendMessage(sock, chi, ctl_server))
 		return 1;
-	}
+
+	//Send the devInfo
+	SplashMsg devi;
+	auto devim = devi.mutable_devinfo();
+	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
+	if(!SendMessage(sock, devi, ctl_server))
+		return 1;
 	
 	//Recursively send file-changed notifications for everything in our working directory
 	//(in case anything changed while we weren't running)
@@ -189,7 +176,7 @@ int main(int argc, char* argv[])
 	}
 	
 	//Done
-	close(hnotify);	
+	close(hnotify);
 	return 0;
 }
 

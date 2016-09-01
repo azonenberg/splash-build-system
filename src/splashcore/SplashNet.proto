@@ -26,6 +26,37 @@ message ClientHello
 	string	hostname	= 4;	//hostname for debug messages
 };
 
+//Report basic information about a developer client
+message DevInfo
+{
+	string	arch 		= 1;	//client architecture triplet
+};
+
+//Report that a file changed clientside
+message FileChanged
+{
+	string	fname		= 1;	//path of changed file
+	string	hash		= 2;	//ASCII hex SHA-256 sum of the changed file
+};
+
+//Report that a file was deleted clientside
+message FileRemoved
+{
+	string	fname		= 1;	//path of changed file
+};
+
+//Tell a client whether a given file is in the cache or not
+message FileAck
+{
+	bool	fileCached	= 1;	//true if in cache, false if we have to send content
+};
+
+//Send contents of a file to the server
+message FileData
+{
+	bytes	fileData	= 1;	//the contents of the file
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -35,5 +66,10 @@ message SplashMsg
 	{
 		ServerHello serverHello = 1;
 		ClientHello clientHello = 2;
+		DevInfo		devInfo		= 3;
+		FileChanged fileChanged	= 4;
+		FileRemoved fileRemoved = 5;
+		FileAck		fileAck		= 6;
+		FileData	fileData	= 7;
 	}
 };

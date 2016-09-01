@@ -34,8 +34,8 @@ using namespace std;
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Build server %s connected\n", hostname.c_str());
-	
-	//Expect a BuildInfo message
+
+	/*
 	msgBuildInfo binfo;
 	if(!s.RecvLooped((unsigned char*)&binfo, sizeof(binfo)))
 	{
@@ -126,4 +126,5 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		//Register the toolchain in the global indexes
 		g_nodeManager->AddToolchain(id, toolchain);
 	}
+	*/
 }

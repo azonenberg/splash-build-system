@@ -28,6 +28,7 @@
 ***********************************************************************************************************************/
 
 #include "splashctl.h"
+#include <ext/stdio_filebuf.h>
 
 using namespace std;
 
@@ -36,42 +37,38 @@ void ClientThread(ZSOCKET sock)
 	Socket s(sock);
 	
 	string client_hostname = "[no hostname]";
-	
 	//LogDebug("New connection received from %s\n", client_hostname.c_str());
 	
-	//Send it a server hello
-	msgServerHello shi;
-	if(!s.SendLooped((unsigned char*)&shi, sizeof(shi)))
-	{
-		LogWarning("Connection from %s dropped (while sending serverHello)\n", client_hostname.c_str());
+	//Send a server hello
+	SplashMsg shi;
+	auto shim = shi.mutable_serverhello();
+	shim->set_magic(SPLASH_PROTO_MAGIC);
+	shim->set_version(SPLASH_PROTO_VERSION);
+	if(!SendMessage(s, shi, client_hostname))
 		return;
-	}
 	
 	//Get a client hello
-	msgClientHello chi(CLIENT_LAST);
-	if(!s.RecvLooped((unsigned char*)&chi, sizeof(chi)))
+	SplashMsg chi;
+	if(!RecvMessage(s, chi, client_hostname))
+		return;
+	if(chi.Payload_case() != SplashMsg::kClientHello)
 	{
-		LogWarning("Connection from %s dropped (while getting clientHello)\n", client_hostname.c_str());
+		LogWarning("Connection from %s dropped (expected clientHello, got %d instead)\n",
+			client_hostname.c_str(), chi.Payload_case());
 		return;
 	}
-	if(chi.type != MSG_TYPE_CLIENTHELLO)
-	{
-		LogWarning("Connection from %s dropped (bad message type %d in clientHello)\n",
-			client_hostname.c_str(), chi.type);
-		return;
-	}
-	if(chi.magic != shi.magic)
+	auto chim = chi.clienthello();
+	if(chim.magic() != SPLASH_PROTO_MAGIC)
 	{
 		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
 		return;
 	}
-	if(chi.clientVersion != 1)
+	if(chim.version() != SPLASH_PROTO_VERSION)
 	{
 		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
 		return;
 	}
-	if(!s.RecvPascalString(client_hostname))
-		return;
+	client_hostname = chim.hostname();
 	
 	//If hostname is alphanumeric or - chars, fail
 	for(size_t i=0; i<client_hostname.length(); i++)
@@ -88,9 +85,9 @@ void ClientThread(ZSOCKET sock)
 	clientID id = g_nodeManager->AllocateClient(client_hostname);
 	
 	//Protocol-specific processing
-	switch(chi.ctype)
+	switch(chim.type())
 	{
-		case CLIENT_DEVELOPER:
+		case ClientHello::CLIENT_DEVELOPER:
 			
 			//Process client traffic
 			DevClientThread(s, client_hostname, id);
@@ -100,7 +97,7 @@ void ClientThread(ZSOCKET sock)
 			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
 			break;
 			
-		case CLIENT_BUILD:
+		case ClientHello::CLIENT_BUILD:
 			
 			//Process client traffic
 			BuildClientThread(s, client_hostname, id);
