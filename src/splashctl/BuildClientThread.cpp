@@ -35,96 +35,62 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Build server %s connected\n", hostname.c_str());
 
-	/*
-	msgBuildInfo binfo;
-	if(!s.RecvLooped((unsigned char*)&binfo, sizeof(binfo)))
+	//Expect a BuildInfo message
+	SplashMsg binfo;
+	if(!RecvMessage(s, binfo, hostname))
+		return;
+	if(binfo.Payload_case() != SplashMsg::kBuildInfo)
 	{
-		LogWarning("Connection from %s dropped (while getting buildInfo)\n", hostname.c_str());
+		LogWarning("Connection to %s dropped (expected buildInfo, got %d instead)\n",
+			hostname.c_str(), binfo.Payload_case());
 		return;
 	}
-	if(binfo.type != MSG_TYPE_BUILD_INFO)
-	{
-		LogWarning("Connection from %s dropped (bad message type in buildInfo)\n", hostname.c_str());
-		return;
-	}
+	auto binfom = binfo.buildinfo();
 	
 	//Print stats
 	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
-		hostname.c_str(), binfo.cpuCount, binfo.cpuSpeed, binfo.ramSize, binfo.toolchainCount);
-		
+		hostname.c_str(),
+		binfom.cpucount(),
+		binfom.cpuspeed(),
+		binfom.ramsize(),
+		binfom.numchains()
+		);
+
 	//If no toolchains, just quit now
-	if(binfo.toolchainCount == 0)
+	if(binfom.numchains() == 0)
 	{
 		LogWarning("Connection from %s dropped (no toolchains found)\n", hostname.c_str());
 		return;
 	}
-		
+
 	//Read the toolchains
-	for(unsigned int i=0; i<binfo.toolchainCount; i++)
-	{	
-		//Get the header
-		msgAddCompiler tadd;
-		if(!s.RecvLooped((unsigned char*)&tadd, sizeof(tadd)))
-		{
-			LogWarning("Connection from %s dropped (while getting addCompiler header)\n", hostname.c_str());
+	for(unsigned int i=0; i<binfom.numchains(); i++)
+	{
+		//Get the message
+		SplashMsg tadd;
+		if(!RecvMessage(s, tadd, hostname))
 			return;
-		}
-		
-		//Read the hash
-		string hash;
-		if(!s.RecvPascalString(hash))
-		{
-			LogWarning("Connection from %s dropped (while getting addCompiler hash)\n", hostname.c_str());
-			return;
-		}
-		
-		//and compiler version
-		string ver;
-		if(!s.RecvPascalString(ver))
-		{
-			LogWarning("Connection from %s dropped (while getting addCompiler ver)\n", hostname.c_str());
-			return;
-		}
+		auto madd = tadd.addcompiler();
 		
 		//Create and initialize the toolchain object
 		RemoteToolchain* toolchain = new RemoteToolchain(
-			static_cast<RemoteToolchain::ToolchainType>(tadd.compilerType),
-			hash,
-			ver,
-			(tadd.versionNum >> 24) & 0xff,
-			(tadd.versionNum >> 16) & 0xff,
-			(tadd.versionNum >> 8) & 0xff
+			static_cast<RemoteToolchain::ToolchainType>(madd.compilertype()),
+			madd.hash(),
+			madd.versionstr(),
+			(madd.versionnum() >> 24) & 0xff,
+			(madd.versionnum() >> 16) & 0xff,
+			(madd.versionnum() >> 8) & 0xff
 			);
 		
 		//Languages
-		for(unsigned int j=0; j<tadd.numLangs; j++)
-		{			
-			uint8_t lang;
-			if(!s.RecvLooped((unsigned char*)&lang, 1))
-			{
-				LogWarning("Connection from %s dropped (while getting addCompiler lang)\n", hostname.c_str());
-				return;
-			}
-			
-			toolchain->AddLanguage(static_cast<Toolchain::Language>(lang));
-		}
+		for(int j=0; j<madd.lang_size(); j++)
+			toolchain->AddLanguage(static_cast<Toolchain::Language>(madd.lang(j)));
 		
 		//Triplets
-		for(unsigned int j=0; j<tadd.numTriplets; j++)
-		{		
-			string triplet;
-			if(!s.RecvPascalString(triplet))
-			{
-				LogWarning("Connection from %s dropped (while getting addCompiler triplet %u/%u)\n",
-					hostname.c_str(), j, tadd.numTriplets);
-				return;
-			}
-			
-			toolchain->AddTriplet(triplet);
-		}
-		
+		for(int j=0; j<madd.triplet_size(); j++)
+			toolchain->AddTriplet(madd.triplet(j));
+
 		//Register the toolchain in the global indexes
 		g_nodeManager->AddToolchain(id, toolchain);
 	}
-	*/
 }

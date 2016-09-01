@@ -93,43 +93,36 @@ int main(int argc, char* argv[])
 	sock.Connect(ctl_server, port);
 	
 	//Get the serverHello
-	msgServerHello shi;
-	if(!sock.RecvLooped((unsigned char*)&shi, sizeof(shi)))
+	SplashMsg shi;
+	if(!RecvMessage(sock, shi, ctl_server))
+		return 1;
+	if(shi.Payload_case() != SplashMsg::kServerHello)
 	{
-		LogWarning("Connection dropped (while reading serverHello)\n");
+		LogWarning("Connection dropped (expected serverHello, got %d instead)\n",
+			shi.Payload_case());
 		return 1;
 	}
-	if(shi.serverVersion != 1)
-	{
-		LogWarning("Connection dropped (bad version number in serverHello)\n");
-		return 1;
-	}
-	if(shi.type != MSG_TYPE_SERVERHELLO)
-	{
-		LogWarning("Connection dropped (bad message type in serverHello)\n");
-		return 1;
-	}
-	
-	//Send the clientHello
-	msgClientHello chi(CLIENT_BUILD);
-	if(!sock.SendLooped((unsigned char*)&chi, sizeof(chi)))
-	{
-		LogWarning("Connection dropped (while sending clientHello)\n");
-		return 1;
-	}
-	string hostname = ShellCommand("hostname", true);
-	if(!sock.SendPascalString(hostname))
-	{
-		LogWarning("Connection dropped (while sending clientHello.hostname)\n");
-		return 1;
-	}
-	
-	//Validate the connection
-	if(chi.magic != shi.magic)
+	auto shim = shi.serverhello();
+	if(shim.magic() != SPLASH_PROTO_MAGIC)
 	{
 		LogWarning("Connection dropped (bad magic number in serverHello)\n");
 		return 1;
 	}
+	if(shim.version() != SPLASH_PROTO_VERSION)
+	{
+		LogWarning("Connection dropped (bad version number in serverHello)\n");
+		return 1;
+	}
+
+	//Send the clientHello
+	SplashMsg chi;
+	auto chim = chi.mutable_clienthello();
+	chim->set_magic(SPLASH_PROTO_MAGIC);
+	chim->set_version(SPLASH_PROTO_VERSION);
+	chim->set_type(ClientHello::CLIENT_BUILD);
+	chim->set_hostname(ShellCommand("hostname", true));
+	if(!SendMessage(sock, chi, ctl_server))
+		return 1;
 	
 	//Look for compilers
 	LogVerbose("Enumerating compilers...\n");
@@ -138,72 +131,41 @@ int main(int argc, char* argv[])
 	FindFPGACompilers();
 	
 	//Get some basic metadata about our hardware and tell the server
-	msgBuildInfo binfo;
-	binfo.cpuCount = atoi(ShellCommand("cat /proc/cpuinfo  | grep processor | wc -l").c_str());
-	binfo.cpuSpeed = atoi(ShellCommand("cat /proc/cpuinfo | grep bogo | head -n 1 | cut -d : -f 2").c_str());
-	binfo.ramSize = atol(ShellCommand("cat /proc/meminfo  | grep MemTotal  | cut -d : -f 2").c_str()) / 1024;
-	binfo.toolchainCount = g_toolchains.size();
-	if(!sock.SendLooped((unsigned char*)&binfo, sizeof(binfo)))
-	{
-		LogWarning("Connection dropped (while sending buildInfo)\n");
+	SplashMsg binfo;
+	auto binfom = binfo.mutable_buildinfo();
+	binfom->set_cpucount(atoi(ShellCommand("cat /proc/cpuinfo  | grep processor | wc -l").c_str()));
+	binfom->set_cpuspeed(atoi(ShellCommand("cat /proc/cpuinfo | grep bogo | head -n 1 | cut -d : -f 2").c_str()));
+	binfom->set_ramsize(atol(ShellCommand("cat /proc/meminfo  | grep MemTotal  | cut -d : -f 2").c_str()) / 1024);
+	binfom->set_numchains(g_toolchains.size());
+	if(!SendMessage(sock, binfo, ctl_server))
 		return 1;
-	}
 	
 	//Report the toolchains we found to the server
 	for(auto it : g_toolchains)
 	{
 		auto t = it.second;
-		
-		vector<string> langs;
-		t->GetSupportedLanguages(langs);
-		auto triplets = t->GetTargetTriplets();
-		
+
 		//DEBUG: Print it out
 		//t->DebugPrint();
-			
-		//Send the toolchain header to the server
-		msgAddCompiler tadd;
-		tadd.compilerType = t->GetType();
-		tadd.versionNum =	(t->GetMajorVersion() << 24) |
+
+		//Send the toolchain info to the server
+		SplashMsg tadd;
+		auto madd = tadd.mutable_addcompiler();
+		madd->set_compilertype(t->GetType());
+		madd->set_versionnum((t->GetMajorVersion() << 24) |
 							(t->GetMinorVersion() << 16) |
-							(t->GetPatchVersion() << 8);
-		tadd.numLangs = langs.size();
-		tadd.numTriplets = triplets.size();
-		if(!sock.SendLooped((unsigned char*)&tadd, sizeof(tadd)))
-		{
-			LogWarning("Connection dropped (while sending addCompiler)\n");
-			return 1;
-		}
-		
-		//Send supplemental payload data
-		if(!sock.SendPascalString(t->GetHash()))
-		{
-			LogWarning("Connection dropped (while sending addCompiler)\n");
-			return 1;
-		}
-		if(!sock.SendPascalString(t->GetVersionString()))
-		{
-			LogWarning("Connection dropped (while sending addCompiler)\n");
-			return 1;
-		}
-		vector<Toolchain::Language> dlangs = t->GetSupportedLanguages();
+							(t->GetPatchVersion() << 8));
+		madd->set_hash(t->GetHash());
+		madd->set_versionstr(t->GetVersionString());
+		auto dlangs = t->GetSupportedLanguages();
 		for(auto x : dlangs)
-		{
-			uint8_t l = x;
-			if(!sock.SendLooped((unsigned char*)&l, 1))
-			{
-				LogWarning("Connection dropped (while sending addCompiler)\n");
-				return 1;
-			}
-		}
+			madd->add_lang(x);
+		auto triplets = t->GetTargetTriplets();
 		for(auto x : triplets)
-		{
-			if(!sock.SendPascalString(x))
-			{
-				LogWarning("Connection dropped (while sending addCompiler)\n");
-				return 1;
-			}
-		}
+			*madd->add_triplet() = x;
+
+		if(!SendMessage(sock, tadd, ctl_server))
+			return 1;
 	}
 	
 	//TODO: Sit around and wait for stuff to come in
