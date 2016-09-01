@@ -14,7 +14,7 @@ message ServerHello
 message ClientHello
 {
 	uint32	magic		= 1;	//magic number, always ("BILD")
-	uint32	version		= 2		//protocol version supported by server (always 1 for now)
+	uint32	version		= 2;	//protocol version supported by server (always 1 for now)
 
 	enum ClientType
 	{
