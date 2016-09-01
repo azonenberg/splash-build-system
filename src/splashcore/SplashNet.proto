@@ -6,15 +6,15 @@ syntax = "proto3";
 //Identify the server to clients
 message ServerHello
 {
-	uint32	magic		= 1 [default = 0x444c942];	//magic number, always "BILD"
-	uint32	version		= 2 [default = 1];			//protocol version supported by server (always 1 for now)
+	uint32	magic		= 1;	//magic number, always "BILD"
+	uint32	version		= 2;	//protocol version supported by server (always 1 for now)
 };
 
 //Identify the client to the server
 message ClientHello
 {
-	uint32	magic		= 1 [default = 0x444c942];	//magic number, always ("BILD")
-	uint32	version		= 2 [default = 1];			//protocol version supported by server (always 1 for now)
+	uint32	magic		= 1;	//magic number, always ("BILD")
+	uint32	version		= 2		//protocol version supported by server (always 1 for now)
 
 	enum ClientType
 	{
