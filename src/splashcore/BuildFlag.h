@@ -27,42 +27,67 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildGraph_h
-#define BuildGraph_h
-
-class BuildGraphNode;
+#ifndef BuildFlag_h
+#define BuildFlag_h
 
 /**
-	@brief A DAG of buildable objects
-	
-	Not even remotely thread safe yet.
-	TODO: see if we need to be, or if we can run everything in the client thread
+	@brief A single compiler/linker flag.
  */
-class BuildGraph
+class BuildFlag
 {
 public:
-	BuildGraph();
-	virtual ~BuildGraph();
-
-	void UpdateScript(std::string path, std::string hash);
-	void RemoveScript(std::string path);
-
+	BuildFlag(std::string flag);
+	virtual ~BuildFlag();
+	
+	/**
+		@brief Bitmask of when this flag can be used
+	 */
+	enum FlagUsage
+	{
+		COMPILE_TIME 	= 0x01,		//software compilation
+		LINK_TIME 		= 0x02,		//software linking
+		SYNTHESIS_TIME	= 0x04,		//HDL synthesis
+		MAP_TIME		= 0x08,		//HDL technology mapping
+		PAR_TIME		= 0x10,		//HDL place-and-route
+		IMAGE_TIME		= 0x20,		//Firmware image creation time
+		
+		NO_TIME			= 0x00		//placeholder
+	};
+	
+	/**
+		@brief Major functional group describing roughly what this flag does
+	 */
+	enum FlagType
+	{
+		TYPE_WARNING	= 1,		//enable/disable some kind of warning
+		TYPE_ERROR		= 2,		//enable/disable some kind of error
+		TYPE_OPTIMIZE	= 3,		//control optimization behavior
+		TYPE_DEBUG		= 4,		//enable/disable debug symbols or debugging features
+		TYPE_ANALYSIS	= 5,		//enable/disable profiling, tracing, etc
+		TYPE_DIALECT	= 6,		//control which dialect of a language is being used
+		
+		TYPE_INVALID	= 0			//placeholder
+	};
+	
 protected:
-	void Rebuild();
-	void InternalRemove(std::string path);
 	
-	void ParseScript(const std::string& script, std::string path);
-	void LoadYAMLDoc(YAML::Node& doc, std::string path);
+	/**
+		@brief Usage flags (bitmask of FlagUsage)
+		
+		This is checked by toolchains to determine whether this flag is relevant to them or not
+	 */
+	uint32_t	m_usage;
 	
-	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
-	void LoadTarget(YAML::Node& node, std::string name, std::string path);
-
-	//Log of configuration error messages (displayed to client when we try to build, if not empty)
-
-	//Our targets
-
-	//The nodes
-	std::unordered_set<BuildGraphNode*> m_nodes;
+	/**
+		@brief Functional group for the flag (used to determine what part of a complex tool should look at it)
+	 */
+	FlagType	m_type;
+	
+	/**
+		@brief Textual name of this flag (like "max" for TYPE_WARNING to enable all warnings)
+	 */
+	std::string	m_flag;
 };
 
 #endif
+

@@ -27,42 +27,23 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildGraph_h
-#define BuildGraph_h
-
-class BuildGraphNode;
+#ifndef BuildConfiguration_h
+#define BuildConfiguration_h
 
 /**
-	@brief A DAG of buildable objects
+	@brief A single configuration for a build ("debug", "release", etc)
 	
-	Not even remotely thread safe yet.
-	TODO: see if we need to be, or if we can run everything in the client thread
+	Right now just a list of flags
  */
-class BuildGraph
+class BuildConfiguration
 {
 public:
-	BuildGraph();
-	virtual ~BuildGraph();
-
-	void UpdateScript(std::string path, std::string hash);
-	void RemoveScript(std::string path);
-
+	BuildConfiguration();
+	virtual ~BuildConfiguration();
+	
 protected:
-	void Rebuild();
-	void InternalRemove(std::string path);
-	
-	void ParseScript(const std::string& script, std::string path);
-	void LoadYAMLDoc(YAML::Node& doc, std::string path);
-	
-	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
-	void LoadTarget(YAML::Node& node, std::string name, std::string path);
-
-	//Log of configuration error messages (displayed to client when we try to build, if not empty)
-
-	//Our targets
-
-	//The nodes
-	std::unordered_set<BuildGraphNode*> m_nodes;
+	std::vector<BuildFlag> m_flags;
 };
 
 #endif
+

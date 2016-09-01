@@ -49,10 +49,11 @@ recursive_config:
 
     # List of flags that apply regardless of configuration
     # (compile vs link is implied by the flag)
-    # use maximum warning level and generate debug info for GDB
+    # use maximum warning level and generate debug info for GDB, compile with C++ 11
     flags:
         - warning/max
         - debug/gdb
+        - dialect/c++11
 
     # List of configurations and flags for each one
     # no optimizations in debug mode, optimize for speed in release

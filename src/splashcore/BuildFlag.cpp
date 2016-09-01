@@ -27,42 +27,24 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildGraph_h
-#define BuildGraph_h
+#include "splashcore.h"
 
-class BuildGraphNode;
+using namespace std;
 
-/**
-	@brief A DAG of buildable objects
-	
-	Not even remotely thread safe yet.
-	TODO: see if we need to be, or if we can run everything in the client thread
- */
-class BuildGraph
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+BuildFlag::BuildFlag(string flag)
 {
-public:
-	BuildGraph();
-	virtual ~BuildGraph();
+	char group[32];
+	char name[32];
+	if(2 != sscanf(flag.c_str(), "%31[^/]/%31s", group, name))
+	{
+		
+	}
+}
 
-	void UpdateScript(std::string path, std::string hash);
-	void RemoveScript(std::string path);
-
-protected:
-	void Rebuild();
-	void InternalRemove(std::string path);
+BuildFlag::~BuildFlag()
+{
 	
-	void ParseScript(const std::string& script, std::string path);
-	void LoadYAMLDoc(YAML::Node& doc, std::string path);
-	
-	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
-	void LoadTarget(YAML::Node& node, std::string name, std::string path);
-
-	//Log of configuration error messages (displayed to client when we try to build, if not empty)
-
-	//Our targets
-
-	//The nodes
-	std::unordered_set<BuildGraphNode*> m_nodes;
-};
-
-#endif
+}

@@ -20,6 +20,8 @@ add_library(splashcore SHARED
 
 	${PROTOBUF_DIR}/splashcore/SplashNet.pb.cc
 
+	BuildFlag.cpp
+
 	CPPToolchain.cpp
 	CToolchain.cpp
 	FPGAToolchain.cpp

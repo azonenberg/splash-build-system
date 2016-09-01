@@ -27,42 +27,35 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildGraph_h
-#define BuildGraph_h
+#ifndef BuildSettings_h
+#define BuildSettings_h
 
-class BuildGraphNode;
+#include "BuildConfiguration.h"
 
 /**
-	@brief A DAG of buildable objects
+	@brief Settings for a particular build
 	
-	Not even remotely thread safe yet.
-	TODO: see if we need to be, or if we can run everything in the client thread
+	Note that these settings are hierarchial, so settings can be inherited from parent scopes.
+	
+	The WorkingCopy class is responsible for determining the full settings that apply to a given target.
  */
-class BuildGraph
+class BuildSettings
 {
 public:
-	BuildGraph();
-	virtual ~BuildGraph();
-
-	void UpdateScript(std::string path, std::string hash);
-	void RemoveScript(std::string path);
-
+	BuildSettings();
+	virtual ~BuildSettings();
+	
 protected:
-	void Rebuild();
-	void InternalRemove(std::string path);
-	
-	void ParseScript(const std::string& script, std::string path);
-	void LoadYAMLDoc(YAML::Node& doc, std::string path);
-	
-	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
-	void LoadTarget(YAML::Node& node, std::string name, std::string path);
 
-	//Log of configuration error messages (displayed to client when we try to build, if not empty)
+	/**
+		@brief Flags that apply regardless of configuration
+	 */
 
-	//Our targets
-
-	//The nodes
-	std::unordered_set<BuildGraphNode*> m_nodes;
+	/**
+		@brief Map of configuration names to configuration objects
+	 */
+	std::map<std::string, BuildConfiguration> m_configurations;
 };
 
 #endif
+

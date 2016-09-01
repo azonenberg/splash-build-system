@@ -104,6 +104,8 @@ void BuildGraph::InternalRemove(string path)
  */
 void BuildGraph::ParseScript(const string& script, string path)
 {
+	LogDebug("Loading build script %s\n", path.c_str());
+	
 	//Read the root node
 	vector<YAML::Node> nodes = YAML::LoadAll(script);
 	for(auto node : nodes)
@@ -118,7 +120,54 @@ void BuildGraph::ParseScript(const string& script, string path)
  */
 void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
 {
-	LogDebug("Loading YAML doc from %s\n", path.c_str());
+	for(auto it : doc)
+	{
+		string name = it.first.as<std::string>();
+		
+		//Configuration stuff is special
+		if(name == "recursive_config")
+			LoadConfig(it.second, true, path);
+		else if(name == "file_config")
+			LoadConfig(it.second, false, path);
+			
+		//Nope, just a target
+		else
+			LoadTarget(it.second, name, path);
+	}
+	
+	//LogDebug("    Size: %d\n", doc.size());
+}
+
+/**
+	@brief Loads configuration for file or recursive scope
+ */
+void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
+{
+	if(recursive)
+		LogDebug("    Loading recursive config\n");
+	else
+		LogDebug("    Loading file-scope config\n");
+		
+	//See what toolchain we're configuring
+	
+}
+
+/**
+	@brief Loads configuration for a single target
+ */
+void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
+{
+	LogDebug("    Loading configuration for target %s\n", name.c_str());
+	
+	//Sanity check
+	if(!node["toolchain"])
+	{
+		LogWarning("Target \"%s\" in build script \"%s\" cannot be loaded as no toolchain was specified",
+			name.c_str(), path.c_str());
+		return;
+	}
+	
+	//
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
