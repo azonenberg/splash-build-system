@@ -1,3 +1,5 @@
+include_directories(${CMAKE_BINARY_DIR}/protobufs)
+
 add_executable(splashdev
 	ChangeNotifier.cpp
 	FileEventHandlers.cpp
