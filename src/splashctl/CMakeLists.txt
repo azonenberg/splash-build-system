@@ -1,3 +1,5 @@
+include_directories(${CMAKE_BINARY_DIR}/protobufs)
+
 add_executable(splashctl
 	BuildClientThread.cpp
 	ClientThread.cpp
