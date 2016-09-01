@@ -1,6 +1,24 @@
-ADD_LIBRARY(splashcore SHARED
-	
+set(PROTOBUF_DIR ${CMAKE_BINARY_DIR}/protobufs)
+
+set(PROTO_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/SplashNet.proto
+)
+
+add_custom_command(
+	OUTPUT ${PROTOBUF_DIR}/splashcore/SplashNet.pb.cc ${PROTOBUF_DIR}/splashcore/SplashNet.pb.h
+	COMMAND mkdir -p ${PROTOBUF_DIR}
+	COMMAND protoc --proto_path=${CMAKE_SOURCE_DIR}/src --cpp_out=${PROTOBUF_DIR} ${PROTO_FILES}
+	COMMENT "Building protocol buffer"
+	DEPENDS ${PROTO_FILES}
+)
+
+include_directories(${PROTOBUF_DIR})
+
+add_library(splashcore SHARED
+
 	Cache.cpp
+
+	${PROTOBUF_DIR}/splashcore/SplashNet.pb.cc
 
 	CPPToolchain.cpp
 	CToolchain.cpp
@@ -20,8 +38,11 @@ ADD_LIBRARY(splashcore SHARED
 	splashcore.cpp
 )
 
+# disable warnings for generated protobuf code
+set_source_files_properties(${PROTOBUF_DIR}/splashcore/SplashNet.pb.cc PROPERTIES COMPILE_FLAGS -w)
+
 target_link_libraries(splashcore
-	cryptopp rt log yaml-cpp ${PROTOBUF_LIBRARIES})
+	cryptopp rt log yaml-cpp xptools ${PROTOBUF_LIBRARIES})
 
 #force static analysis to rerun
 #TODO: automate this for every target?
