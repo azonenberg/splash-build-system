@@ -48,7 +48,6 @@
 //unique ID for a client
 typedef uint64_t clientID;
 
-#include "protocol.h"
 #include "WorkingCopy.h"
 #include "NodeManager.h"
 
