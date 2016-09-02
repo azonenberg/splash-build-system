@@ -228,30 +228,34 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		
 	//See what architecture(s) we're targeting.
 	//Start by pulling in the default architectures
-	unordered_set<string> arches;
-	GetDefaultArchitecturesForToolchain(toolchain, path, arches);
-	for(auto a : arches)
-		LogDebug("        Default arch: %s\n", a.c_str());
+	unordered_set<string> darches;
+	GetDefaultArchitecturesForToolchain(toolchain, path, darches);
 		
 	//Then look to see if we overrode them
+	unordered_set<string> arches;
 	if(node["arches"])
 	{
 		auto oarch = node["arches"];
 		
-		//See if we have a global declaration
-		//TODO: is there a faster way to do this (w/o two traversals)?
-		bool haveGlobal = false;
 		for(auto it : oarch)
 		{
-			if(it.as<std::string>() == "global")
-				haveGlobal = true;
+			//If we got a "global" then copy the global arches
+			string arch = it.as<std::string>();
+			if(arch == "global")
+			{
+				for(auto a : darches)
+					arches.emplace(a);
+			}
+			
+			//nope, just copy this one
+			else
+				arches.emplace(arch);
 		}
-		
-		if(haveGlobal)
-			LogDebug("have global\n");
-		else
-			LogDebug("do not have global\n");
 	}
+	
+	//DEBUG: spam the list
+	for(auto a : arches)
+		LogDebug("        Target arch: %s\n", a.c_str());
 
 	//Figure out what kind of target we're creating
 	//Empty type is OK, pick a reasonable default for
