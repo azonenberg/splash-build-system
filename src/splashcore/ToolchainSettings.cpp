@@ -66,3 +66,55 @@ void ToolchainSettings::LoadConfig(YAML::Node& node, bool recursive, string path
 	else
 		m_fileSettings[path] = BuildSettings(node);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Data accessors
+
+void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, string path)
+{
+	//Split the path up into segments
+	list<string> dirs;
+	string p = path;
+	while(p != "")
+	{
+		p = GetDirOfFile(p);
+		dirs.push_front(p);
+	}
+	
+	//Start out with an empty list of architectures
+	arches.clear();
+	
+	//For each directory from top down to us, look up the settings for that directory
+	for(auto d : dirs)
+	{
+		//Generate the path to the build script
+		string p = d;
+		if(p != "")
+			p += "/";
+		p += "build.yml";
+		
+		//See if there are any recursive settings for us there.
+		//If not, automatically inherit from parent scope
+		if(m_recursiveSettings.find(p) == m_recursiveSettings.end())
+			continue;
+			
+		GetDefaultArchitectures_helper(m_recursiveSettings[p], arches);
+	}
+	
+	//Search our path for file level settings
+	if(m_fileSettings.find(path) == m_fileSettings.end())
+		return;
+	GetDefaultArchitectures_helper(m_fileSettings[path], arches);
+}
+
+void ToolchainSettings::GetDefaultArchitectures_helper(const BuildSettings& settings, unordered_set<string>& arches)
+{
+	//If the flags do not include "global", clear whatever was there before
+	if(!settings.InheritTriplets())
+		arches.clear();
+	
+	//Copy the current flags
+	auto triplets = settings.GetTriplets();
+	for(auto t : triplets)
+		arches.emplace(t);
+}

@@ -40,6 +40,8 @@ BuildSettings::BuildSettings()
 }
 
 BuildSettings::BuildSettings(YAML::Node& node)
+	: m_bInheritTriplets(false)
+	, m_bInheritFlags(false)
 {
 	//we already read the name and toolchain by the time we got here, ignore them
 	
@@ -48,7 +50,17 @@ BuildSettings::BuildSettings(YAML::Node& node)
 	{
 		auto arches = node["arches"];
 		for(auto it : arches)
-			m_triplets.emplace(it.as<std::string>());
+		{
+			string t = it.as<std::string>();
+			
+			//special keywords for triplet inheritance
+			if(t == "global")
+				m_bInheritTriplets = true;
+			
+			//nope, just copy it
+			else
+				m_triplets.emplace(t);
+		}
 	}
 	
 	//Compiler flags
@@ -56,7 +68,17 @@ BuildSettings::BuildSettings(YAML::Node& node)
 	{
 		auto flags = node["flags"];
 		for(auto it : flags)
-			m_flags.emplace(BuildFlag(it.as<std::string>()));
+		{
+			string flag = it.as<std::string>();
+			
+			//special keywords for flag inheritance
+			if(flag == "global")
+				m_bInheritFlags = true;
+				
+			//nope, just create a flag
+			else
+				m_flags.emplace(BuildFlag(flag));
+		}
 	}
 	
 	//Build configurations

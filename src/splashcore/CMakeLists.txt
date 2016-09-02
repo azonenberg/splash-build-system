@@ -39,6 +39,7 @@ add_library(splashcore SHARED
 
 	BuildGraph.cpp
 	BuildGraphNode.cpp
+	CPPExecutableNode.cpp
 
 	splashcore.cpp
 )

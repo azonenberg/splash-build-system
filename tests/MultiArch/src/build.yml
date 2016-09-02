@@ -29,35 +29,31 @@
 
 
 ########################################################################################################################
-# Recursive global configuration (one YAML document per toolchain, containing a single object named "recursive_config")
-# Syntax is identical to that of a normal target, except only configuration is legal (no sources block)
-# Configuration specified here applies to targets in the current file, as well as in all subdirectories.
-# This block is normally only used in the build.yml file at the root of the project, but it's legal to use
-# at lower scopes (for example, configuration of a major subsystem with its own directory)
+# An actual target (many targets allowed in only one document)
+# Most build.yml files in individual source directories will only contain targets and not configurations.
 
-# This is a fairly sane default configuration for cpp/generic
----
-recursive_config:
+MultiArch:
 
-    # The target toolchain for this recursive_config block
+    # type of compiler to use (generic C++ compiler, no preference on version or suite)
     toolchain:     cpp/generic
     
-    # Target architecture (just one by default)
+    # Target type (default: exe)
+    
+    # array of architectures we're being compiled for
+    # The special target "global" pulls in the globally specified targets.
+    # Having no "targets" section at all is equivalent to "targets: [global]" and is usually a sane default.
+    # In this case, however, we're adding additional targets to the global list
     arches:
-        - x86_64-linux-gnu
+        - global
+        - i386-linux-gnu
+        
+    # array of source files (TODO support wildcards)
+    sources:
+        - main.cpp
 
-    # List of flags that apply regardless of configuration
-    # (compile vs link is implied by the flag)
-    # use maximum warning level and generate debug info for GDB, compile with C++ 11
+    # Toolchain flags
+    # No special config here, inherit global configs
+    # Note that global only NEEDS to be specified if we're adding flags.
+    # If you want to use global flags exclusively, just omit the entire flags section
     flags:
-        - warning/max
-        - debug/gdb
-        - dialect/c++11
-
-    # List of configurations and flags for each one
-    # no optimizations in debug mode, optimize for speed in release
-    configurations:
-        debug:
-            - optimize/none
-        release:
-            - optimize/speed
+        - global

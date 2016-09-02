@@ -58,15 +58,45 @@ BuildGraph::~BuildGraph()
  */
 void BuildGraph::UpdateScript(string path, string hash)
 {
+	//This is now a known script, keep track of it
+	m_buildScriptPaths[path] = hash;
+	
+	//Reload the build script (and its dependencies)
+	InternalUpdateScript(path, hash);	
+
+	//Rebuild the graph to fix up dependencies and delete orphaned nodes
+	Rebuild();
+}
+
+/**
+	@brief Reloads a build script
+ */
+void BuildGraph::InternalUpdateScript(string path, string hash)
+{
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
 
 	//Read the new script and execute it
 	//Don't check if the file is in cache already, it was just updated and is thus LRU
 	ParseScript(g_cache->ReadCachedFile(hash), path);
-
-	//Rebuild the graph to fix up dependencies and delete orphaned nodes
-	Rebuild();
+	
+	//If we changed a script in a parent directory, go through all of our subdirectories and re-parse them
+	//since recursively inherited configuration may have changed.
+	//TODO: index somehow rather than having to do O(n) search of all known build scripts?
+	//TODO: can we patch the configs in at run time somehow rather than re-running it?
+	string dir = GetDirOfFile(path);
+	for(auto it : m_buildScriptPaths)
+	{		
+		//Path must have our path as a substring, but not be the same script
+		string s = it.first;
+		if( (s.find(dir) != 0) || (s == path) )
+			continue;
+			
+		LogDebug("    Build script %s needs to be re-run to reflect changed recursive configurations\n",
+			s.c_str());
+			
+		InternalUpdateScript(s, m_buildScriptPaths[s]);
+	}
 }
 
 /**
@@ -76,6 +106,9 @@ void BuildGraph::UpdateScript(string path, string hash)
  */
 void BuildGraph::RemoveScript(string path)
 {
+	//This is no longer a known script
+	m_buildScriptPaths.erase(path);
+	
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
 
@@ -192,6 +225,33 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	string type;
 	if(node["type"])
 		type = node["type"].as<std::string>();
+		
+	//See what architecture(s) we're targeting.
+	//Start by pulling in the default architectures
+	unordered_set<string> arches;
+	GetDefaultArchitecturesForToolchain(toolchain, path, arches);
+	for(auto a : arches)
+		LogDebug("        Default arch: %s\n", a.c_str());
+		
+	//Then look to see if we overrode them
+	if(node["arches"])
+	{
+		auto oarch = node["arches"];
+		
+		//See if we have a global declaration
+		//TODO: is there a faster way to do this (w/o two traversals)?
+		bool haveGlobal = false;
+		for(auto it : oarch)
+		{
+			if(it.as<std::string>() == "global")
+				haveGlobal = true;
+		}
+		
+		if(haveGlobal)
+			LogDebug("have global\n");
+		else
+			LogDebug("do not have global\n");
+	}
 
 	//Figure out what kind of target we're creating
 	//Empty type is OK, pick a reasonable default for
@@ -200,7 +260,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	{
 		if( (type == "exe") || type.empty() )
 		{
-			//LogDebug("        Target is a C++ executable\n");
+			LogDebug("        Target is a C++ executable\n");
 		}
 	}
 	else
@@ -210,6 +270,21 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	}
 	
 	//TODO: Add to target list
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Settings manipulation
+
+/**
+	@brief Get the default architecture list for a given toolchain and scope
+	
+	@param toolchain	The name of the toolchain to query
+	@param path			Path to the build script of the current scope
+	@param arches		Set of architectures we found
+ */
+void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string path, unordered_set<string>& arches)
+{
+	m_toolchainSettings[toolchain].GetDefaultArchitectures(arches, path);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

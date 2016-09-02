@@ -27,37 +27,20 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef ToolchainSettings_h
-#define ToolchainSettings_h
+#ifndef CPPExecutableNode_h
+#define CPPExecutableNode_h
 
 /**
-	@brief Settings for a particular toolchain
+	@brief A single node in the build graph
  */
-class ToolchainSettings
+class CPPExecutableNode
 {
 public:
-	ToolchainSettings();
-	virtual ~ToolchainSettings();
-	
-	void PurgeConfig(std::string path);
-	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
-	
-	void GetDefaultArchitectures(std::unordered_set<std::string>& arches, std::string path);
-	
-protected:
-	void GetDefaultArchitectures_helper(const BuildSettings& settings, std::unordered_set<std::string>& arches);
+	CPPExecutableNode();
+	virtual ~CPPExecutableNode();
 
-	/**
-		@brief Map from file paths to BuildSettings declared in that path. Inherited by subdirectories.
-	 */
-	std::map<std::string, BuildSettings> m_recursiveSettings;
-	
-	/**
-		@brief Map from file paths to BuildSettings declared in that path. Not inherited by subdirectories.
-	 */
-	std::map<std::string, BuildSettings> m_fileSettings;
+protected:
 };
 
 #endif
-
 

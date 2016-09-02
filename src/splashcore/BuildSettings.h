@@ -47,12 +47,35 @@ public:
 	
 	virtual ~BuildSettings();
 	
+	const std::unordered_set<BuildFlag>& GetFlags() const
+	{ return m_flags; }
+	
+	bool InheritFlags() const
+	{ return m_bInheritFlags; }
+	
+	const std::unordered_set<std::string>& GetTriplets() const
+	{ return m_triplets; }
+	
+	bool InheritTriplets() const
+	{ return m_bInheritTriplets; }
+		
 protected:
+
+	/**
+		@brief True if we inherit global triplets
+	 */
+	bool m_bInheritTriplets;
+
 
 	/**
 		@brief Architecture triplets
 	 */
 	std::unordered_set<std::string> m_triplets;
+	
+	/**
+		@brief True if we inherit global flags
+	 */
+	bool m_bInheritFlags;
 
 	/**
 		@brief Flags that apply regardless of configuration

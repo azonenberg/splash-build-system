@@ -227,6 +227,8 @@ bool DoesFileExist(string fname)
 string GetDirOfFile(string fname)
 {
 	size_t pos = fname.rfind("/");
+	if(pos == string::npos)				//if no parent directory, return empty string
+		return "";
 	return fname.substr(0, pos);
 }
 

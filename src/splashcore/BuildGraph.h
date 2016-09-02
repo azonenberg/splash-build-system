@@ -50,21 +50,25 @@ public:
 	void UpdateScript(std::string path, std::string hash);
 	void RemoveScript(std::string path);
 
-	/**
-		@brief Look up the settings object for a particular toolchain
-	 */
-	ToolchainSettings& GetSettingsForToolchain(std::string chain)
-	{ return m_toolchainSettings[chain]; }
-
 protected:
 	void Rebuild();
 	void InternalRemove(std::string path);
+	void InternalUpdateScript(std::string path, std::string hash);
 	
 	void ParseScript(const std::string& script, std::string path);
 	void LoadYAMLDoc(YAML::Node& doc, std::string path);
 	
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
+	
+	void GetDefaultArchitecturesForToolchain(
+		std::string toolchain,
+		std::string path,
+		std::unordered_set<std::string>& arches);
+		
+	//Build scripts that we know about
+	//Map from path to hash
+	std::map<std::string, std::string> m_buildScriptPaths;
 
 	//TODO: Log of configuration error messages (displayed to client when we try to build, if not empty)
 

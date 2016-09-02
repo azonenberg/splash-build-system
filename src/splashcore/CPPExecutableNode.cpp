@@ -27,37 +27,18 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef ToolchainSettings_h
-#define ToolchainSettings_h
+#include "splashcore.h"
 
-/**
-	@brief Settings for a particular toolchain
- */
-class ToolchainSettings
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+CPPExecutableNode::CPPExecutableNode()
 {
-public:
-	ToolchainSettings();
-	virtual ~ToolchainSettings();
-	
-	void PurgeConfig(std::string path);
-	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
-	
-	void GetDefaultArchitectures(std::unordered_set<std::string>& arches, std::string path);
-	
-protected:
-	void GetDefaultArchitectures_helper(const BuildSettings& settings, std::unordered_set<std::string>& arches);
 
-	/**
-		@brief Map from file paths to BuildSettings declared in that path. Inherited by subdirectories.
-	 */
-	std::map<std::string, BuildSettings> m_recursiveSettings;
+}
+
+CPPExecutableNode::~CPPExecutableNode()
+{
 	
-	/**
-		@brief Map from file paths to BuildSettings declared in that path. Not inherited by subdirectories.
-	 */
-	std::map<std::string, BuildSettings> m_fileSettings;
-};
-
-#endif
-
+}
 
