@@ -39,6 +39,9 @@ void ShowVersion();
 //Project root directory
 string g_rootDir;
 
+//Map of watch descriptors to directory names
+map<int, string> g_watchMap;
+
 /**
 	@brief Program entry point
  */
@@ -168,7 +171,7 @@ int main(int argc, char* argv[])
 			
 			//Skip events without a filename, or hidden files
 			if( (evt->len != 0) && (evt->name[0] != '.') )
-				WatchedFileChanged(sock, evt->mask, g_rootDir + "/" + evt->name);
+				WatchedFileChanged(sock, evt->mask, g_watchMap[evt->wd] + "/" + evt->name);
 			
 			//Go on to the next one
 			offset += sizeof(inotify_event) + evt->len;
@@ -188,13 +191,16 @@ void WatchDirRecursively(int hnotify, string dir)
 	//LogDebug("    Recursively watching directory %s\n", dir.c_str());
 	
 	//Watch changes to the directory
-	if(0 > inotify_add_watch(
+	int wd;
+	if(0 > (wd = inotify_add_watch(
 		hnotify,
 		dir.c_str(),
-		IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF))
+		IN_CREATE | IN_DELETE | IN_MODIFY | IN_MOVED_FROM | IN_MOVED_TO | IN_DELETE_SELF)))
 	{
 		LogFatal("Failed to watch directory %s\n", dir.c_str());
 	}
+	
+	g_watchMap[wd] = dir;
 	
 	//Look for any subdirs and watch them
 	vector<string> subdirs;
