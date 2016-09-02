@@ -33,7 +33,7 @@
 #include "BuildConfiguration.h"
 
 /**
-	@brief Settings for a particular build
+	@brief Build settings declared in a particular scope
 	
 	Note that these settings are hierarchial, so settings can be inherited from parent scopes.
 	
@@ -43,13 +43,21 @@ class BuildSettings
 {
 public:
 	BuildSettings();
+	BuildSettings(YAML::Node& node);
+	
 	virtual ~BuildSettings();
 	
 protected:
 
 	/**
+		@brief Architecture triplets
+	 */
+	std::unordered_set<std::string> m_triplets;
+
+	/**
 		@brief Flags that apply regardless of configuration
 	 */
+	std::unordered_set<BuildFlag> m_flags;
 
 	/**
 		@brief Map of configuration names to configuration objects

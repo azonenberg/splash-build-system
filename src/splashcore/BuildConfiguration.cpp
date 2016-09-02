@@ -27,24 +27,26 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildConfiguration_h
-#define BuildConfiguration_h
+#include "splashcore.h"
 
-/**
-	@brief A single configuration for a build ("debug", "release", etc)
-	
-	Right now just a list of flags
- */
-class BuildConfiguration
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+BuildConfiguration::BuildConfiguration()
 {
-public:
-	BuildConfiguration();
-	BuildConfiguration(YAML::Node& node);
-	virtual ~BuildConfiguration();
-	
-protected:
-	std::unordered_set<BuildFlag> m_flags;
-};
 
-#endif
+}
 
+BuildConfiguration::BuildConfiguration(YAML::Node& node)
+{
+	//Load all of our flags
+	for(auto it : node)
+		m_flags.emplace(BuildFlag(it.as<std::string>()));
+}
+
+BuildConfiguration::~BuildConfiguration()
+{
+
+}

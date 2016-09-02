@@ -27,24 +27,34 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildConfiguration_h
-#define BuildConfiguration_h
+#ifndef ToolchainSettings_h
+#define ToolchainSettings_h
 
 /**
-	@brief A single configuration for a build ("debug", "release", etc)
-	
-	Right now just a list of flags
+	@brief Settings for a particular toolchain
  */
-class BuildConfiguration
+class ToolchainSettings
 {
 public:
-	BuildConfiguration();
-	BuildConfiguration(YAML::Node& node);
-	virtual ~BuildConfiguration();
+	ToolchainSettings();
+	virtual ~ToolchainSettings();
+	
+	void PurgeConfig(std::string path);
+	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	
 protected:
-	std::unordered_set<BuildFlag> m_flags;
+
+	/**
+		@brief Map from file paths to BuildSettings declared in that path. Inherited by subdirectories.
+	 */
+	std::map<std::string, BuildSettings> m_recursiveSettings;
+	
+	/**
+		@brief Map from file paths to BuildSettings declared in that path. Not inherited by subdirectories.
+	 */
+	std::map<std::string, BuildSettings> m_fileSettings;
 };
 
 #endif
+
 

@@ -27,24 +27,48 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildConfiguration_h
-#define BuildConfiguration_h
+#include "splashcore.h"
 
-/**
-	@brief A single configuration for a build ("debug", "release", etc)
-	
-	Right now just a list of flags
- */
-class BuildConfiguration
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+BuildSettings::BuildSettings()
 {
-public:
-	BuildConfiguration();
-	BuildConfiguration(YAML::Node& node);
-	virtual ~BuildConfiguration();
+	//default ctor for STL, not normally used directly
+}
+
+BuildSettings::BuildSettings(YAML::Node& node)
+{
+	//we already read the name and toolchain by the time we got here, ignore them
 	
-protected:
-	std::unordered_set<BuildFlag> m_flags;
-};
+	//Target architectures
+	if(node["arches"])
+	{
+		auto arches = node["arches"];
+		for(auto it : arches)
+			m_triplets.emplace(it.as<std::string>());
+	}
+	
+	//Compiler flags
+	if(node["flags"])
+	{
+		auto flags = node["flags"];
+		for(auto it : flags)
+			m_flags.emplace(BuildFlag(it.as<std::string>()));
+	}
+	
+	//Build configurations
+	if(node["configurations"])
+	{
+		auto configs = node["configurations"];
+		for(auto it : configs)
+			m_configurations[it.first.as<std::string>()] = BuildConfiguration(it.second);
+	}
+}
 
-#endif
+BuildSettings::~BuildSettings()
+{
 
+}

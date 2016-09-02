@@ -20,7 +20,10 @@ add_library(splashcore SHARED
 
 	${PROTOBUF_DIR}/splashcore/SplashNet.pb.cc
 
+	BuildConfiguration.cpp
 	BuildFlag.cpp
+	BuildSettings.cpp
+	ToolchainSettings.cpp
 
 	CPPToolchain.cpp
 	CToolchain.cpp

@@ -30,6 +30,9 @@
 #ifndef BuildGraph_h
 #define BuildGraph_h
 
+//TODO: replace this with something that logs to the BuildGraph and displays it clientside
+#define LogParseError(...) LogError(__VA_ARGS__)
+
 class BuildGraphNode;
 
 /**
@@ -47,6 +50,12 @@ public:
 	void UpdateScript(std::string path, std::string hash);
 	void RemoveScript(std::string path);
 
+	/**
+		@brief Look up the settings object for a particular toolchain
+	 */
+	ToolchainSettings& GetSettingsForToolchain(std::string chain)
+	{ return m_toolchainSettings[chain]; }
+
 protected:
 	void Rebuild();
 	void InternalRemove(std::string path);
@@ -58,6 +67,9 @@ protected:
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
 
 	//Log of configuration error messages (displayed to client when we try to build, if not empty)
+
+	//Map of toolchain names to settings for that toolchain
+	std::map<std::string, ToolchainSettings> m_toolchainSettings;
 
 	//Our targets
 

@@ -39,6 +39,9 @@ public:
 	BuildFlag(std::string flag);
 	virtual ~BuildFlag();
 	
+	bool operator==(const BuildFlag& rhs) const
+	{ return m_rawflag == rhs.m_rawflag; }
+	
 	/**
 		@brief Bitmask of when this flag can be used
 	 */
@@ -69,6 +72,9 @@ public:
 		TYPE_INVALID	= 0			//placeholder
 	};
 	
+	operator std::string() const
+	{ return m_rawflag; }
+	
 protected:
 	
 	/**
@@ -87,6 +93,23 @@ protected:
 		@brief Textual name of this flag (like "max" for TYPE_WARNING to enable all warnings)
 	 */
 	std::string	m_flag;
+	
+	/**
+		@brief Raw text of this flag (used for hash comparisons etc)
+	 */
+	std::string	m_rawflag;
+};
+
+/**
+	@brief Hash function (for unordered_set)
+ */
+namespace std
+{
+	template<> struct hash<BuildFlag>
+	{
+		size_t operator()(const BuildFlag& b) const
+		{ return hash<string>()(static_cast<string>(b)); }
+	};
 };
 
 #endif

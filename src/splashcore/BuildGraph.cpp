@@ -84,16 +84,17 @@ void BuildGraph::RemoveScript(string path)
 }
 
 /**
-	@brief Deletes all targets and tests declared in a given source file
-
-	TODO: Purge recursive configs (if any)
-
-	TODO: index somehow, rather than doing an O(n) scan?
+	@brief Deletes all targets and tests declared in a given build script
  */
 void BuildGraph::InternalRemove(string path)
 {
-	//TODO
-	LogWarning("BuildGraph::InternalRemove() not fully implemented\n");
+	for(auto x : m_toolchainSettings)
+	{
+		//TODO: Purge configs (if any)
+	}
+	
+	//TODO: delete targets
+	//TODO: delete tests
 }
 
 /**
@@ -104,12 +105,19 @@ void BuildGraph::InternalRemove(string path)
  */
 void BuildGraph::ParseScript(const string& script, string path)
 {
-	LogDebug("Loading build script %s\n", path.c_str());
+	//LogDebug("Loading build script %s\n", path.c_str());
 	
-	//Read the root node
-	vector<YAML::Node> nodes = YAML::LoadAll(script);
-	for(auto node : nodes)
-		LoadYAMLDoc(node, path);
+	try
+	{
+		//Read the root node
+		vector<YAML::Node> nodes = YAML::LoadAll(script);
+		for(auto node : nodes)
+			LoadYAMLDoc(node, path);
+	}
+	catch(YAML::ParserException exc)
+	{
+		LogParseError("YAML parsing failed: %s\n", exc.what());
+	}
 }
 
 /**
@@ -134,22 +142,23 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
 		else
 			LoadTarget(it.second, name, path);
 	}
-	
-	//LogDebug("    Size: %d\n", doc.size());
 }
 
 /**
 	@brief Loads configuration for file or recursive scope
  */
 void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
-{
-	if(recursive)
-		LogDebug("    Loading recursive config\n");
-	else
-		LogDebug("    Loading file-scope config\n");
-		
+{	
 	//See what toolchain we're configuring
+	if(!node["toolchain"])
+	{
+		LogParseError("Configuration block in build script \"%s\" cannot be loaded as no toolchain was specified",
+			path.c_str());
+		return;
+	}
 	
+	//Configure that toolchain
+	m_toolchainSettings[node["toolchain"].as<std::string>()].LoadConfig(node, recursive, path);
 }
 
 /**
@@ -159,6 +168,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 {
 	LogDebug("    Loading configuration for target %s\n", name.c_str());
 	
+	/*
 	//Sanity check
 	if(!node["toolchain"])
 	{
@@ -166,6 +176,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			name.c_str(), path.c_str());
 		return;
 	}
+	*/
 	
 	//
 }

@@ -35,16 +35,15 @@
 # This block is normally only used in the build.yml file at the root of the project, but it's legal to use
 # at lower scopes (for example, configuration of a major subsystem with its own directory)
 
-# Global configuration for generic/cpp target
-# This is a fairly sane default configuration
+# This is a fairly sane default configuration for cpp/generic
 ---
 recursive_config:
 
     # The target toolchain for this recursive_config block
-    toolchain:     generic/cpp
+    toolchain:     cpp/generic
     
     # Target architecture (just one by default)
-    targets:
+    arches:
         - x86_64-linux-gnu
 
     # List of flags that apply regardless of configuration
@@ -59,21 +58,9 @@ recursive_config:
     # no optimizations in debug mode, optimize for speed in release
     configurations:
         debug:
-            flags:
-                - optimize/none
+            - optimize/none
         release:
-            flags:
-                - optimize/speed
-
-########################################################################################################################
-# Per-file global configuration (one YAML document per toolchain, containing a single object named "file_config")
-# Basically the same as recursive_config, except it doesn't apply to subdirectories
-
-# Global configuration for generic/cpp target
-# Nothing here, just specified as an example
----
-file_config:
-    toolchain:     generic/cpp
+            - optimize/speed
 
 ########################################################################################################################
 # An actual target (many targets allowed in only one document)
@@ -82,13 +69,15 @@ file_config:
 MultiArch:
 
     # type of compiler to use (generic C++ compiler, no preference on version or suite)
-    toolchain:     generic/cpp
+    toolchain:     cpp/generic
     
-    # array of targets we're being compiled for
+    # Target type (default: exe)
+    
+    # array of architectures we're being compiled for
     # The special target "global" pulls in the globally specified targets.
     # Having no "targets" section at all is equivalent to "targets: [global]" and is usually a sane default.
     # In this case, however, we're adding additional targets to the global list
-    targets:
+    arches:
         - global
         - i386-linux-gnu
         
@@ -98,7 +87,7 @@ MultiArch:
 
     # Toolchain flags
     # No special config here, inherit global configs
-    # Note that config/global only NEEDS to be specified if we're adding flags.
+    # Note that global only NEEDS to be specified if we're adding flags.
     # If you want to use global flags exclusively, just omit the entire flags section
     flags:
-        config/global
+        - global

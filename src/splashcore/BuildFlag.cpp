@@ -35,13 +35,20 @@ using namespace std;
 // Construction / destruction
 
 BuildFlag::BuildFlag(string flag)
+	: m_rawflag(flag)
 {
+	LogDebug("    Flag: %s\n", flag.c_str());
+	
+	//TODO: Parse the flag and set things up properly
+	
+	/*
 	char group[32];
 	char name[32];
 	if(2 != sscanf(flag.c_str(), "%31[^/]/%31s", group, name))
 	{
 		
 	}
+	*/
 }
 
 BuildFlag::~BuildFlag()
