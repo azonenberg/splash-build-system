@@ -89,9 +89,7 @@ void BuildGraph::RemoveScript(string path)
 void BuildGraph::InternalRemove(string path)
 {
 	for(auto x : m_toolchainSettings)
-	{
-		//TODO: Purge configs (if any)
-	}
+		x.second.PurgeConfig(path);
 	
 	//TODO: delete targets
 	//TODO: delete tests
@@ -149,6 +147,8 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
  */
 void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
 {	
+	LogDebug("    Loading configuration\n");
+	
 	//See what toolchain we're configuring
 	if(!node["toolchain"])
 	{
@@ -166,19 +166,50 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
  */
 void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 {
-	LogDebug("    Loading configuration for target %s\n", name.c_str());
-	
-	/*
-	//Sanity check
+	LogDebug("    Loading target %s\n", name.c_str());
+
+	//Sanity check that we asked for a toolchain
 	if(!node["toolchain"])
 	{
-		LogWarning("Target \"%s\" in build script \"%s\" cannot be loaded as no toolchain was specified",
+		LogParseError("Target \"%s\" in build script \"%s\" cannot be loaded as no toolchain was specified",
 			name.c_str(), path.c_str());
 		return;
 	}
-	*/
+	string toolchain = node["toolchain"].as<std::string>();
 	
-	//
+	//Get the toolchain type
+	string chaintype;
+	size_t offset = toolchain.find("/");
+	if(offset != string::npos)
+		chaintype = toolchain.substr(0, offset);
+	if(chaintype.empty())
+	{
+		LogParseError("Malformed toolchain name \"%s\" in build script \"%s\"", toolchain.c_str(), path.c_str());
+		return;
+	}
+
+	//See if we asked for a target type
+	string type;
+	if(node["type"])
+		type = node["type"].as<std::string>();
+
+	//Figure out what kind of target we're creating
+	//Empty type is OK, pick a reasonable default for
+	BuildGraphNode* target = NULL;
+	if(chaintype == "cpp")
+	{
+		if( (type == "exe") || type.empty() )
+		{
+			//LogDebug("        Target is a C++ executable\n");
+		}
+	}
+	else
+	{
+		LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
+		return;
+	}
+	
+	//TODO: Add to target list
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

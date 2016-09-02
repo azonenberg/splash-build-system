@@ -66,12 +66,13 @@ protected:
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
 
-	//Log of configuration error messages (displayed to client when we try to build, if not empty)
+	//TODO: Log of configuration error messages (displayed to client when we try to build, if not empty)
 
 	//Map of toolchain names to settings for that toolchain
 	std::map<std::string, ToolchainSettings> m_toolchainSettings;
 
-	//Our targets
+	//Map of target names to targets
+	std::map<std::string, BuildGraphNode*> m_targets;
 
 	//The nodes
 	std::unordered_set<BuildGraphNode*> m_nodes;
