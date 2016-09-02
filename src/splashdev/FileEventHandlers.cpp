@@ -36,7 +36,7 @@ using namespace std;
  */
 void WatchedFileChanged(Socket& s, int type, string fname)
 {
-	LogDebug("message of type %x for %s\n", type, fname.c_str());
+	//LogDebug("message of type %x for %s\n", type, fname.c_str());
 
 	//TODO: handle moving/deletion of a whole directory
 	if( (type & IN_MOVE_SELF) == IN_MOVE_SELF )
