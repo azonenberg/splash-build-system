@@ -39,6 +39,7 @@ public:
 	CPPExecutableNode(
 		BuildGraph* graph,
 		std::string arch,
+		std::string config,
 		std::string name,
 		std::string path,
 		std::string toolchain,

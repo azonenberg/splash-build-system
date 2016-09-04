@@ -57,12 +57,12 @@ BuildGraph::~BuildGraph()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Garbage collection and target helper stuff
 
-BuildGraph::TargetMap& BuildGraph::GetTargetMap(string arch)
+BuildGraph::TargetMap& BuildGraph::GetTargetMap(ArchConfig config)
 {
-	if(m_targets.find(arch) != m_targets.end())
-		return *m_targets[arch];
+	if(m_targets.find(config) != m_targets.end())
+		return *m_targets[config];
 
-	return *(m_targets[arch] = new TargetMap);
+	return *(m_targets[config] = new TargetMap);
 }
 
 /**
@@ -349,39 +349,38 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	unordered_set<string> configs;
 	GetConfigNames(toolchain, path, configs);
 
-	//DEBUG: dump configs
-	for(auto x : configs)
-		LogDebug("config: %s\n", x.c_str());
-
 	//Figure out what kind of target we're creating
 	//Empty type is OK, pick a reasonable default for that.
 	//We need separate nodes for each architecture since they can have different dependencies etc
 	for(auto a : arches)
 	{
-		BuildGraphNode* target = NULL;
-
-		//C/C++ executables
-		if(chaintype == "cpp")
+		for(auto c : configs)
 		{
-			if( (type == "exe") || type.empty() )
-				target = new CPPExecutableNode(this, a, name, path, toolchain, node);
-		}
-		
-		else
-		{
-			LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
-			return;
-		}
+			BuildGraphNode* target = NULL;
 
-		if(target == NULL)
-		{
-			LogParseError("No target could be created for architecture %s\n", a.c_str());
-			return;
-		}
+			//C/C++ executables
+			if(chaintype == "cpp")
+			{
+				if( (type == "exe") || type.empty() )
+					target = new CPPExecutableNode(this, a, c, name, path, toolchain, node);
+			}
+			
+			else
+			{
+				LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
+				return;
+			}
 
-		//Add to target list plus global node set
-		GetTargetMap(a)[name] = target;
-		m_nodes.emplace(target);
+			if(target == NULL)
+			{
+				LogParseError("No target could be created for architecture %s\n", a.c_str());
+				return;
+			}
+
+			//Add to target list plus global node set
+			GetTargetMap(ArchConfig(a, c))[name] = target;
+			m_nodes.emplace(target);
+		}
 	}
 
 	//Record that we were declared in this file

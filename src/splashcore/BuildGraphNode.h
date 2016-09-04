@@ -37,7 +37,13 @@ class BuildGraphNode
 {
 public:
 	BuildGraphNode();
-	BuildGraphNode(BuildGraph* graph, std::string arch, std::string name, std::string path, YAML::Node& node);
+	BuildGraphNode(
+		BuildGraph* graph,
+		std::string arch,
+		std::string config,
+		std::string name,
+		std::string path,
+		YAML::Node& node);
 	virtual ~BuildGraphNode();
 	
 	/// @brief Get the hash of the node
@@ -80,6 +86,9 @@ protected:
 
 	/// @brief Architecture of this node, or "generic" if independent (source file etc)
 	std::string m_arch;
+
+	/// @brief Configuration of this node, or "generic" if independent
+	std::string m_config;
 
 	/// @brief Human-readable name of this node (for debug messages)
 	std::string m_name;

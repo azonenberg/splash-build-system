@@ -47,10 +47,11 @@ BuildGraphNode::BuildGraphNode()
 /**
 	@brief Constructor for nodes which are targets or tests
  */
-BuildGraphNode::BuildGraphNode(BuildGraph* graph, string arch, string name, string path, YAML::Node& node)
+BuildGraphNode::BuildGraphNode(BuildGraph* graph, string arch, string config, string name, string path, YAML::Node& node)
 	: m_ref(false)
 	, m_graph(graph)
 	, m_arch(arch)
+	, m_config(config)
 	, m_name(name)
 	, m_script(path)
 {

@@ -94,11 +94,15 @@ protected:
 	//Map of target names to targets for a single architecture
 	typedef std::map<std::string, BuildGraphNode*> TargetMap;
 
-	//Map of architectures to target sets
-	std::map<std::string, TargetMap*> m_targets;
+	//An <architecture, config> tuple.
+	//There can be at most one target of a given name per ArchConfig.
+	typedef std::pair<std::string, std::string> ArchConfig;
+
+	//Map of architecture-config pairs to target sets
+	std::map<ArchConfig, TargetMap*> m_targets;
 
 	//helper to create stuff
-	TargetMap& GetTargetMap(std::string arch);
+	TargetMap& GetTargetMap(ArchConfig config);
 
 	//The nodes
 	std::unordered_set<BuildGraphNode*> m_nodes;

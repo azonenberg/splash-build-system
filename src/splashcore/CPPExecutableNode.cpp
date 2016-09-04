@@ -37,14 +37,15 @@ using namespace std;
 CPPExecutableNode::CPPExecutableNode(
 	BuildGraph* graph,
 	string arch,
+	string config,
 	string name,
 	string path,
 	string toolchain,
 	YAML::Node& node)
-	: BuildGraphNode(graph, arch, name, path, node)
+	: BuildGraphNode(graph, arch, config, name, path, node)
 {
-	LogDebug("Creating CPPExecutableNode %p (arch %s, name %s, toolchain %s)\n",
-		this, arch.c_str(), name.c_str(), toolchain.c_str());
+	LogDebug("Creating CPPExecutableNode %p (arch %s, config %s, name %s, toolchain %s)\n",
+		this, arch.c_str(), config.c_str(), name.c_str(), toolchain.c_str());
 
 	//Sanity check: we must have some source files!
 	if(!node["sources"])
