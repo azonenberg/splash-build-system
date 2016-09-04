@@ -27,59 +27,40 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashctl.h"
+#ifndef WorkingCopy_h
+#define WorkingCopy_h
 
-using namespace std;
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Construction / destruction
-
-WorkingCopy::WorkingCopy()
-	: m_graph(NULL)	//FIXME
-{
-}
-
-WorkingCopy::~WorkingCopy()
-{
-}
+//unique ID for a client
+typedef uint64_t clientID;
 
 /**
-	@brief Save info about the working copy, mostly for debug logging
+	@brief An individual client's working copy
+
+	NOT thread safe; all accesses must come from the DevClientThread for this object
  */
-void WorkingCopy::SetInfo(string hostname, clientID id)
+class WorkingCopy
 {
-	m_hostname = hostname;
-	m_id = id;
-}
+public:
+	WorkingCopy();
+	virtual ~WorkingCopy();
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Directory structure manipulation
+	void SetInfo(std::string hostname, clientID id);
 
-/**
-	@brief Updates a file in the current working copy
+	void UpdateFile(std::string path, std::string hash);
+	void RemoveFile(std::string path);
 
-	@param path		Relative path of the file
-	@param hash		SHA-256 hash of the file
- */
-void WorkingCopy::UpdateFile(string path, string hash)
-{
-	//If the file is a build.yml, process it
-	if(GetBasenameOfFile(path) == "build.yml")
-		m_graph.UpdateScript(path, hash);
+protected:
 
-	m_fileMap[path] = hash;
-}
+	//Map of relative paths to hashes
+	std::map<std::string, std::string> m_fileMap;
 
-/**
-	@brief Removes a file in the current working copy
+	//Info about this working copy
+	std::string m_hostname;
+	clientID m_id;
+	
+	//The parsed build graph for this working copy
+	BuildGraph m_graph;
+};
 
-	@param path		Relative path of the file
- */
-void WorkingCopy::RemoveFile(string path)
-{
-	//If the file is a build.yml, process it
-	if(GetBasenameOfFile(path) == "build.yml")
-		m_graph.RemoveScript(path);
+#endif
 
-	m_fileMap.erase(path);
-}

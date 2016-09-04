@@ -17,6 +17,7 @@ include_directories(${PROTOBUF_DIR})
 add_library(splashcore SHARED
 
 	Cache.cpp
+	WorkingCopy.cpp
 
 	${PROTOBUF_DIR}/splashcore/SplashNet.pb.cc
 
