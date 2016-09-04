@@ -218,7 +218,7 @@ void BuildGraph::InternalRemove(string path)
  */
 void BuildGraph::ParseScript(const string& script, string path)
 {
-	LogDebug("Loading build script %s\n", path.c_str());
+	//LogDebug("Loading build script %s\n", path.c_str());
 	
 	try
 	{
@@ -262,8 +262,6 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
  */
 void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
 {	
-	LogDebug("    Loading configuration\n");
-	
 	//See what toolchain we're configuring
 	if(!node["toolchain"])
 	{
@@ -281,8 +279,8 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
  */
 void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 {
-	LogDebug("    Loading target %s\n", name.c_str());
-
+	LogDebug("Processing target %s in file %s\n", name.c_str(), path.c_str());
+	
 	//Complain if this target is already declared
 	if(m_targetReverseOrigins.find(name) != m_targetReverseOrigins.end())
 	{
@@ -346,10 +344,14 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 				arches.emplace(arch);
 		}
 	}
-	
-	//DEBUG: spam the list
-	for(auto a : arches)
-		LogDebug("        Target arch: %s\n", a.c_str());
+
+	//See what configurations we might be building for
+	unordered_set<string> configs;
+	GetConfigNames(toolchain, path, configs);
+
+	//DEBUG: dump configs
+	for(auto x : configs)
+		LogDebug("config: %s\n", x.c_str());
 
 	//Figure out what kind of target we're creating
 	//Empty type is OK, pick a reasonable default for that.
@@ -362,10 +364,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		if(chaintype == "cpp")
 		{
 			if( (type == "exe") || type.empty() )
-			{
-				LogDebug("        Target is a C++ executable\n");
-				target = new CPPExecutableNode(this, a, name, node);
-			}
+				target = new CPPExecutableNode(this, a, name, path, toolchain, node);
 		}
 		
 		else
@@ -386,7 +385,6 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	}
 
 	//Record that we were declared in this file
-	LogDebug("        Declaring %s in %s\n", name.c_str(), path.c_str());
 	m_targetOrigins[path].emplace(name);
 	m_targetReverseOrigins[name] = path;
 }
@@ -404,6 +402,18 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string path, unordered_set<string>& arches)
 {
 	m_toolchainSettings[toolchain].GetDefaultArchitectures(arches, path);
+}
+
+/**
+	@brief Gets the full set of configurations which we might be building for
+
+	@param toolchain	The name of the toolchain to query
+	@param path			Path to the build script of the current scope
+	@param configs		Set of configurations we found
+ */
+void BuildGraph::GetConfigNames(string toolchain, string path, unordered_set<string>& configs)
+{
+	m_toolchainSettings[toolchain].GetConfigNames(path, configs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

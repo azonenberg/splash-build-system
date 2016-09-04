@@ -36,7 +36,13 @@
 class CPPExecutableNode : public BuildGraphNode
 {
 public:
-	CPPExecutableNode(BuildGraph* graph, std::string arch, std::string name, YAML::Node& node);
+	CPPExecutableNode(
+		BuildGraph* graph,
+		std::string arch,
+		std::string name,
+		std::string path,
+		std::string toolchain,
+		YAML::Node& node);
 	virtual ~CPPExecutableNode();
 
 protected:

@@ -34,9 +34,36 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-CPPExecutableNode::CPPExecutableNode(BuildGraph* graph, string arch, string name, YAML::Node& node)
+CPPExecutableNode::CPPExecutableNode(
+	BuildGraph* graph,
+	string arch,
+	string name,
+	string path,
+	string toolchain,
+	YAML::Node& node)
+	: BuildGraphNode(graph, arch, name, path, node)
 {
-	LogDebug("        Creating CPPExecutableNode %p (arch %s, name %s)\n", this, arch.c_str(), name.c_str());
+	LogDebug("Creating CPPExecutableNode %p (arch %s, name %s, toolchain %s)\n",
+		this, arch.c_str(), name.c_str(), toolchain.c_str());
+
+	//Sanity check: we must have some source files!
+	if(!node["sources"])
+	{
+		LogParseError(
+			"CPPExecutableNode: cannot have a C++ executable (%s, declared in %s) without any source files\n",
+			name.c_str(),
+			path.c_str()
+			);
+		return;
+	}
+	auto snode = node["sources"];
+
+	//Read the sources section
+	for(auto it : snode)
+	{
+		string fname = it.as<std::string>();
+		LogDebug("    source file %s\n", fname.c_str());
+	}
 }
 
 CPPExecutableNode::~CPPExecutableNode()

@@ -58,6 +58,8 @@ public:
 	
 	bool InheritTriplets() const
 	{ return m_bInheritTriplets; }
+
+	void GetConfigNames(std::unordered_set<std::string>& configs);
 		
 protected:
 

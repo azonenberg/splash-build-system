@@ -37,6 +37,7 @@ class BuildGraphNode
 {
 public:
 	BuildGraphNode();
+	BuildGraphNode(BuildGraph* graph, std::string arch, std::string name, std::string path, YAML::Node& node);
 	virtual ~BuildGraphNode();
 	
 	/// @brief Get the hash of the node
@@ -71,11 +72,23 @@ protected:
 	/// @brief Indicates if the node is referenced
 	bool m_ref;
 
+	/// @brief Pointer to our parent graph
+	BuildGraph* m_graph;
+
 	/// @brief The hash of this node (must be set in constructor; immutable)
 	std::string m_hash;
+
+	/// @brief Architecture of this node, or "generic" if independent (source file etc)
+	std::string m_arch;
+
+	/// @brief Human-readable name of this node (for debug messages)
+	std::string m_name;
 	
-	/// @brief Path to the build script this node was declared in
+	/// @brief Path to the build script this node was declared in (for debug messages)
 	std::string m_script;
+
+	/// @brief Flags applied to the node at any step (note that target nodes may have flags for earlier stages too)
+	std::unordered_set<BuildFlag> m_flags;
 };
 
 #endif

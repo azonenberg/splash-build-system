@@ -29,12 +29,43 @@
 
 #include "splashcore.h"
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
+/**
+	@brief Default constructor (for non-targets)
+
+	TODO: how do we use this?
+ */
 BuildGraphNode::BuildGraphNode()
 {
 	m_ref = false;
+}
+
+/**
+	@brief Constructor for nodes which are targets or tests
+ */
+BuildGraphNode::BuildGraphNode(BuildGraph* graph, string arch, string name, string path, YAML::Node& node)
+	: m_ref(false)
+	, m_graph(graph)
+	, m_arch(arch)
+	, m_name(name)
+	, m_script(path)
+{
+	//Ignore the toolchain and arches sections, they're already taken care of
+
+	//Read the flags section
+	if(node["flags"])
+	{
+		auto nflags = node["flags"];
+	
+		for(auto it : nflags)
+			m_flags.emplace(BuildFlag(it.as<std::string>()));
+	}
+
+	//anything else is handled in base class (source files etc)
 }
 
 BuildGraphNode::~BuildGraphNode()

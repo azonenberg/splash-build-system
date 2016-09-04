@@ -70,6 +70,47 @@ void ToolchainSettings::LoadConfig(YAML::Node& node, bool recursive, string path
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Data accessors
 
+/**
+	@brief Find every named configuration we might be targeting
+ */
+void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& configs)
+{
+	//Split the path up into segments
+	list<string> dirs;
+	string p = path;
+	while(p != "")
+	{
+		p = GetDirOfFile(p);
+		dirs.push_front(p);
+	}
+
+	//Start out with an empty list of configs
+	configs.clear();
+
+	//For each directory from top down to us, look up the settings for that directory
+	for(auto d : dirs)
+	{
+		//Generate the path to the build script
+		string p = d;
+		if(p != "")
+			p += "/";
+		p += "build.yml";
+
+		//See if there are any recursive settings for us there.
+		//If not, automatically inherit from parent scope
+		if(m_recursiveSettings.find(p) == m_recursiveSettings.end())
+			continue;
+
+		//Add any new configs
+		m_recursiveSettings[p].GetConfigNames(configs);
+	}
+
+	//Search our path for file level settings
+	if(m_fileSettings.find(path) == m_fileSettings.end())
+		return;
+	m_fileSettings[path].GetConfigNames(configs);
+}
+
 void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, string path)
 {
 	//Split the path up into segments

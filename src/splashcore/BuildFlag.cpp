@@ -37,7 +37,7 @@ using namespace std;
 BuildFlag::BuildFlag(string flag)
 	: m_rawflag(flag)
 {
-	//LogDebug("    Flag: %s\n", flag.c_str());
+	LogDebug("    Flag: %s\n", flag.c_str());
 	
 	//TODO: Parse the flag and set things up properly
 	

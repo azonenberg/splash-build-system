@@ -62,6 +62,11 @@ protected:
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
 
 	void CollectGarbage();
+
+	void GetConfigNames(
+		std::string toolchain,
+		std::string path,
+		std::unordered_set<std::string>& configs);
 	
 	void GetDefaultArchitecturesForToolchain(
 		std::string toolchain,

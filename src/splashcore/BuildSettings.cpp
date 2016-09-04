@@ -94,3 +94,12 @@ BuildSettings::~BuildSettings()
 {
 
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Accessors
+
+void BuildSettings::GetConfigNames(unordered_set<string>& configs)
+{
+	for(auto it : m_configurations)
+		configs.emplace(it.first);
+}
