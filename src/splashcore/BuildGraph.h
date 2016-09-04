@@ -34,6 +34,7 @@
 #define LogParseError(...) LogError(__VA_ARGS__)
 
 class BuildGraphNode;
+class WorkingCopy;
 
 /**
 	@brief A DAG of buildable objects
@@ -44,14 +45,14 @@ class BuildGraphNode;
 class BuildGraph
 {
 public:
-	BuildGraph(Cache* cache);
+	BuildGraph(WorkingCopy* wc);
 	virtual ~BuildGraph();
 
 	void UpdateScript(std::string path, std::string hash);
 	void RemoveScript(std::string path);
 
-	Cache* GetCache()
-	{ return m_cache; }
+	WorkingCopy* GetWorkingCopy()
+	{ return m_workingCopy; }
 
 protected:
 	void Rebuild();
@@ -76,8 +77,8 @@ protected:
 		std::string path,
 		std::unordered_set<std::string>& arches);
 
-	//The cache we're attached to (so we can access file content etc)
-	Cache* m_cache;
+	//The working copy of the repository we're attached to (so we can access file content etc)
+	WorkingCopy* m_workingCopy;
 		
 	//Build scripts that we know about
 	//Map from path to hash

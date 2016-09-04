@@ -34,8 +34,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-BuildGraph::BuildGraph(Cache* cache)
-	: m_cache(cache)
+BuildGraph::BuildGraph(WorkingCopy* wc)
+	: m_workingCopy(wc)
 {
 
 }

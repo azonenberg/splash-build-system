@@ -34,8 +34,9 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-WorkingCopy::WorkingCopy()
-	: m_graph(NULL)	//FIXME
+WorkingCopy::WorkingCopy(Cache* cache)
+	: m_cache(cache)
+	, m_graph(this)
 {
 }
 

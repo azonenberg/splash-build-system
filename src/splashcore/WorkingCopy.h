@@ -41,7 +41,7 @@ typedef uint64_t clientID;
 class WorkingCopy
 {
 public:
-	WorkingCopy();
+	WorkingCopy(Cache* cache = NULL);
 	virtual ~WorkingCopy();
 
 	void SetInfo(std::string hostname, clientID id);
@@ -57,6 +57,9 @@ protected:
 	//Info about this working copy
 	std::string m_hostname;
 	clientID m_id;
+
+	//Pointer to our cache (so we can get to actual file contents)
+	Cache* m_cache;
 	
 	//The parsed build graph for this working copy
 	BuildGraph m_graph;
