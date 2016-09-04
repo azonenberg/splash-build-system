@@ -50,7 +50,11 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Garbage collection during graph rebuilds
 
-	/// @brief Mark the node as referenced
+	/**
+		@brief Mark the node as referenced
+
+		TODO: Mark our dependencies as referenced (if they're not already)
+	 */
 	void SetRef()
 	{ m_ref = true; }
 	

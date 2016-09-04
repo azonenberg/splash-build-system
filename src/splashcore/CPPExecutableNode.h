@@ -33,10 +33,10 @@
 /**
 	@brief A single node in the build graph
  */
-class CPPExecutableNode
+class CPPExecutableNode : public BuildGraphNode
 {
 public:
-	CPPExecutableNode();
+	CPPExecutableNode(BuildGraph* graph, std::string arch, std::string name, YAML::Node& node);
 	virtual ~CPPExecutableNode();
 
 protected:

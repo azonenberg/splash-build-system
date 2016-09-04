@@ -60,6 +60,8 @@ protected:
 	
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
+
+	void CollectGarbage();
 	
 	void GetDefaultArchitecturesForToolchain(
 		std::string toolchain,
@@ -70,13 +72,25 @@ protected:
 	//Map from path to hash
 	std::map<std::string, std::string> m_buildScriptPaths;
 
+	//Track where targets were declared
+	//Map from path to target names (architecture doesn't matter)
+	typedef std::unordered_set<std::string> TargetSet;
+	std::map<std::string, TargetSet > m_targetOrigins;
+
+	//Reverse map of target origins (used to catch multiple declarations)
+	//Map from target name to script path
+	std::map<std::string, std::string> m_targetReverseOrigins;
+
 	//TODO: Log of configuration error messages (displayed to client when we try to build, if not empty)
 
 	//Map of toolchain names to settings for that toolchain
 	std::map<std::string, ToolchainSettings> m_toolchainSettings;
 
-	//Map of target names to targets
-	std::map<std::string, BuildGraphNode*> m_targets;
+	//Map of target names to targets for a single architecture
+	typedef std::map<std::string, BuildGraphNode*> TargetMap;
+
+	//Map of architectures to target sets
+	std::map<std::string, TargetMap> m_targets;
 
 	//The nodes
 	std::unordered_set<BuildGraphNode*> m_nodes;

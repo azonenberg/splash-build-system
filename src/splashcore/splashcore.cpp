@@ -60,7 +60,7 @@ bool SendMessage(Socket& s, const SplashMsg& msg, string hostname)
 	}
 	if(!s.SendPascalString(buf))
 	{
-		LogWarning("Connection to %s dropped (while sending protobuf len)\n", hostname.c_str());
+		//LogWarning("Connection to %s dropped (while sending protobuf)\n", hostname.c_str());
 		return false;
 	}
 	return true;
@@ -74,7 +74,7 @@ bool RecvMessage(Socket& s, SplashMsg& msg, string hostname)
 	string buf;
 	if(!s.RecvPascalString(buf))
 	{
-		LogWarning("Connection to %s dropped (while reading protobuf len)\n", hostname.c_str());
+		//LogWarning("Connection to %s dropped (while reading protobuf)\n", hostname.c_str());
 		return false;
 	}
 	if(!msg.ParseFromString(buf))

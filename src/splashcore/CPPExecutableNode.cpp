@@ -29,16 +29,18 @@
 
 #include "splashcore.h"
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-CPPExecutableNode::CPPExecutableNode()
+CPPExecutableNode::CPPExecutableNode(BuildGraph* graph, string arch, string name, YAML::Node& node)
 {
-
+	LogDebug("        Creating CPPExecutableNode %p (arch %s, name %s)\n", this, arch.c_str(), name.c_str());
 }
 
 CPPExecutableNode::~CPPExecutableNode()
 {
-	
+	LogDebug("        Destroying CPPExecutableNode %p\n", this);
 }
 

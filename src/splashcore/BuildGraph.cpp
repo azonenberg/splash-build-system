@@ -121,11 +121,86 @@ void BuildGraph::RemoveScript(string path)
  */
 void BuildGraph::InternalRemove(string path)
 {
+	//Remove any recursive toolchain configurations declared in this file
 	for(auto x : m_toolchainSettings)
 		x.second.PurgeConfig(path);
+
+	//Find targets declared in that script
+	LogDebug("Purging all nodes declared in %s\n", path.c_str());
+	for(auto target : m_targetOrigins[path])
+	{
+		LogDebug("    Removing all instances of target %s\n", target.c_str());
+
+		//Loop over the set of architectures and remove each instance of the target separately
+		for(auto it : m_targets)
+		{
+			TargetMap& m = it.second;
+			if(m.find(target) != m.end())
+			{
+				LogDebug("        Found architecture %s\n", it.first.c_str());
+				m.erase(target);
+			}
+		}
+
+		//Remove references to this script being declared
+		m_targetReverseOrigins.erase(target);
+	}
+	m_targetOrigins.erase(path);
+
+	//GC unused nodes
+	CollectGarbage();
 	
-	//TODO: delete targets
 	//TODO: delete tests
+
+	//Remove references to the script itself
+	m_targetOrigins.erase(path);
+}
+
+/**
+	@brief Simple mark-and-sweep garbage collector to remove nodes we no longer have any references to
+
+	(for example, after deleting a dependency)
+ */
+void BuildGraph::CollectGarbage()
+{
+	LogDebug("Collecting garbage\n");
+	
+	//First pass: Mark all nodes unreferenced
+	LogDebug("    Marking %d nodes as unreferenced\n", m_nodes.size());
+	for(auto n : m_nodes)
+		n->SetUnref();
+
+	//Second pass: Mark all of our targets as referenced.
+	//They will propagate the reference flag as needed.
+	//TODO: Mark tests as referenced (if tests are not the same as targets)
+	LogDebug("    Marking architectures for %d targets as referenced\n", m_targets.size());
+	for(auto it : m_targets)
+	{
+		LogDebug("        Marking %d targets for architecture %s as referenced\n", it.second.size(), it.first.c_str());
+		for(auto jt : it.second)
+		{
+			LogDebug("            Marking nodes for target %s as referenced\n", jt.first.c_str());
+			jt.second->SetRef();
+		}
+	}
+
+	//Third pass: Make a list of nodes to delete (can't delete them during iteration)
+	list<BuildGraphNode*> garbage;
+	LogDebug("    Scanning for unreferenced nodes\n");
+	for(auto n : m_nodes)
+	{
+		if(!n->IsReferenced())
+			garbage.push_back(n);
+	}
+	LogDebug("        Found %d nodes\n", garbage.size());
+
+	//Final step: actually delete them
+	LogDebug("    Deleting unreferenced nodes\n");
+	for(auto n : garbage)
+	{
+		m_nodes.erase(n);
+		delete n;
+	}
 }
 
 /**
@@ -136,7 +211,7 @@ void BuildGraph::InternalRemove(string path)
  */
 void BuildGraph::ParseScript(const string& script, string path)
 {
-	//LogDebug("Loading build script %s\n", path.c_str());
+	LogDebug("Loading build script %s\n", path.c_str());
 	
 	try
 	{
@@ -201,6 +276,18 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 {
 	LogDebug("    Loading target %s\n", name.c_str());
 
+	//Complain if this target is already declared
+	if(m_targetReverseOrigins.find(name) != m_targetReverseOrigins.end())
+	{
+		LogParseError(
+			"Target \"%s\" in build script \"%s\" conflicts with another target of the same name declared in "
+			"build script \"%s\"\n",
+			name.c_str(),
+			path.c_str(),
+			m_targetReverseOrigins[name].c_str());
+		return;
+	}
+
 	//Sanity check that we asked for a toolchain
 	if(!node["toolchain"])
 	{
@@ -258,22 +345,43 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		LogDebug("        Target arch: %s\n", a.c_str());
 
 	//Figure out what kind of target we're creating
-	//Empty type is OK, pick a reasonable default for
-	BuildGraphNode* target = NULL;
-	if(chaintype == "cpp")
+	//Empty type is OK, pick a reasonable default for that.
+	//We need separate nodes for each architecture since they can have different dependencies etc
+	for(auto a : arches)
 	{
-		if( (type == "exe") || type.empty() )
+		BuildGraphNode* target = NULL;
+
+		//C/C++ executables
+		if(chaintype == "cpp")
 		{
-			LogDebug("        Target is a C++ executable\n");
+			if( (type == "exe") || type.empty() )
+			{
+				LogDebug("        Target is a C++ executable\n");
+				target = new CPPExecutableNode(this, a, name, node);
+			}
 		}
+		
+		else
+		{
+			LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
+			return;
+		}
+
+		if(target == NULL)
+		{
+			LogParseError("No target could be created for architecture %s\n", a.c_str());
+			return;
+		}
+
+		//Add to target list plus global node set
+		m_targets[a][name] = target;
+		m_nodes.emplace(target);
 	}
-	else
-	{
-		LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
-		return;
-	}
-	
-	//TODO: Add to target list
+
+	//Record that we were declared in this file
+	LogDebug("        Declaring %s in %s\n", name.c_str(), path.c_str());
+	m_targetOrigins[path].emplace(name);
+	m_targetReverseOrigins[name] = path;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
