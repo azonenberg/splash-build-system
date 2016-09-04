@@ -44,11 +44,14 @@ class BuildGraphNode;
 class BuildGraph
 {
 public:
-	BuildGraph();
+	BuildGraph(Cache* cache);
 	virtual ~BuildGraph();
 
 	void UpdateScript(std::string path, std::string hash);
 	void RemoveScript(std::string path);
+
+	Cache* GetCache()
+	{ return m_cache; }
 
 protected:
 	void Rebuild();
@@ -72,6 +75,9 @@ protected:
 		std::string toolchain,
 		std::string path,
 		std::unordered_set<std::string>& arches);
+
+	//The cache we're attached to (so we can access file content etc)
+	Cache* m_cache;
 		
 	//Build scripts that we know about
 	//Map from path to hash

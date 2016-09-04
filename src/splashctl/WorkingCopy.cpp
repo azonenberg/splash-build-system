@@ -35,6 +35,7 @@ using namespace std;
 // Construction / destruction
 
 WorkingCopy::WorkingCopy()
+	: m_graph(NULL)	//FIXME
 {
 }
 

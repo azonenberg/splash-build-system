@@ -106,9 +106,12 @@ void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& confi
 	}
 
 	//Search our path for file level settings
-	if(m_fileSettings.find(path) == m_fileSettings.end())
-		return;
-	m_fileSettings[path].GetConfigNames(configs);
+	if(m_fileSettings.find(path) != m_fileSettings.end())
+		m_fileSettings[path].GetConfigNames(configs);
+
+	//If there are no configs whatsoever after all this, default to "release"
+	if(configs.empty())
+		configs.emplace("release");
 }
 
 void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, string path)

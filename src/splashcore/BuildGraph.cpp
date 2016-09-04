@@ -34,7 +34,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-BuildGraph::BuildGraph()
+BuildGraph::BuildGraph(Cache* cache)
+	: m_cache(cache)
 {
 
 }
@@ -72,7 +73,7 @@ BuildGraph::TargetMap& BuildGraph::GetTargetMap(ArchConfig config)
  */
 void BuildGraph::CollectGarbage()
 {
-	LogDebug("Collecting garbage\n");
+	//LogDebug("Collecting garbage\n");
 	
 	//First pass: Mark all nodes unreferenced
 	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodes.size());
