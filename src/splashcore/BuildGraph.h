@@ -90,7 +90,10 @@ protected:
 	typedef std::map<std::string, BuildGraphNode*> TargetMap;
 
 	//Map of architectures to target sets
-	std::map<std::string, TargetMap> m_targets;
+	std::map<std::string, TargetMap*> m_targets;
+
+	//helper to create stuff
+	TargetMap& GetTargetMap(std::string arch);
 
 	//The nodes
 	std::unordered_set<BuildGraphNode*> m_nodes;

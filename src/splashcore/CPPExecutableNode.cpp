@@ -41,6 +41,6 @@ CPPExecutableNode::CPPExecutableNode(BuildGraph* graph, string arch, string name
 
 CPPExecutableNode::~CPPExecutableNode()
 {
-	LogDebug("        Destroying CPPExecutableNode %p\n", this);
+	LogDebug("    Destroying CPPExecutableNode %p\n", this);
 }
 

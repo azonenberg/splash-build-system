@@ -41,10 +41,75 @@ BuildGraph::BuildGraph()
 
 BuildGraph::~BuildGraph()
 {
+	LogDebug("Destroying build graph\n");
+	
+	//Delete all targets
+	for(auto it : m_targets)
+		delete it.second;
+	m_targets.clear();
+	
 	//Delete all nodes (in no particular order)
 	for(auto x : m_nodes)
 		delete x;
 	m_nodes.clear();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Garbage collection and target helper stuff
+
+BuildGraph::TargetMap& BuildGraph::GetTargetMap(string arch)
+{
+	if(m_targets.find(arch) != m_targets.end())
+		return *m_targets[arch];
+
+	return *(m_targets[arch] = new TargetMap);
+}
+
+/**
+	@brief Simple mark-and-sweep garbage collector to remove nodes we no longer have any references to
+
+	(for example, after deleting a dependency)
+ */
+void BuildGraph::CollectGarbage()
+{
+	LogDebug("Collecting garbage\n");
+	
+	//First pass: Mark all nodes unreferenced
+	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodes.size());
+	for(auto n : m_nodes)
+		n->SetUnref();
+
+	//Second pass: Mark all of our targets as referenced.
+	//They will propagate the reference flag as needed.
+	//TODO: Mark tests as referenced (if tests are not the same as targets)
+	//LogDebug("    Marking architectures for %zu targets as referenced\n", m_targets.size());
+	for(auto it : m_targets)
+	{
+		//LogDebug("        Marking %zu targets for architecture %s as referenced\n", it.second->size(), it.first.c_str());
+		for(auto jt : *it.second)
+		{
+			//LogDebug("            Marking nodes for target %s as referenced\n", jt.first.c_str());
+			jt.second->SetRef();
+		}
+	}
+
+	//Third pass: Make a list of nodes to delete (can't delete them during iteration)
+	list<BuildGraphNode*> garbage;
+	//LogDebug("    Scanning for unreferenced nodes\n");
+	for(auto n : m_nodes)
+	{
+		if(!n->IsReferenced())
+			garbage.push_back(n);
+	}
+	//LogDebug("        Found %d nodes\n", garbage.size());
+
+	//Final step: actually delete them
+	//LogDebug("    Deleting unreferenced nodes\n");
+	for(auto n : garbage)
+	{
+		m_nodes.erase(n);
+		delete n;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,23 +191,12 @@ void BuildGraph::InternalRemove(string path)
 		x.second.PurgeConfig(path);
 
 	//Find targets declared in that script
-	LogDebug("Purging all nodes declared in %s\n", path.c_str());
+	//LogDebug("Purging all nodes declared in %s\n", path.c_str());
 	for(auto target : m_targetOrigins[path])
 	{
-		LogDebug("    Removing all instances of target %s\n", target.c_str());
-
-		//Loop over the set of architectures and remove each instance of the target separately
 		for(auto it : m_targets)
-		{
-			TargetMap& m = it.second;
-			if(m.find(target) != m.end())
-			{
-				LogDebug("        Found architecture %s\n", it.first.c_str());
-				m.erase(target);
-			}
-		}
-
-		//Remove references to this script being declared
+			it.second->erase(target);
+		
 		m_targetReverseOrigins.erase(target);
 	}
 	m_targetOrigins.erase(path);
@@ -154,53 +208,6 @@ void BuildGraph::InternalRemove(string path)
 
 	//Remove references to the script itself
 	m_targetOrigins.erase(path);
-}
-
-/**
-	@brief Simple mark-and-sweep garbage collector to remove nodes we no longer have any references to
-
-	(for example, after deleting a dependency)
- */
-void BuildGraph::CollectGarbage()
-{
-	LogDebug("Collecting garbage\n");
-	
-	//First pass: Mark all nodes unreferenced
-	LogDebug("    Marking %d nodes as unreferenced\n", m_nodes.size());
-	for(auto n : m_nodes)
-		n->SetUnref();
-
-	//Second pass: Mark all of our targets as referenced.
-	//They will propagate the reference flag as needed.
-	//TODO: Mark tests as referenced (if tests are not the same as targets)
-	LogDebug("    Marking architectures for %d targets as referenced\n", m_targets.size());
-	for(auto it : m_targets)
-	{
-		LogDebug("        Marking %d targets for architecture %s as referenced\n", it.second.size(), it.first.c_str());
-		for(auto jt : it.second)
-		{
-			LogDebug("            Marking nodes for target %s as referenced\n", jt.first.c_str());
-			jt.second->SetRef();
-		}
-	}
-
-	//Third pass: Make a list of nodes to delete (can't delete them during iteration)
-	list<BuildGraphNode*> garbage;
-	LogDebug("    Scanning for unreferenced nodes\n");
-	for(auto n : m_nodes)
-	{
-		if(!n->IsReferenced())
-			garbage.push_back(n);
-	}
-	LogDebug("        Found %d nodes\n", garbage.size());
-
-	//Final step: actually delete them
-	LogDebug("    Deleting unreferenced nodes\n");
-	for(auto n : garbage)
-	{
-		m_nodes.erase(n);
-		delete n;
-	}
 }
 
 /**
@@ -374,7 +381,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		}
 
 		//Add to target list plus global node set
-		m_targets[a][name] = target;
+		GetTargetMap(a)[name] = target;
 		m_nodes.emplace(target);
 	}
 
