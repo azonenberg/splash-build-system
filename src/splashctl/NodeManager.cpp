@@ -159,9 +159,9 @@ void NodeManager::RecomputeCompilerHashes()
 						continue;
 					}
 
-					//If another node took it, keep the higher version
+					//If another node took the tuple already, keep the higher version
 					Toolchain* otherTool = GetAnyToolchainForHash(currentToolchains[c]);
-					if(tool->CompareVersion(otherTool))
+					if(tool->CompareVersion(otherTool) >= 0)
 						currentToolchains[c] = hash;
 				}
 			}
