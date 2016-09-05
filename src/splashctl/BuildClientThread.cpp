@@ -77,9 +77,9 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			static_cast<RemoteToolchain::ToolchainType>(madd.compilertype()),
 			madd.hash(),
 			madd.versionstr(),
-			(madd.versionnum() >> 24) & 0xff,
-			(madd.versionnum() >> 16) & 0xff,
-			(madd.versionnum() >> 8) & 0xff
+			(madd.versionnum() >> 16) & 0xffff,
+			(madd.versionnum() >> 8) & 0xff,
+			(madd.versionnum() >> 0) & 0xff
 			);
 		
 		//Languages

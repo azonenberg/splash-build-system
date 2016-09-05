@@ -75,8 +75,9 @@ message BuildInfo
 message AddCompiler
 {
 				uint32	compilerType= 1;	//Type of compiler (Toolchain::CompilerType)
-				uint32	versionNum	= 2;	//Machine-readable version number of compiler, left justified hex
-											//4.9.2 is encoded as 0x04090200
+				uint32	versionNum	= 2;	//Machine-readable version number of compiler, left justified hex.
+											//Two octets for major version.
+											//4.9.2 is encoded as 0x0400090200
 				string	hash		= 3;	//ID hash of the compiler
 				string	versionStr	= 4;	//Human-readable version string
 	repeated	uint32	lang		= 5;	//Array of languages

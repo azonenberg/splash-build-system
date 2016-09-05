@@ -152,9 +152,9 @@ int main(int argc, char* argv[])
 		SplashMsg tadd;
 		auto madd = tadd.mutable_addcompiler();
 		madd->set_compilertype(t->GetType());
-		madd->set_versionnum((t->GetMajorVersion() << 24) |
-							(t->GetMinorVersion() << 16) |
-							(t->GetPatchVersion() << 8));
+		madd->set_versionnum((t->GetMajorVersion() << 16) |
+							(t->GetMinorVersion() << 8) |
+							(t->GetPatchVersion() << 0));
 		madd->set_hash(t->GetHash());
 		madd->set_versionstr(t->GetVersionString());
 		auto dlangs = t->GetSupportedLanguages();
