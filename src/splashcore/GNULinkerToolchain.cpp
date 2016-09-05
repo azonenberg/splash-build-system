@@ -48,21 +48,25 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 		LogFatal("bad ld version\n");
 	}
 	m_patchVersion = 0;
-	
-	/*	
-	//Some compilers can target other arches if you feed them the right flags.
-	//Thanks to @GyrosGeier for this
-	string cmd =
-		string("/bin/bash -c \"") + 
-		basepath + " -print-multi-lib | sed -e 's/.*;//' -e 's/@/ -/g' | while read line; do " +
-		basepath + " \\$line -print-multiarch; done" +
-		string("\"");
-	string extra_arches = ShellCommand(cmd);
-	ParseLines(extra_arches, m_triplets);
+
+	//Get the list of supported $ARCHes
+	/*
+	string archlist = ShellCommand(basepath + " -V | grep elf");
+	vector<string> lines;
+	ParseLines(lines, archlist);
 	*/
 	
-	//For now, only use the arch in the file name
+	//Use the arch in the file name
 	m_triplets.push_back(triplet);
+
+	//Add some extra triplets as needed
+	//TODO: can we auto-detect this without having to hard code mappings?
+	if(triplet == "x86_64-linux-gnu")
+	{
+		m_triplets.push_back(str_replace("x86_64", "i386", triplet));
+		m_triplets.push_back(str_replace("gnu", "gnux32", triplet));
+	}
+	//TODO: mips/mipsel etc
 	
 	//Generate the hash
 	//TODO: Anything else to add here?
