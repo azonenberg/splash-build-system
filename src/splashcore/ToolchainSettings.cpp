@@ -71,18 +71,71 @@ void ToolchainSettings::LoadConfig(YAML::Node& node, bool recursive, string path
 // Data accessors
 
 /**
-	@brief Find every named configuration we might be targeting
+	@brief Split a path up into its component directories
+
+	TODO: Move this to a global function so we can use it elsewhere?
  */
-void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& configs)
+void ToolchainSettings::SegmentPath(string path, list<string>& dirs)
 {
-	//Split the path up into segments
-	list<string> dirs;
 	string p = path;
 	while(p != "")
 	{
 		p = GetDirOfFile(p);
 		dirs.push_front(p);
 	}
+}
+
+/**
+	@brief Gets the path to the build script for a given directory
+
+	TODO: Move this to a global function so we can use it elsewhere?
+ */
+string ToolchainSettings::GetBuildScriptPath(string dir)
+{
+	string p = dir;
+	if(p != "")
+		p += "/";
+	p += "build.yml";
+	return p;
+}
+
+/**
+	@brief Get flags for a given configuration and scope.
+
+	Note that the flags set is NOT cleared beforehand since we might want to append to existing stuff
+ */
+void ToolchainSettings::GetFlags(string config, string path, unordered_set<BuildFlag>& flags)
+{
+	//Split the path up into segments
+	list<string> dirs;
+	SegmentPath(path, dirs);
+	
+	//For each directory from top down to us, look up the settings for that directory
+	for(auto d : dirs)
+	{
+		//See if there are any recursive settings for us there.
+		//If not, automatically inherit from parent scope
+		string p = GetBuildScriptPath(d);
+		if(m_recursiveSettings.find(p) == m_recursiveSettings.end())
+			continue;
+
+		m_recursiveSettings[p].GetFlags(config, flags);
+	}
+	
+	//Search our path for file level settings
+	if(m_fileSettings.find(path) == m_fileSettings.end())
+		return;
+	m_fileSettings[path].GetFlags(config, flags);
+}
+
+/**
+	@brief Find every named configuration we might be targeting
+ */
+void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& configs)
+{
+	//Split the path up into segments
+	list<string> dirs;
+	SegmentPath(path, dirs);
 
 	//Start out with an empty list of configs
 	configs.clear();
@@ -90,14 +143,9 @@ void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& confi
 	//For each directory from top down to us, look up the settings for that directory
 	for(auto d : dirs)
 	{
-		//Generate the path to the build script
-		string p = d;
-		if(p != "")
-			p += "/";
-		p += "build.yml";
-
 		//See if there are any recursive settings for us there.
 		//If not, automatically inherit from parent scope
+		string p = GetBuildScriptPath(d);
 		if(m_recursiveSettings.find(p) == m_recursiveSettings.end())
 			continue;
 
@@ -118,12 +166,7 @@ void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, s
 {
 	//Split the path up into segments
 	list<string> dirs;
-	string p = path;
-	while(p != "")
-	{
-		p = GetDirOfFile(p);
-		dirs.push_front(p);
-	}
+	SegmentPath(path, dirs);
 	
 	//Start out with an empty list of architectures
 	arches.clear();
@@ -131,14 +174,9 @@ void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, s
 	//For each directory from top down to us, look up the settings for that directory
 	for(auto d : dirs)
 	{
-		//Generate the path to the build script
-		string p = d;
-		if(p != "")
-			p += "/";
-		p += "build.yml";
-		
 		//See if there are any recursive settings for us there.
 		//If not, automatically inherit from parent scope
+		string p = GetBuildScriptPath(d);
 		if(m_recursiveSettings.find(p) == m_recursiveSettings.end())
 			continue;
 			

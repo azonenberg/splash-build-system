@@ -37,21 +37,126 @@ using namespace std;
 BuildFlag::BuildFlag(string flag)
 	: m_rawflag(flag)
 {
-	//LogDebug("    Flag: %s\n", flag.c_str());
+	//If the flag is "global" then no further parsing needed
+	if(flag == "global")
+	{
+		m_usage = NO_TIME;
+		m_type = TYPE_META;
+		m_flag = "global";
+		return;
+	}
 	
-	//TODO: Parse the flag and set things up properly
-	
-	/*
+	//Try to get the info out of it
 	char group[32];
 	char name[32];
 	if(2 != sscanf(flag.c_str(), "%31[^/]/%31s", group, name))
 	{
-		
+		LogParseError("Flag \"%s\" is malformed (expected \"category/flag\" form)\n", flag.c_str());
+		return;
 	}
-	*/
+
+	//Read the flag name itself
+	m_flag = name;
+
+	//Look up the type
+	string sgroup(group);
+	if(sgroup == "warning")
+		LoadWarningFlag();
+	else if(sgroup == "error")
+		LoadErrorFlag();
+	else if(sgroup == "optimize")
+		LoadOptimizeFlag();
+	else if(sgroup == "debug")
+		LoadDebugFlag();
+	else if(sgroup == "analysis")
+		LoadAnalysisFlag();
+	else if(sgroup == "dialect")
+		LoadDialectFlag();
+	else
+		LogParseError("Unknown flag group \"%s\"\n", group);
 }
 
 BuildFlag::~BuildFlag()
 {
 	
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Accessors
+
+/**
+	@brief Checks if this flag is used at a particular step in the build process
+ */
+bool BuildFlag::IsUsedAt(FlagUsage t)
+{
+	return (m_usage & t) ? true : false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Initialization
+
+void BuildFlag::LoadWarningFlag()
+{
+	m_type = TYPE_WARNING;
+
+	//warning/max: request max available warning level
+	if(m_flag == "max")
+		m_usage = COMPILE_TIME | LINK_TIME | SYNTHESIS_TIME | MAP_TIME | PAR_TIME | IMAGE_TIME;
+
+	else
+		LogParseError("Flag \"warning/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadErrorFlag()
+{
+	m_type = TYPE_ERROR;
+
+	LogParseError("Flag \"error/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadOptimizeFlag()
+{
+	m_type = TYPE_OPTIMIZE;
+
+	//optimize/none: request no optimizations
+	if(m_flag == "none")
+		m_usage = COMPILE_TIME | LINK_TIME | SYNTHESIS_TIME | MAP_TIME | PAR_TIME;
+
+	//optimize/speed: generic speed optimizations
+	else if(m_flag == "speed")
+		m_usage = COMPILE_TIME | LINK_TIME | SYNTHESIS_TIME | MAP_TIME | PAR_TIME;
+
+	else
+		LogParseError("Flag \"optimize/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadDebugFlag()
+{
+	m_type = TYPE_DEBUG;
+
+	//debug/gdb: generate gdb debug information
+	if(m_flag == "gdb")
+		m_usage = COMPILE_TIME | LINK_TIME;
+
+	else
+		LogParseError("Flag \"debug/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadAnalysisFlag()
+{
+	m_type = TYPE_ANALYSIS;
+
+	LogParseError("Flag \"analysis/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadDialectFlag()
+{
+	m_type = TYPE_DIALECT;
+
+	//dialect/c++11: use C++ 11
+	if(m_flag == "c++11")
+		m_usage = COMPILE_TIME;
+
+	else
+		LogParseError("Flag \"dialect/%s\" is unknown\n", m_flag.c_str());
 }

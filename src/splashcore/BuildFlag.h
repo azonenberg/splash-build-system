@@ -62,20 +62,34 @@ public:
 	 */
 	enum FlagType
 	{
-		TYPE_WARNING	= 1,		//enable/disable some kind of warning
-		TYPE_ERROR		= 2,		//enable/disable some kind of error
-		TYPE_OPTIMIZE	= 3,		//control optimization behavior
-		TYPE_DEBUG		= 4,		//enable/disable debug symbols or debugging features
-		TYPE_ANALYSIS	= 5,		//enable/disable profiling, tracing, etc
-		TYPE_DIALECT	= 6,		//control which dialect of a language is being used
+		TYPE_META		= 1,		//flags that control splash itself (like "global")
+		TYPE_WARNING	= 2,		//enable/disable some kind of warning
+		TYPE_ERROR		= 3,		//enable/disable some kind of error
+		TYPE_OPTIMIZE	= 4,		//control optimization behavior
+		TYPE_DEBUG		= 5,		//enable/disable debug symbols or debugging features
+		TYPE_ANALYSIS	= 6,		//enable/disable profiling, tracing, etc
+		TYPE_DIALECT	= 7,		//control which dialect of a language is being used
 		
 		TYPE_INVALID	= 0			//placeholder
 	};
-	
+
+	/**
+		@brief Return the original flag text, human readable (like "warning/max")
+	 */
 	operator std::string() const
 	{ return m_rawflag; }
+
+	bool IsUsedAt(FlagUsage t);
 	
 protected:
+
+	//Helpers for initializing
+	void LoadWarningFlag();
+	void LoadErrorFlag();
+	void LoadOptimizeFlag();
+	void LoadDebugFlag();
+	void LoadAnalysisFlag();
+	void LoadDialectFlag();
 	
 	/**
 		@brief Usage flags (bitmask of FlagUsage)

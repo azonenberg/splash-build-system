@@ -50,8 +50,8 @@ BuildGraph::~BuildGraph()
 	m_targets.clear();
 	
 	//Delete all nodes (in no particular order)
-	for(auto x : m_nodes)
-		delete x;
+	for(auto it : m_nodes)
+		delete it.second;
 	m_nodes.clear();
 }
 
@@ -77,8 +77,8 @@ void BuildGraph::CollectGarbage()
 	
 	//First pass: Mark all nodes unreferenced
 	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodes.size());
-	for(auto n : m_nodes)
-		n->SetUnref();
+	for(auto it : m_nodes)
+		it.second->SetUnref();
 
 	//Second pass: Mark all of our targets as referenced.
 	//They will propagate the reference flag as needed.
@@ -94,22 +94,22 @@ void BuildGraph::CollectGarbage()
 		}
 	}
 
-	//Third pass: Make a list of nodes to delete (can't delete them during iteration)
-	list<BuildGraphNode*> garbage;
+	//Third pass: Make a list (by hash) of nodes to delete (can't delete them during iteration)
+	list<std::string> garbage;
 	//LogDebug("    Scanning for unreferenced nodes\n");
-	for(auto n : m_nodes)
+	for(auto it : m_nodes)
 	{
-		if(!n->IsReferenced())
-			garbage.push_back(n);
+		if(!it.second->IsReferenced())
+			garbage.push_back(it.first);
 	}
 	//LogDebug("        Found %d nodes\n", garbage.size());
 
 	//Final step: actually delete them
 	//LogDebug("    Deleting unreferenced nodes\n");
-	for(auto n : garbage)
+	for(auto hash : garbage)
 	{
-		m_nodes.erase(n);
-		delete n;
+		delete m_nodes[hash];
+		m_nodes.erase(hash);
 	}
 }
 
@@ -276,6 +276,14 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
 }
 
 /**
+	@brief Adds a node to the graph
+ */
+void BuildGraph::AddNode(BuildGraphNode* node)
+{
+	m_nodes[node->GetHash()] = node;
+}
+
+/**
 	@brief Loads configuration for a single target
  */
 void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
@@ -380,7 +388,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 
 			//Add to target list plus global node set
 			GetTargetMap(ArchConfig(a, c))[name] = target;
-			m_nodes.emplace(target);
+			AddNode(target);
 		}
 	}
 
@@ -414,6 +422,19 @@ void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string pa
 void BuildGraph::GetConfigNames(string toolchain, string path, unordered_set<string>& configs)
 {
 	m_toolchainSettings[toolchain].GetConfigNames(path, configs);
+}
+
+/**
+	@brief Gets the flags to be used for a particular architecture and configuration
+
+	@param toolchain	The toolchain in use
+	@param config		The configuration to query
+	@param path			Path to the build script of the current scope
+	@param flags		The set of flags. Any flags already in this set are kept.
+ */
+void BuildGraph::GetFlags(string toolchain, string config, string path, unordered_set<BuildFlag>& flags)
+{
+	m_toolchainSettings[toolchain].GetFlags(config, path, flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -50,3 +50,12 @@ BuildConfiguration::~BuildConfiguration()
 {
 
 }
+
+/**
+	@brief Add our flags to the provided set
+ */
+void BuildConfiguration::GetFlags(unordered_set<BuildFlag>& flags)
+{
+	for(auto f : m_flags)
+		flags.emplace(f);
+}

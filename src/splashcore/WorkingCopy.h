@@ -49,9 +49,17 @@ public:
 	void UpdateFile(std::string path, std::string hash);
 	void RemoveFile(std::string path);
 
+	//Get the hash of a file
+	std::string GetFileHash(std::string path)
+	{ return m_fileMap[path]; }
+
 protected:
 
-	//Map of relative paths to hashes
+	/**
+		@brief Map of relative paths to hashes
+
+		Object/executable files TODO
+	 */
 	std::map<std::string, std::string> m_fileMap;
 
 	//Info about this working copy

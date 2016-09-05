@@ -39,6 +39,7 @@ public:
 	BuildGraphNode();
 	BuildGraphNode(
 		BuildGraph* graph,
+		std::string toolchain,
 		std::string arch,
 		std::string config,
 		std::string name,
@@ -53,6 +54,10 @@ public:
 	/// @brief Get the script of the node
 	std::string GetScript()
 	{ return m_script; }
+
+	void GetFlagsForUseAt(
+		BuildFlag::FlagUsage when,
+		std::unordered_set<BuildFlag>& flags);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Garbage collection during graph rebuilds
@@ -81,6 +86,9 @@ protected:
 	/// @brief Pointer to our parent graph
 	BuildGraph* m_graph;
 
+	/// @brief The toolchain this node is built with (may be empty string if a source file, etc)
+	std::string m_toolchain;
+
 	/// @brief The hash of this node (must be set in constructor; immutable)
 	std::string m_hash;
 
@@ -98,6 +106,9 @@ protected:
 
 	/// @brief Flags applied to the node at any step (note that target nodes may have flags for earlier stages too)
 	std::unordered_set<BuildFlag> m_flags;
+
+	/// @brief Set of named files we DIRECTLY depend on (source files, object files, etc)
+	std::unordered_set<std::string> m_directDependencies;
 };
 
 #endif

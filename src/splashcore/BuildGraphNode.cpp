@@ -47,9 +47,17 @@ BuildGraphNode::BuildGraphNode()
 /**
 	@brief Constructor for nodes which are targets or tests
  */
-BuildGraphNode::BuildGraphNode(BuildGraph* graph, string arch, string config, string name, string path, YAML::Node& node)
+BuildGraphNode::BuildGraphNode(
+	BuildGraph* graph,
+	string toolchain,
+	string arch,
+	string config,
+	string name,
+	string path,
+	YAML::Node& node)
 	: m_ref(false)
 	, m_graph(graph)
+	, m_toolchain(toolchain)
 	, m_arch(arch)
 	, m_config(config)
 	, m_name(name)
@@ -63,7 +71,14 @@ BuildGraphNode::BuildGraphNode(BuildGraph* graph, string arch, string config, st
 		auto nflags = node["flags"];
 	
 		for(auto it : nflags)
-			m_flags.emplace(BuildFlag(it.as<std::string>()));
+		{
+			//If the flag is "global" pull in the upstream flags
+			string flag = it.as<std::string>();
+			if(flag == "global")
+				graph->GetFlags(toolchain, config, path, m_flags);
+			else
+				m_flags.emplace(BuildFlag(flag));
+		}
 	}
 
 	//anything else is handled in base class (source files etc)
@@ -72,4 +87,21 @@ BuildGraphNode::BuildGraphNode(BuildGraph* graph, string arch, string config, st
 BuildGraphNode::~BuildGraphNode()
 {
 	
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Accessors
+
+/**
+	@brief Figures out what flags are applicable to a particular point in the build process
+ */
+void BuildGraphNode::GetFlagsForUseAt(
+	BuildFlag::FlagUsage when,
+	unordered_set<BuildFlag>& flags)
+{
+	for(auto f : m_flags)
+	{
+		if(f.IsUsedAt(when))
+			flags.emplace(f);
+	}
 }

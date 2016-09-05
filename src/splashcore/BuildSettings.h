@@ -60,6 +60,8 @@ public:
 	{ return m_bInheritTriplets; }
 
 	void GetConfigNames(std::unordered_set<std::string>& configs);
+
+	void GetFlags(std::string config, std::unordered_set<BuildFlag>& flags);
 		
 protected:
 

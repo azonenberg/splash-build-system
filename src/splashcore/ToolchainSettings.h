@@ -44,9 +44,13 @@ public:
 	
 	void GetDefaultArchitectures(std::unordered_set<std::string>& arches, std::string path);
 	void GetConfigNames(std::string path, std::unordered_set<std::string>& configs);
+	void GetFlags(std::string config, std::string path, std::unordered_set<BuildFlag>& flags);
 	
 protected:
 	void GetDefaultArchitectures_helper(const BuildSettings& settings, std::unordered_set<std::string>& arches);
+
+	void SegmentPath(std::string path, std::list<std::string>& dirs);
+	std::string GetBuildScriptPath(std::string dir);
 
 	/**
 		@brief Map from file paths to BuildSettings declared in that path. Inherited by subdirectories.

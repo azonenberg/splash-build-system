@@ -42,7 +42,7 @@ CPPExecutableNode::CPPExecutableNode(
 	string path,
 	string toolchain,
 	YAML::Node& node)
-	: BuildGraphNode(graph, arch, config, name, path, node)
+	: BuildGraphNode(graph, toolchain, arch, config, name, path, node)
 {
 	LogDebug("    Creating CPPExecutableNode (arch %s, config %s, name %s, toolchain %s)\n",
 		arch.c_str(), config.c_str(), name.c_str(), toolchain.c_str());
@@ -59,15 +59,42 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 	auto snode = node["sources"];
 
-	//Read the sources section
+	//Look up the working copy we're part of
+	WorkingCopy* wc = m_graph->GetWorkingCopy();
+
+	//Collect the compiler flags
+	unordered_set<BuildFlag> compileFlags;
+	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
+	for(auto x : compileFlags)
+		LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
+
+	//Read the sources section and create an object node for each one
 	for(auto it : snode)
 	{
-		string fname = it.as<std::string>();
+		//File name is relative to the build script.
+		//Get the actual path name (TODO: canonicalize ../ etc)
+		string fname = (GetDirOfFile(path) + "/" + it.as<std::string>());
 
-		//See if
-		
-		LogDebug("        source file %s\n", fname.c_str());
+		//TODO
 	}
+
+		/*
+	//Look up the hash for that file name
+	string hash = wc->GetFileHash(fpath);
+	LogDebug("        source file %s has hash %s\n", fpath.c_str(), hash.c_str());
+
+	//If we do not already have a node for that hash, create one
+	if(!m_graph->HasNodeWithHash(hash))
+	{
+		LogDebug("        No source file node in graph\n");
+	}
+	*/
+
+	//Generate our hash
+	//FIXME: just use our pointer
+	char tmp[32];
+	snprintf(tmp, sizeof(tmp), "%p", this);
+	m_hash = sha256(tmp);
 }
 
 CPPExecutableNode::~CPPExecutableNode()

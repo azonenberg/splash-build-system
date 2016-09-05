@@ -98,6 +98,20 @@ BuildSettings::~BuildSettings()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 
+/**
+	@brief Add our flags to the provided set
+ */
+void BuildSettings::GetFlags(string config, unordered_set<BuildFlag>& flags)
+{
+	//Apply global flags
+	for(auto x : m_flags)
+		flags.emplace(x);
+	
+	//and then flags for this config
+	if(m_configurations.find(config) != m_configurations.end())
+		m_configurations[config].GetFlags(flags);
+}
+
 void BuildSettings::GetConfigNames(unordered_set<string>& configs)
 {
 	for(auto it : m_configurations)

@@ -48,6 +48,9 @@
 						We don't use filesystem atime as that's way too easy to set by accident
 
 	All functions (aside from constructor/destructor) are thread safe and include locking where necessary.
+
+	TODO: provide some way to "pin" actively referenced items in the cache so we don't evict them, even if not
+	recently changed
  */
 class Cache
 {

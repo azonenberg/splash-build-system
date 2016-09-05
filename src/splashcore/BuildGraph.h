@@ -41,6 +41,9 @@ class WorkingCopy;
 	
 	Not even remotely thread safe yet.
 	TODO: see if we need to be, or if we can run everything in the client thread
+
+	TODO: eventually consider having some of the graph nodes (source files etc) be shared across working copies
+	to reduce memory usage in large projects
  */
 class BuildGraph
 {
@@ -53,6 +56,16 @@ public:
 
 	WorkingCopy* GetWorkingCopy()
 	{ return m_workingCopy; }
+
+	/**
+		@brief Check if we have a node with a given hash
+	 */
+	bool HasNodeWithHash(std::string hash)
+	{ return m_nodes.find(hash) != m_nodes.end(); }
+
+	void AddNode(BuildGraphNode* node);
+
+	void GetFlags(std::string toolchain, std::string config, std::string path, std::unordered_set<BuildFlag>& flags);
 
 protected:
 	void Rebuild();
@@ -111,8 +124,8 @@ protected:
 	//helper to create stuff
 	TargetMap& GetTargetMap(ArchConfig config);
 
-	//The nodes
-	std::unordered_set<BuildGraphNode*> m_nodes;
+	//The nodes (map from hash to pointer)
+	std::map<std::string, BuildGraphNode*> m_nodes;
 };
 
 #endif
