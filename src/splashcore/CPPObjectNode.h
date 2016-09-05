@@ -27,67 +27,27 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashcore.h"
+#ifndef CPPObjectNode_h
+#define CPPObjectNode_h
 
-using namespace std;
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Construction / destruction
-
-CPPExecutableNode::CPPExecutableNode(
-	BuildGraph* graph,
-	string arch,
-	string config,
-	string name,
-	string path,
-	string toolchain,
-	YAML::Node& node)
-	: BuildGraphNode(graph, toolchain, arch, config, name, path, node)
+/**
+	@brief A C++ object file
+ */
+class CPPObjectNode : public BuildGraphNode
 {
-	LogDebug("    Creating CPPExecutableNode (arch %s, config %s, name %s, toolchain %s)\n",
-		arch.c_str(), config.c_str(), name.c_str(), toolchain.c_str());
+public:
+	CPPObjectNode(
+		BuildGraph* graph,
+		std::string arch,
+		std::string config,
+		std::string fname,
+		std::string path,
+		std::string toolchain
+	);
+	virtual ~CPPObjectNode();
 
-	//Sanity check: we must have some source files!
-	if(!node["sources"])
-	{
-		LogParseError(
-			"CPPExecutableNode: cannot have a C++ executable (%s, declared in %s) without any source files\n",
-			name.c_str(),
-			path.c_str()
-			);
-		return;
-	}
-	auto snode = node["sources"];
+protected:
+};
 
-	//Look up the working copy we're part of
-	WorkingCopy* wc = m_graph->GetWorkingCopy();
-
-	//Collect the compiler flags
-	unordered_set<BuildFlag> compileFlags;
-	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
-	for(auto x : compileFlags)
-		LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
-
-	/*
-	//Read the sources section and create an object node for each one
-	for(auto it : snode)
-	{
-		//File name is relative to the build script.
-		//Get the actual path name (TODO: canonicalize ../ etc)
-		string fname = (GetDirOfFile(path) + "/" + it.as<std::string>());
-
-		//TODO
-	}
-	*/
-
-	//Generate our hash
-	//FIXME: just use our pointer
-	char tmp[32];
-	snprintf(tmp, sizeof(tmp), "%p", this);
-	m_hash = sha256(tmp);
-}
-
-CPPExecutableNode::~CPPExecutableNode()
-{
-}
+#endif
 

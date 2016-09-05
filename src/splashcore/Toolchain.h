@@ -39,16 +39,21 @@ public:
 	/**
 		@brief Type of compiler
 
-		Allows build server to report installed compilers to splashctl
+		Allows build server to report installed compilers to splashctl.
+
+		Type IDs should be ordered such that higher IDs are preferable when both are available for a given
+		language/architecture pairing (for example Vivado is preferred to ISE as the default Verilog toolchain)
 	 */
 	enum ToolchainType
 	{
+		TOOLCHAIN_NULL,		//No compiler (placeholder / least preferred)
+		
 		TOOLCHAIN_GNU,		//GNU C/C++
 		TOOLCHAIN_CLANG,	//Clang
 		TOOLCHAIN_ISE,		//Xilinx ISE
 		TOOLCHAIN_VIVADO,	//Xilinx Vivado
 
-		TOOLCHAIN_LAST		//placeholder
+		TOOLCHAIN_LAST		//max toolchain ID
 	};
 	
 	Toolchain(std::string basepath, ToolchainType type);
@@ -84,6 +89,21 @@ public:
 	 */
 	const std::vector<Language>& GetSupportedLanguages()
 	{ return m_langs; }
+
+	/**
+		@brief Determines if we support a given language
+	 */
+	bool IsLanguageSupported(Language lang);
+
+	/**
+		@brief Determines if we support a given architecture
+	 */
+	bool IsArchitectureSupported(std::string arch);
+
+	/**
+		@brief Get a language ID as a string
+	 */
+	static std::string LangToString(Language lang);
 	
 	/**
 		@brief Get the list of languages that we can compile, as strings (for debug)

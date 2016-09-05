@@ -31,7 +31,7 @@
 #define CPPExecutableNode_h
 
 /**
-	@brief A single node in the build graph
+	@brief A C++ executable
  */
 class CPPExecutableNode : public BuildGraphNode
 {

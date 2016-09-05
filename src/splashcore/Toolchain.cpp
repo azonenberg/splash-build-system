@@ -51,7 +51,7 @@ void Toolchain::DebugPrint()
 {
 	vector<string> langs;
 	GetSupportedLanguages(langs);
-	
+
 	LogVerbose("Toolchain %s:\n", GetHash().c_str());
 	LogVerbose("    Type:        %s\n", GetToolchainType().c_str());
 	if(GetPatchVersion() != 0)
@@ -71,22 +71,67 @@ void Toolchain::DebugPrint()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 
+bool Toolchain::IsArchitectureSupported(string arch)
+{
+	for(auto x : m_triplets)
+	{
+		if(x == arch)
+			return true;
+	}
+	return false;
+}
+
+bool Toolchain::IsLanguageSupported(Language lang)
+{
+	for(auto x : m_langs)
+	{
+		if(x == lang)
+			return true;
+	}
+
+	return false;
+}
+
 string Toolchain::GetToolchainType()
 {
 	switch(m_type)
 	{
 		case TOOLCHAIN_GNU:
 			return "GNU";
-			
+
 		case TOOLCHAIN_CLANG:
 			return "Clang";
-			
+
 		case TOOLCHAIN_ISE:
 			return "ISE";
-		
+
 		case TOOLCHAIN_VIVADO:
 			return "Vivado";
-		
+
+		default:
+			return "invalid";
+	}
+}
+
+string Toolchain::LangToString(Language lang)
+{
+	switch(lang)
+	{
+		case LANG_OBJECT:
+			return "Object files";
+
+		case LANG_C:
+			return "C";
+
+		case LANG_CPP:
+			return "C++";
+
+		case LANG_ASM:
+			return "Assembly";
+
+		case LANG_VERILOG:
+			return "Verilog";
+
 		default:
 			return "invalid";
 	}
@@ -95,32 +140,5 @@ string Toolchain::GetToolchainType()
 void Toolchain::GetSupportedLanguages(vector<string>& langs)
 {
 	for(auto x : m_langs)
-	{
-		switch(x)
-		{
-			case LANG_OBJECT:
-				langs.push_back("Object files");
-				break;
-				
-			case LANG_C:
-				langs.push_back("C");
-				break;
-				
-			case LANG_CPP:
-				langs.push_back("C++");
-				break;
-				
-			case LANG_ASM:
-				langs.push_back("Assembly");
-				break;
-			
-			case LANG_VERILOG:
-				langs.push_back("Verilog");
-				break;
-				
-			default:
-				langs.push_back("invalid");
-				break;
-		}
-	}
+		langs.push_back(LangToString(x));
 }

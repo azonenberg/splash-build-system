@@ -30,8 +30,8 @@
 #ifndef NodeManager_h
 #define NodeManager_h
 
-//set of toolchains
-typedef std::unordered_set<Toolchain*> vtool;
+//map of toolchain hashes to IDs
+typedef std::map<std::string, Toolchain*> vtool;
 
 //set of node IDs
 typedef std::unordered_set<clientID> vnode;
@@ -39,10 +39,14 @@ typedef std::unordered_set<clientID> vnode;
 //(language, target arch) tuple
 typedef std::pair<Toolchain::Language, std::string> larch;
 
+//(compiler name, target arch) tuple
+typedef std::pair<std::string, std::string> carch;
+
 /**
 	@brief List of nodes connected to the server, and various info about them
 
 	All functions except constructor/destructor are thread safe
+	(not an issue as they're called before clients join / after they leave)
  */
 class NodeManager
 {
@@ -53,12 +57,14 @@ public:
 	clientID AllocateClient(std::string hostname);
 	void RemoveClient(clientID id);
 
-	void AddToolchain(clientID id, Toolchain* chain);
+	void AddToolchain(clientID id, Toolchain* chain, bool moreComing);
 
 	WorkingCopy& GetWorkingCopy(clientID id)
 	{ return m_workingCopies[id]; }
 
 protected:
+
+	void RecomputeCompilerHashes();
 
 	//Mutex to control access to all node lists
 	std::mutex m_mutex;
@@ -66,6 +72,8 @@ protected:
 	//List of compilers available on each node
 	//This is the authoritative pointer to nodes
 	std::map<clientID, vtool> m_toolchainsByNode;
+
+	//Map from compiler info to compiler hashes
 
 	//List of nodes with any compiler for a given language and target architecture
 	std::map<larch, vnode> m_nodesByLanguage;
@@ -77,6 +85,18 @@ protected:
 	std::map<clientID, WorkingCopy> m_workingCopies;
 
 	clientID m_nextClientID;
+};
+
+/**
+	@brief Hash function (for unordered_set)
+ */
+namespace std
+{
+	template<> struct hash<larch>
+	{
+		size_t operator()(const larch& l) const
+		{ return hash<string>()(Toolchain::LangToString(l.first) + "/" + l.second); }
+	};
 };
 
 extern NodeManager* g_nodeManager;

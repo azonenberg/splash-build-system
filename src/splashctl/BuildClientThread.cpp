@@ -91,6 +91,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			toolchain->AddTriplet(madd.triplet(j));
 
 		//Register the toolchain in the global indexes
-		g_nodeManager->AddToolchain(id, toolchain);
+		bool moreToolchains = (i+1 < binfom.numchains());
+		g_nodeManager->AddToolchain(id, toolchain, moreToolchains);
 	}
 }

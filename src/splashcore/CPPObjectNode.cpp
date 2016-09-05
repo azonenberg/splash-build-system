@@ -5,10 +5,10 @@
 * Copyright (c) 2016 Andrew D. Zonenberg                                                                               *
 * All rights reserved.                                                                                                 *
 *                                                                                                                      *
-* Redistribution and use in source and binary forms, with or without modification, are permitted provided that the     *
+* Redistribution and use in Object and binary forms, with or without modification, are permitted provided that the     *
 * following conditions are met:                                                                                        *
 *                                                                                                                      *
-*    * Redistributions of source code must retain the above copyright notice, this list of conditions, and the         *
+*    * Redistributions of Object code must retain the above copyright notice, this list of conditions, and the         *
 *      following disclaimer.                                                                                           *
 *                                                                                                                      *
 *    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the       *
@@ -34,60 +34,18 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-CPPExecutableNode::CPPExecutableNode(
+CPPObjectNode::CPPObjectNode(
 	BuildGraph* graph,
-	string arch,
-	string config,
-	string name,
-	string path,
-	string toolchain,
-	YAML::Node& node)
-	: BuildGraphNode(graph, toolchain, arch, config, name, path, node)
+	std::string arch,
+	std::string config,
+	std::string fname,
+	std::string path,
+	std::string toolchain)
 {
-	LogDebug("    Creating CPPExecutableNode (arch %s, config %s, name %s, toolchain %s)\n",
-		arch.c_str(), config.c_str(), name.c_str(), toolchain.c_str());
-
-	//Sanity check: we must have some source files!
-	if(!node["sources"])
-	{
-		LogParseError(
-			"CPPExecutableNode: cannot have a C++ executable (%s, declared in %s) without any source files\n",
-			name.c_str(),
-			path.c_str()
-			);
-		return;
-	}
-	auto snode = node["sources"];
-
-	//Look up the working copy we're part of
-	WorkingCopy* wc = m_graph->GetWorkingCopy();
-
-	//Collect the compiler flags
-	unordered_set<BuildFlag> compileFlags;
-	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
-	for(auto x : compileFlags)
-		LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
-
-	/*
-	//Read the sources section and create an object node for each one
-	for(auto it : snode)
-	{
-		//File name is relative to the build script.
-		//Get the actual path name (TODO: canonicalize ../ etc)
-		string fname = (GetDirOfFile(path) + "/" + it.as<std::string>());
-
-		//TODO
-	}
-	*/
-
-	//Generate our hash
-	//FIXME: just use our pointer
-	char tmp[32];
-	snprintf(tmp, sizeof(tmp), "%p", this);
-	m_hash = sha256(tmp);
+	
 }
 
-CPPExecutableNode::~CPPExecutableNode()
+CPPObjectNode::~CPPObjectNode()
 {
 }
 

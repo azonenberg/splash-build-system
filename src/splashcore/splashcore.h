@@ -95,6 +95,8 @@
 
 #include "BuildGraph.h"
 #include "BuildGraphNode.h"
+#include "CPPSourceNode.h"
+#include "CPPObjectNode.h"
 #include "CPPExecutableNode.h"
 
 #include "WorkingCopy.h"

@@ -107,8 +107,12 @@ protected:
 	/// @brief Flags applied to the node at any step (note that target nodes may have flags for earlier stages too)
 	std::unordered_set<BuildFlag> m_flags;
 
-	/// @brief Set of named files we DIRECTLY depend on (source files, object files, etc)
-	std::unordered_set<std::string> m_directDependencies;
+	/**
+		@brief Set of named files we depend on (source files, object files, etc)
+
+		Direct dependencies only, not transitive ones.
+	 */
+	std::unordered_set<std::string> m_dependencies;
 };
 
 #endif
