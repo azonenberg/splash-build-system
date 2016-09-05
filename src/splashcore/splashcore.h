@@ -118,6 +118,7 @@ bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 double GetTime();
 
 void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false);
+std::string MakeStringLowercase(std::string str);
 
 std::string ShellCommand(std::string cmd, bool trimNewline = true);
 

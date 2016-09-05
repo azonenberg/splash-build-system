@@ -65,6 +65,7 @@ public:
 protected:
 
 	void RecomputeCompilerHashes();
+	Toolchain* GetAnyToolchainForHash(std::string hash);
 
 	//Mutex to control access to all node lists
 	std::mutex m_mutex;
@@ -73,7 +74,8 @@ protected:
 	//This is the authoritative pointer to nodes
 	std::map<clientID, vtool> m_toolchainsByNode;
 
-	//Map from compiler info to compiler hashes
+	//Map from<name, architecture> to compiler hash
+	std::map<carch, std::string> m_toolchainsByHash;
 
 	//List of nodes with any compiler for a given language and target architecture
 	std::map<larch, vnode> m_nodesByLanguage;

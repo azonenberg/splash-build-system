@@ -71,6 +71,50 @@ void Toolchain::DebugPrint()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 
+/**
+	@brief Compare our version and type to another toolchain
+
+	@return 1 if we're greater
+			0 if equal
+			-1 if other is greater
+ */
+int Toolchain::CompareVersionAndType(Toolchain* rhs)
+{
+	if(m_type > rhs->m_type)
+		return 1;
+	else if(m_type < rhs->m_type)
+		return -1;
+
+	return CompareVersion(rhs);
+}
+
+/**
+	@brief Compare our version to another toolchain
+
+	@return 1 if we're greater
+			0 if equal
+			-1 if other is greater
+ */
+int Toolchain::CompareVersion(Toolchain* rhs)
+{
+	if(m_majorVersion > rhs->m_majorVersion)
+		return 1;
+	else if(m_majorVersion < rhs->m_majorVersion)
+		return -1;
+
+	if(m_minorVersion > rhs->m_minorVersion)
+		return 1;
+	else if(m_minorVersion < rhs->m_minorVersion)
+		return -1;
+
+	if(m_patchVersion > rhs->m_patchVersion)
+		return 1;
+	else if(m_patchVersion < rhs->m_patchVersion)
+		return -1;
+
+	return 0;
+}
+
 bool Toolchain::IsArchitectureSupported(string arch)
 {
 	for(auto x : m_triplets)
@@ -118,7 +162,7 @@ string Toolchain::LangToString(Language lang)
 	switch(lang)
 	{
 		case LANG_OBJECT:
-			return "Object files";
+			return "Object";
 
 		case LANG_C:
 			return "C";
@@ -141,4 +185,36 @@ void Toolchain::GetSupportedLanguages(vector<string>& langs)
 {
 	for(auto x : m_langs)
 		langs.push_back(LangToString(x));
+}
+
+/**
+	@brief Get the full list of compiler names we implement
+ */
+void Toolchain::GetCompilerNames(unordered_set<string>& names)
+{
+	//Toolchain type
+	string type = MakeStringLowercase(GetToolchainType());
+
+	//Set of languages we support
+	unordered_set<string> langs;
+	for(auto x : m_langs)
+		langs.emplace(MakeStringLowercase(LangToString(x)));
+
+	//Set of version numbers we implement
+	unordered_set<string> versions;
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "%d", m_majorVersion);
+	versions.emplace(tmp);
+	snprintf(tmp, sizeof(tmp), "%d.%d", m_majorVersion, m_minorVersion);
+	versions.emplace(tmp);
+	snprintf(tmp, sizeof(tmp), "%d.%d.%d", m_majorVersion, m_minorVersion, m_patchVersion);
+	versions.emplace(tmp);
+
+	//Generate the full set
+	for(auto l : langs)
+	{
+		for(auto v : versions)
+			names.emplace(string(l + "/" + type + "/" + v));
+		names.emplace(string(l + "/" + type));
+	}
 }

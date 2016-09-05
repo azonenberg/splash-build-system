@@ -156,6 +156,11 @@ public:
 	
 	std::string GetVersionString()
 	{ return m_stringVersion; }
+
+	void GetCompilerNames(std::unordered_set<std::string>& names);
+
+	int CompareVersion(Toolchain* rhs);
+	int CompareVersionAndType(Toolchain* rhs);
 	
 protected:
 

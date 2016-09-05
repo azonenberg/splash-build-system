@@ -113,6 +113,14 @@ string ShellCommand(string cmd, bool trimNewline)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // String manipulation helpers
 
+string MakeStringLowercase(string str)
+{
+	string r;
+	for(auto c : str)
+		r += tolower(c);
+	return r;
+}
+
 /**
 	@brief Split a large string into an array of lines
  */

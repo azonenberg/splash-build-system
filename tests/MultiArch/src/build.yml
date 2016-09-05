@@ -35,7 +35,7 @@
 MultiArch:
 
     # type of compiler to use (generic C++ compiler, no preference on version or suite)
-    toolchain:     cpp/generic
+    toolchain:     c++/generic
     
     # Target type (default for cpp: exe)
     
