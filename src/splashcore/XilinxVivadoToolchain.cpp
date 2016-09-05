@@ -51,26 +51,15 @@ XilinxVivadoToolchain::XilinxVivadoToolchain(string basepath, int major, int min
 	//TODO: Do this based on version number etc
 	//We know that basic 7 series are supported everywhere
 	
-	m_triplets.push_back("artix7-xc7a100t-1");
-	m_triplets.push_back("artix7-xc7a100t-2");
-	m_triplets.push_back("artix7-xc7a100t-3");
-	m_triplets.push_back("artix7-xc7a200t-1");
-	m_triplets.push_back("artix7-xc7a200t-2");
-	m_triplets.push_back("artix7-xc7a200t-3");
+	m_triplets.push_back("artix7-xc7a100t");
+	m_triplets.push_back("artix7-xc7a200t");
 	
-	m_triplets.push_back("kintex7-xc7k70t-1");
-	m_triplets.push_back("kintex7-xc7k70t-2");
-	m_triplets.push_back("kintex7-xc7k70t-3");
+	m_triplets.push_back("kintex7-xc7k70t");
+	m_triplets.push_back("kintex7-xc7k160t");
 	
-	m_triplets.push_back("zynq7-xc7z010-1");
-	m_triplets.push_back("zynq7-xc7z010-2");
-	m_triplets.push_back("zynq7-xc7z010-3");
-	m_triplets.push_back("zynq7-xc7z020-1");
-	m_triplets.push_back("zynq7-xc7z020-2");
-	m_triplets.push_back("zynq7-xc7z020-3");
-	m_triplets.push_back("zynq7-xc7z030-1");
-	m_triplets.push_back("zynq7-xc7z030-2");
-	m_triplets.push_back("zynq7-xc7z030-3");
+	m_triplets.push_back("zynq7-xc7z010");
+	m_triplets.push_back("zynq7-xc7z020");
+	m_triplets.push_back("zynq7-xc7z030");
 	
 	//Generate the hash
 	m_hash = sha256(string("Xilinx Vivado ") + m_stringVersion);
