@@ -213,7 +213,7 @@ void NodeManager::RecomputeCompilerHashes()
 			string hash = it.second;
 			Toolchain* tool = GetAnyToolchainForHash(hash);
 
-			LogDebug("%20s for %20s is %15s (%s)\n",
+			LogDebug("%25s for %20s is %25s (%s)\n",
 				c.first.c_str(), c.second.c_str(), tool->GetVersionString().c_str(), hash.c_str());
 		}
 
