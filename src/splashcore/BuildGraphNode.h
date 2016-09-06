@@ -37,14 +37,22 @@ class BuildGraphNode
 {
 public:
 	BuildGraphNode();
+
+	BuildGraphNode(
+		BuildGraph* graph,
+		std::string path
+		);
+	
 	BuildGraphNode(
 		BuildGraph* graph,
 		std::string toolchain,
 		std::string arch,
 		std::string config,
 		std::string name,
+		std::string scriptpath,
 		std::string path,
 		YAML::Node& node);
+		
 	virtual ~BuildGraphNode();
 	
 	/// @brief Get the hash of the node
@@ -77,6 +85,10 @@ public:
 	/// @brief Checks if the node is referenced
 	bool IsReferenced()
 	{ return m_ref; }
+
+	/// @brief Gets the path of our node (relative to the working copy)
+	std::string GetFilePath()
+	{ return m_path; }
 	
 protected:
 
@@ -103,6 +115,9 @@ protected:
 	
 	/// @brief Path to the build script this node was declared in (for debug messages)
 	std::string m_script;
+
+	/// @brief Path to the file this node creates (or the input file, for source nodes)
+	std::string m_path;
 
 	/// @brief Flags applied to the node at any step (note that target nodes may have flags for earlier stages too)
 	std::unordered_set<BuildFlag> m_flags;

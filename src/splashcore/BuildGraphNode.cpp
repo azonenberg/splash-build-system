@@ -45,6 +45,23 @@ BuildGraphNode::BuildGraphNode()
 }
 
 /**
+	@brief Constructor for nodes which are source files
+ */
+BuildGraphNode::BuildGraphNode(
+	BuildGraph* graph,
+	string path)
+	: m_ref(false)
+	, m_graph(graph)
+	, m_toolchain(NULL)
+	, m_arch("generic")
+	, m_config("generic")
+	, m_name(GetBasenameOfFile(path))
+	, m_script("")
+	, m_path(path)
+{
+}
+
+/**
 	@brief Constructor for nodes which are targets or tests
  */
 BuildGraphNode::BuildGraphNode(
@@ -53,6 +70,7 @@ BuildGraphNode::BuildGraphNode(
 	string arch,
 	string config,
 	string name,
+	string scriptpath,
 	string path,
 	YAML::Node& node)
 	: m_ref(false)
@@ -61,7 +79,8 @@ BuildGraphNode::BuildGraphNode(
 	, m_arch(arch)
 	, m_config(config)
 	, m_name(name)
-	, m_script(path)
+	, m_script(scriptpath)
+	, m_path(path)
 {
 	//Ignore the toolchain and arches sections, they're already taken care of
 

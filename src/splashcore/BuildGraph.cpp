@@ -50,9 +50,10 @@ BuildGraph::~BuildGraph()
 	m_targets.clear();
 	
 	//Delete all nodes (in no particular order)
-	for(auto it : m_nodes)
+	for(auto it : m_nodesByHash)
 		delete it.second;
-	m_nodes.clear();
+	m_nodesByHash.clear();
+	m_nodesByPath.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +78,7 @@ void BuildGraph::CollectGarbage()
 	
 	//First pass: Mark all nodes unreferenced
 	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodes.size());
-	for(auto it : m_nodes)
+	for(auto it : m_nodesByHash)
 		it.second->SetUnref();
 
 	//Second pass: Mark all of our targets as referenced.
@@ -97,7 +98,7 @@ void BuildGraph::CollectGarbage()
 	//Third pass: Make a list (by hash) of nodes to delete (can't delete them during iteration)
 	list<std::string> garbage;
 	//LogDebug("    Scanning for unreferenced nodes\n");
-	for(auto it : m_nodes)
+	for(auto it : m_nodesByHash)
 	{
 		if(!it.second->IsReferenced())
 			garbage.push_back(it.first);
@@ -108,8 +109,9 @@ void BuildGraph::CollectGarbage()
 	//LogDebug("    Deleting unreferenced nodes\n");
 	for(auto hash : garbage)
 	{
-		delete m_nodes[hash];
-		m_nodes.erase(hash);
+		m_nodesByPath.erase(m_nodesByHash[hash]->GetFilePath());
+		delete m_nodesByHash[hash];
+		m_nodesByHash.erase(hash);
 	}
 }
 
@@ -280,7 +282,8 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
  */
 void BuildGraph::AddNode(BuildGraphNode* node)
 {
-	m_nodes[node->GetHash()] = node;
+	m_nodesByHash[node->GetHash()] = node;
+	m_nodesByPath[node->GetFilePath()] = node;
 }
 
 /**
@@ -367,11 +370,14 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		{
 			BuildGraphNode* target = NULL;
 
+			//Create the output path
+			string exepath = GetOutputFilePath(toolchain, c, a, type, name);
+
 			//C/C++ executables
 			if(chaintype == "c++")
 			{
 				if( (type == "exe") || type.empty() )
-					target = new CPPExecutableNode(this, a, c, name, path, toolchain, node);
+					target = new CPPExecutableNode(this, a, c, name, path, exepath, toolchain, node);
 			}
 			
 			else
@@ -447,21 +453,38 @@ void BuildGraph::GetFlags(string toolchain, string config, string path, unordere
 	changes (like the monstrosity that was Splash v0.1 did).
 
 	Basic rebuild flow is as follows:
-
-	READ SCRIPT
-
-	GARBAGE COLLECT
-	* For all graph nodes
-		* Mark as unreferenced
-	* Add nodes for all targets and tests to a FIFO
-	* While fifo not empty
-		* Pop node
-		* If node is referenced, go on to next node
-		* Mark node as referenced
-		* Add all dependencies of the node to the tail of the FIFO
-	* For all graph nodes
-		* If not referenced, delete it
+	TODO
  */
 void BuildGraph::Rebuild()
 {
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Filesystem
+
+/**
+	@brief Gets the output file name for a *target*.
+
+	TODO: separate function for intermediate build results like object files?
+
+	Overall path looks like this:
+	output_dir/architecture/config/name.suffix
+ */
+string BuildGraph::GetOutputFilePath(
+	string /*toolchain*/,
+	string config,
+	string arch,
+	string /*type*/,
+	string name)
+{
+	//TODO: make this configurable in the root Splashfile or something?
+	string path = "build/";
+
+	path += arch + "/";
+	path += config + "/";
+	path += name;
+
+	//TODO: apply toolchain-specific suffix for .so, .dll, .exe, etc
+
+	return path;
 }

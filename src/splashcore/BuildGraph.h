@@ -61,11 +61,18 @@ public:
 		@brief Check if we have a node with a given hash
 	 */
 	bool HasNodeWithHash(std::string hash)
-	{ return m_nodes.find(hash) != m_nodes.end(); }
+	{ return m_nodesByHash.find(hash) != m_nodesByHash.end(); }
 
 	void AddNode(BuildGraphNode* node);
 
 	void GetFlags(std::string toolchain, std::string config, std::string path, std::unordered_set<BuildFlag>& flags);
+
+	std::string GetOutputFilePath(
+		std::string toolchain,
+		std::string config,
+		std::string arch,
+		std::string type,
+		std::string name);
 
 protected:
 	void Rebuild();
@@ -124,8 +131,12 @@ protected:
 	//helper to create stuff
 	TargetMap& GetTargetMap(ArchConfig config);
 
+	//Alternate index of nodes (map from file name to pointer)
+	//TODO: properly handle multiple nodes mapping to same binary if we don't GC all the time?
+	std::map<std::string, BuildGraphNode*> m_nodesByPath;
+
 	//The nodes (map from hash to pointer)
-	std::map<std::string, BuildGraphNode*> m_nodes;
+	std::map<std::string, BuildGraphNode*> m_nodesByHash;
 };
 
 #endif

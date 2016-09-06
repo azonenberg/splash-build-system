@@ -39,13 +39,14 @@ CPPExecutableNode::CPPExecutableNode(
 	string arch,
 	string config,
 	string name,
+	string scriptpath,
 	string path,
 	string toolchain,
 	YAML::Node& node)
-	: BuildGraphNode(graph, toolchain, arch, config, name, path, node)
+	: BuildGraphNode(graph, toolchain, arch, config, name, scriptpath, path, node)
 {
-	LogDebug("    Creating CPPExecutableNode (arch %s, config %s, name %s, toolchain %s)\n",
-		arch.c_str(), config.c_str(), name.c_str(), toolchain.c_str());
+	LogDebug("    Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
+		toolchain.c_str(), path.c_str());
 
 	//Sanity check: we must have some source files!
 	if(!node["sources"])
@@ -67,6 +68,8 @@ CPPExecutableNode::CPPExecutableNode(
 	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
 	for(auto x : compileFlags)
 		LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
+
+	//Create source nodes, if they don't already exist
 
 	/*
 	//Read the sources section and create an object node for each one
