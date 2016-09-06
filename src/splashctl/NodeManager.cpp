@@ -57,7 +57,8 @@ clientID NodeManager::AllocateClient(string hostname)
 
 	m_mutex.lock();
 		id = m_nextClientID ++;
-		m_workingCopies[id].SetInfo(hostname, id);
+		m_workingCopies[id] = new WorkingCopy;
+		m_workingCopies[id]->SetInfo(hostname, id);
 	m_mutex.unlock();
 
 	return id;
@@ -82,6 +83,7 @@ void NodeManager::RemoveClient(clientID id)
 		for(auto x : m_nodesByCompiler)
 			m_nodesByCompiler[x.first].erase(id);
 
+		delete m_workingCopies[id];
 		m_workingCopies.erase(id);
 
 	m_mutex.unlock();
@@ -165,7 +167,7 @@ void NodeManager::RecomputeCompilerHashes()
 						currentToolchains[c] = hash;
 				}
 			}
-			
+
 		}
 
 		//For each language/architecture, find the best toolchain available
@@ -177,7 +179,7 @@ void NodeManager::RecomputeCompilerHashes()
 
 			//Loop over all toolchains we have (TODO: only per language? index this somehow?)
 			for(auto it : m_nodesByCompiler)
-			{				
+			{
 				//Look up the toolchain object for that client
 				string hash = it.first;
 				Toolchain* tool = GetAnyToolchainForHash(hash);
@@ -206,6 +208,7 @@ void NodeManager::RecomputeCompilerHashes()
 			}
 		}
 
+		/*
 		//DEBUG: Print the final mapping
 		for(auto it : currentToolchains)
 		{
@@ -215,6 +218,36 @@ void NodeManager::RecomputeCompilerHashes()
 
 			LogDebug("%25s for %20s is %25s (%s)\n",
 				c.first.c_str(), c.second.c_str(), tool->GetVersionString().c_str(), hash.c_str());
+		}
+		*/
+
+		//Update the global toolchain list
+		bool changed = false;
+		for(auto it : currentToolchains)
+		{
+			carch c = it.first;
+			string hash = it.second;
+
+			//If adding a new toolchain where there was not one already: No big deal, existing state didn't change
+			if(m_toolchainsByHash.find(c) == m_toolchainsByHash.end())
+			{
+				m_toolchainsByHash[c] = hash;
+				//LogDebug("Adding new toolchain for %25s on %20s\n", c.first.c_str(), c.second.c_str());
+				continue;
+			}
+
+
+			//Existing toolchain is there.
+			//Go over each working copy and re-run all build scripts that touched nodes of that toolchain
+			changed = true;
+		}
+
+		//FIXME: do something more efficient!
+		//For now, just re-run every build script in every working copy.
+		if(changed)
+		{
+			for(auto it : m_workingCopies)
+				it.second->RefreshToolchains();
 		}
 
 	m_mutex.unlock();
@@ -232,7 +265,7 @@ Toolchain* NodeManager::GetAnyToolchainForHash(string hash)
 		return NULL;
 	if(m_nodesByCompiler[hash].empty())
 		return NULL;
-	
+
 	//Find a client that has this toolchain installed
 	clientID id = *m_nodesByCompiler[hash].begin();
 

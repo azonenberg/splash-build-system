@@ -44,6 +44,9 @@ WorkingCopy::~WorkingCopy()
 {
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Accessors
+
 /**
 	@brief Save info about the working copy, mostly for debug logging
  */
@@ -51,6 +54,14 @@ void WorkingCopy::SetInfo(string hostname, clientID id)
 {
 	m_hostname = hostname;
 	m_id = id;
+}
+
+string WorkingCopy::GetFileHash(string path)
+{
+	m_mutex.lock();
+		string r = m_fileMap[path];
+	m_mutex.unlock();
+	return r;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,11 +75,15 @@ void WorkingCopy::SetInfo(string hostname, clientID id)
  */
 void WorkingCopy::UpdateFile(string path, string hash)
 {
-	//If the file is a build.yml, process it
-	if(GetBasenameOfFile(path) == "build.yml")
-		m_graph.UpdateScript(path, hash);
+	m_mutex.lock();
+	
+		//If the file is a build.yml, process it
+		if(GetBasenameOfFile(path) == "build.yml")
+			m_graph.UpdateScript(path, hash);
 
-	m_fileMap[path] = hash;
+		m_fileMap[path] = hash;
+
+	m_mutex.unlock();
 }
 
 /**
@@ -78,9 +93,27 @@ void WorkingCopy::UpdateFile(string path, string hash)
  */
 void WorkingCopy::RemoveFile(string path)
 {
-	//If the file is a build.yml, process it
-	if(GetBasenameOfFile(path) == "build.yml")
-		m_graph.RemoveScript(path);
+	m_mutex.lock();
+		
+		//If the file is a build.yml, process it
+		if(GetBasenameOfFile(path) == "build.yml")
+			m_graph.RemoveScript(path);
 
-	m_fileMap.erase(path);
+		m_fileMap.erase(path);
+
+	m_mutex.unlock();
+}
+
+/**
+	@brief Called when available toolchains have changed
+
+	For now, just re-run all build scripts
+ */
+void WorkingCopy::RefreshToolchains()
+{
+	m_mutex.lock();
+
+		LogDebug("Refreshing toolchains\n");
+	
+	m_mutex.unlock();
 }

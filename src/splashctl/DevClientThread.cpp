@@ -87,7 +87,7 @@ bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id)
 		hostname.c_str());
 	
 	//Update the file's status in our working copy
-	g_nodeManager->GetWorkingCopy(id).RemoveFile(msg.fname());
+	g_nodeManager->GetWorkingCopy(id)->RemoveFile(msg.fname());
 	return true;
 }
 
@@ -145,7 +145,7 @@ bool OnFileChanged(Socket& s, const FileChanged& msg, string& hostname, clientID
 	}
 	
 	//Update the file's status in our working copy
-	g_nodeManager->GetWorkingCopy(id).UpdateFile(fname, hash);
+	g_nodeManager->GetWorkingCopy(id)->UpdateFile(fname, hash);
 
 	return true;
 }

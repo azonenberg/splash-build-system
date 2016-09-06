@@ -59,7 +59,7 @@ public:
 
 	void AddToolchain(clientID id, Toolchain* chain, bool moreComing);
 
-	WorkingCopy& GetWorkingCopy(clientID id)
+	WorkingCopy* GetWorkingCopy(clientID id)
 	{ return m_workingCopies[id]; }
 
 protected:
@@ -84,7 +84,7 @@ protected:
 	std::map<std::string, vnode> m_nodesByCompiler;
 
 	//The working copies of the repository for each client
-	std::map<clientID, WorkingCopy> m_workingCopies;
+	std::map<clientID, WorkingCopy*> m_workingCopies;
 
 	clientID m_nextClientID;
 };

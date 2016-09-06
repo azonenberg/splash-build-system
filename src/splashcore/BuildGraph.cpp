@@ -368,7 +368,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			BuildGraphNode* target = NULL;
 
 			//C/C++ executables
-			if(chaintype == "cpp")
+			if(chaintype == "c++")
 			{
 				if( (type == "exe") || type.empty() )
 					target = new CPPExecutableNode(this, a, c, name, path, toolchain, node);

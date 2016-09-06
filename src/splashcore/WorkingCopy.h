@@ -35,8 +35,6 @@ typedef uint64_t clientID;
 
 /**
 	@brief An individual client's working copy
-
-	NOT thread safe; all accesses must come from the DevClientThread for this object
  */
 class WorkingCopy
 {
@@ -50,10 +48,14 @@ public:
 	void RemoveFile(std::string path);
 
 	//Get the hash of a file
-	std::string GetFileHash(std::string path)
-	{ return m_fileMap[path]; }
+	std::string GetFileHash(std::string path);
+
+	void RefreshToolchains();
 
 protected:
+
+	//Our mutex
+	std::mutex m_mutex;
 
 	/**
 		@brief Map of relative paths to hashes
