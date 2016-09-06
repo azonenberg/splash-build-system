@@ -113,7 +113,25 @@ void WorkingCopy::RefreshToolchains()
 {
 	m_mutex.lock();
 
-		LogDebug("Refreshing toolchains\n");
+		//Find build scripts
+		vector<string> paths;
+		for(auto it : m_fileMap)
+		{
+			string fname = it.first;
+			if(GetBasenameOfFile(fname) == "build.yml")
+				paths.push_back(fname);
+		}
+
+		//Sort the paths lexically
+		//This way we do root dirs first so that we don't waste time doing multiple refreshes
+		sort(paths.begin(), paths.end());
+
+		//And evaluate them in that order
+		for(auto p : paths)
+		{
+			//LogDebug("Re-evaluating build script %s\n", p.c_str());
+			m_graph.UpdateScript(p, m_fileMap[p]);
+		}
 	
 	m_mutex.unlock();
 }

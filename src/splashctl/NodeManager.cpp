@@ -222,27 +222,10 @@ void NodeManager::RecomputeCompilerHashes()
 		*/
 
 		//Update the global toolchain list
-		bool changed = false;
-		for(auto it : currentToolchains)
-		{
-			carch c = it.first;
-			string hash = it.second;
+		bool changed = (m_toolchainsByHash != currentToolchains);
+		m_toolchainsByHash = currentToolchains;
 
-			//If adding a new toolchain where there was not one already: No big deal, existing state didn't change
-			if(m_toolchainsByHash.find(c) == m_toolchainsByHash.end())
-			{
-				m_toolchainsByHash[c] = hash;
-				//LogDebug("Adding new toolchain for %25s on %20s\n", c.first.c_str(), c.second.c_str());
-				continue;
-			}
-
-
-			//Existing toolchain is there.
-			//Go over each working copy and re-run all build scripts that touched nodes of that toolchain
-			changed = true;
-		}
-
-		//FIXME: do something more efficient!
+		//FIXME: do something more efficient based on what changed
 		//For now, just re-run every build script in every working copy.
 		if(changed)
 		{

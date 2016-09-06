@@ -94,4 +94,13 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		bool moreToolchains = (i+1 < binfom.numchains());
 		g_nodeManager->AddToolchain(id, toolchain, moreToolchains);
 	}
+
+	while(true)
+	{
+		//TEMP: Wait forever for messages to show up.
+		//TODO: wait for work to dispatch instead
+		SplashMsg msg;
+		if(!RecvMessage(s, msg, hostname))
+			return;
+	}
 }
