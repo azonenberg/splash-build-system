@@ -40,7 +40,7 @@
 recursive_config:
 
     # The target toolchain for this recursive_config block
-    toolchain:     cpp/generic
+    toolchain:     c++/generic
     
     # Target architecture (just one by default)
     arches:
