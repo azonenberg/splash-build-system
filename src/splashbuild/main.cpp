@@ -168,7 +168,15 @@ int main(int argc, char* argv[])
 			return 1;
 	}
 	
-	//TODO: Sit around and wait for stuff to come in
+	//Sit around and wait for stuff to come in
+	while(true)
+	{
+		SplashMsg rxm;
+		if(!RecvMessage(sock, rxm, ctl_server))
+			return 1;
+
+		LogDebug("Got a message\n");
+	}
 	
 	//clean up
 	for(auto x : g_toolchains)
