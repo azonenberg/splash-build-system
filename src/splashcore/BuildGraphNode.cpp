@@ -49,15 +49,18 @@ BuildGraphNode::BuildGraphNode()
  */
 BuildGraphNode::BuildGraphNode(
 	BuildGraph* graph,
-	string path)
+	string path,
+	string hash)
 	: m_ref(false)
 	, m_graph(graph)
 	, m_toolchain(NULL)
+	, m_hash(hash)
 	, m_arch("generic")
 	, m_config("generic")
 	, m_name(GetBasenameOfFile(path))
 	, m_script("")
 	, m_path(path)
+	, m_invalidInput(false)
 {
 }
 

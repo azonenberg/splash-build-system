@@ -109,7 +109,7 @@ void ToolchainSettings::GetFlags(string config, string path, unordered_set<Build
 	//Split the path up into segments
 	list<string> dirs;
 	SegmentPath(path, dirs);
-	
+
 	//For each directory from top down to us, look up the settings for that directory
 	for(auto d : dirs)
 	{
@@ -121,7 +121,7 @@ void ToolchainSettings::GetFlags(string config, string path, unordered_set<Build
 
 		m_recursiveSettings[p].GetFlags(config, flags);
 	}
-	
+
 	//Search our path for file level settings
 	if(m_fileSettings.find(path) == m_fileSettings.end())
 		return;
@@ -162,15 +162,18 @@ void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& confi
 		configs.emplace("release");
 }
 
+/**
+	@brief Get all of the default architectures (not specified in a specific target) for the given build path
+ */
 void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, string path)
 {
 	//Split the path up into segments
 	list<string> dirs;
 	SegmentPath(path, dirs);
-	
+
 	//Start out with an empty list of architectures
 	arches.clear();
-	
+
 	//For each directory from top down to us, look up the settings for that directory
 	for(auto d : dirs)
 	{
@@ -179,10 +182,10 @@ void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, s
 		string p = GetBuildScriptPath(d);
 		if(m_recursiveSettings.find(p) == m_recursiveSettings.end())
 			continue;
-			
+
 		GetDefaultArchitectures_helper(m_recursiveSettings[p], arches);
 	}
-	
+
 	//Search our path for file level settings
 	if(m_fileSettings.find(path) == m_fileSettings.end())
 		return;
@@ -194,7 +197,7 @@ void ToolchainSettings::GetDefaultArchitectures_helper(const BuildSettings& sett
 	//If the flags do not include "global", clear whatever was there before
 	if(!settings.InheritTriplets())
 		arches.clear();
-	
+
 	//Copy the current flags
 	auto triplets = settings.GetTriplets();
 	for(auto t : triplets)

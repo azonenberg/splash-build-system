@@ -63,6 +63,12 @@ public:
 	bool HasNodeWithHash(std::string hash)
 	{ return m_nodesByHash.find(hash) != m_nodesByHash.end(); }
 
+	/**
+		@brief Find the node with a given hash
+	 */
+	BuildGraphNode* GetNodeWithHash(std::string hash)
+	{ return m_nodesByHash[hash]; }
+
 	void AddNode(BuildGraphNode* node);
 
 	void GetFlags(std::string toolchain, std::string config, std::string path, std::unordered_set<BuildFlag>& flags);
@@ -73,6 +79,15 @@ public:
 		std::string arch,
 		std::string type,
 		std::string name);
+
+	/*
+	std::string GetIntermediateFilePath(
+		std::string toolchain,
+		std::string config,
+		std::string arch,
+		std::string type,
+		std::string name);
+	*/
 
 protected:
 	void Rebuild();

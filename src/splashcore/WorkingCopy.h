@@ -47,8 +47,8 @@ public:
 	void UpdateFile(std::string path, std::string hash);
 	void RemoveFile(std::string path);
 
-	//Get the hash of a file
 	std::string GetFileHash(std::string path);
+	bool HasFile(std::string path);
 
 	void RefreshToolchains();
 

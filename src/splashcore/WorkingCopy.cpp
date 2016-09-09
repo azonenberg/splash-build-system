@@ -56,6 +56,21 @@ void WorkingCopy::SetInfo(string hostname, clientID id)
 	m_id = id;
 }
 
+/**
+	@brief See if we have a file with a specific path
+ */
+bool WorkingCopy::HasFile(string path)
+{
+	m_mutex.lock();
+		bool found = (m_fileMap.find(path) != m_fileMap.end());
+	m_mutex.unlock();
+
+	return found;
+}
+
+/**
+	@brief Gets the hash of a specific file, if we have it
+ */
 string WorkingCopy::GetFileHash(string path)
 {
 	m_mutex.lock();

@@ -56,6 +56,7 @@ CPPExecutableNode::CPPExecutableNode(
 			name.c_str(),
 			path.c_str()
 			);
+		m_invalidInput = true;
 		return;
 	}
 	auto snode = node["sources"];
@@ -69,19 +70,44 @@ CPPExecutableNode::CPPExecutableNode(
 	for(auto x : compileFlags)
 		LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
 
-	//Create source nodes, if they don't already exist
-
-	/*
-	//Read the sources section and create an object node for each one
+	//Look up the source files and see if we have source nodes for them yet
+	vector<BuildGraphNode*> sources;
 	for(auto it : snode)
 	{
 		//File name is relative to the build script.
 		//Get the actual path name (TODO: canonicalize ../ etc)
 		string fname = (GetDirOfFile(path) + "/" + it.as<std::string>());
 
-		//TODO
+		//Now we can check the working copy and see what the file looks like.
+		//Gotta make sure it's there first!
+		if(!wc->HasFile(fname))
+		{
+			LogParseError(
+				"CPPExecutableNode: No file named %s in working copy\n",
+				fname.c_str());
+			m_invalidInput = true;
+			return;
+		}
+
+		//We have the file, look up the hash
+		//This is a separate mutex operation from HasFile(), but no real risk of a race condition
+		//because the constructor is only called from the DevClientThread, which is the only thread
+		//that can remove files from the working copy.
+		string hash = wc->GetFileHash(fname);
+
+		//If we already have a node, save it
+		if(m_graph->HasNodeWithHash(hash))
+		{
+			LogDebug("Already have source node for %s\n", fname.c_str());
+			sources.push_back(m_graph->GetNodeWithHash(hash));
+			continue;
+		}
+
+		//Nope, need to create one
+		sources.push_back(new CPPSourceNode(m_graph, fname, hash));
 	}
-	*/
+
+	//We have source nodes. Create the object nodes.
 
 	//Generate our hash
 	//FIXME: just use our pointer

@@ -43,12 +43,12 @@ BuildGraph::BuildGraph(WorkingCopy* wc)
 BuildGraph::~BuildGraph()
 {
 	LogDebug("Destroying build graph\n");
-	
+
 	//Delete all targets
 	for(auto it : m_targets)
 		delete it.second;
 	m_targets.clear();
-	
+
 	//Delete all nodes (in no particular order)
 	for(auto it : m_nodesByHash)
 		delete it.second;
@@ -75,7 +75,7 @@ BuildGraph::TargetMap& BuildGraph::GetTargetMap(ArchConfig config)
 void BuildGraph::CollectGarbage()
 {
 	//LogDebug("Collecting garbage\n");
-	
+
 	//First pass: Mark all nodes unreferenced
 	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodes.size());
 	for(auto it : m_nodesByHash)
@@ -128,9 +128,9 @@ void BuildGraph::UpdateScript(string path, string hash)
 {
 	//This is now a known script, keep track of it
 	m_buildScriptPaths[path] = hash;
-	
+
 	//Reload the build script (and its dependencies)
-	InternalUpdateScript(path, hash);	
+	InternalUpdateScript(path, hash);
 
 	//Rebuild the graph to fix up dependencies and delete orphaned nodes
 	Rebuild();
@@ -147,22 +147,22 @@ void BuildGraph::InternalUpdateScript(string path, string hash)
 	//Read the new script and execute it
 	//Don't check if the file is in cache already, it was just updated and is thus LRU
 	ParseScript(g_cache->ReadCachedFile(hash), path);
-	
+
 	//If we changed a script in a parent directory, go through all of our subdirectories and re-parse them
 	//since recursively inherited configuration may have changed.
 	//TODO: index somehow rather than having to do O(n) search of all known build scripts?
 	//TODO: can we patch the configs in at run time somehow rather than re-running it?
 	string dir = GetDirOfFile(path);
 	for(auto it : m_buildScriptPaths)
-	{		
+	{
 		//Path must have our path as a substring, but not be the same script
 		string s = it.first;
 		if( (s.find(dir) != 0) || (s == path) )
 			continue;
-			
+
 		LogDebug("    Build script %s needs to be re-run to reflect changed recursive configurations\n",
 			s.c_str());
-			
+
 		InternalUpdateScript(s, m_buildScriptPaths[s]);
 	}
 }
@@ -176,7 +176,7 @@ void BuildGraph::RemoveScript(string path)
 {
 	//This is no longer a known script
 	m_buildScriptPaths.erase(path);
-	
+
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
 
@@ -199,14 +199,14 @@ void BuildGraph::InternalRemove(string path)
 	{
 		for(auto it : m_targets)
 			it.second->erase(target);
-		
+
 		m_targetReverseOrigins.erase(target);
 	}
 	m_targetOrigins.erase(path);
 
 	//GC unused nodes
 	CollectGarbage();
-	
+
 	//TODO: delete tests
 
 	//Remove references to the script itself
@@ -222,7 +222,7 @@ void BuildGraph::InternalRemove(string path)
 void BuildGraph::ParseScript(const string& script, string path)
 {
 	//LogDebug("Loading build script %s\n", path.c_str());
-	
+
 	try
 	{
 		//Read the root node
@@ -238,7 +238,7 @@ void BuildGraph::ParseScript(const string& script, string path)
 
 /**
 	@brief Loads and executes the YAML commands in a single document within a build script
-	
+
 	@param doc			The document within the build script
 	@param path			Relative path of the script (for error messages etc)
  */
@@ -247,13 +247,13 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
 	for(auto it : doc)
 	{
 		string name = it.first.as<std::string>();
-		
+
 		//Configuration stuff is special
 		if(name == "recursive_config")
 			LoadConfig(it.second, true, path);
 		else if(name == "file_config")
 			LoadConfig(it.second, false, path);
-			
+
 		//Nope, just a target
 		else
 			LoadTarget(it.second, name, path);
@@ -264,7 +264,7 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
 	@brief Loads configuration for file or recursive scope
  */
 void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
-{	
+{
 	//See what toolchain we're configuring
 	if(!node["toolchain"])
 	{
@@ -272,7 +272,7 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
 			path.c_str());
 		return;
 	}
-	
+
 	//Configure that toolchain
 	m_toolchainSettings[node["toolchain"].as<std::string>()].LoadConfig(node, recursive, path);
 }
@@ -292,7 +292,7 @@ void BuildGraph::AddNode(BuildGraphNode* node)
 void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 {
 	LogDebug("Processing target %s in file %s\n", name.c_str(), path.c_str());
-	
+
 	//Complain if this target is already declared
 	if(m_targetReverseOrigins.find(name) != m_targetReverseOrigins.end())
 	{
@@ -313,7 +313,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		return;
 	}
 	string toolchain = node["toolchain"].as<std::string>();
-	
+
 	//Get the toolchain type
 	string chaintype;
 	size_t offset = toolchain.find("/");
@@ -329,18 +329,18 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	string type;
 	if(node["type"])
 		type = node["type"].as<std::string>();
-		
+
 	//See what architecture(s) we're targeting.
 	//Start by pulling in the default architectures
 	unordered_set<string> darches;
 	GetDefaultArchitecturesForToolchain(toolchain, path, darches);
-		
+
 	//Then look to see if we overrode them
 	unordered_set<string> arches;
 	if(node["arches"])
 	{
 		auto oarch = node["arches"];
-		
+
 		for(auto it : oarch)
 		{
 			//If we got a "global" then copy the global arches
@@ -350,7 +350,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 				for(auto a : darches)
 					arches.emplace(a);
 			}
-			
+
 			//nope, just copy this one
 			else
 				arches.emplace(arch);
@@ -379,7 +379,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 				if( (type == "exe") || type.empty() )
 					target = new CPPExecutableNode(this, a, c, name, path, exepath, toolchain, node);
 			}
-			
+
 			else
 			{
 				LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
@@ -408,7 +408,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 
 /**
 	@brief Get the default architecture list for a given toolchain and scope
-	
+
 	@param toolchain	The name of the toolchain to query
 	@param path			Path to the build script of the current scope
 	@param arches		Set of architectures we found

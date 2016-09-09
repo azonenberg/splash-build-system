@@ -35,6 +35,7 @@ using namespace std;
 // Construction / destruction
 
 CPPSourceNode::CPPSourceNode(BuildGraph* graph, string fname, string hash)
+	: BuildGraphNode(graph, fname, hash)
 {
 	
 }

@@ -40,7 +40,8 @@ public:
 
 	BuildGraphNode(
 		BuildGraph* graph,
-		std::string path
+		std::string path,
+		std::string hash
 		);
 	
 	BuildGraphNode(
@@ -128,6 +129,13 @@ protected:
 		Direct dependencies only, not transitive ones.
 	 */
 	std::unordered_set<std::string> m_dependencies;
+
+	/**
+		@brief Indicates that this node is in an "error" state and cannot be built.
+
+		This is used for things like "missing input files" etc
+	 */
+	bool m_invalidInput;
 };
 
 #endif
