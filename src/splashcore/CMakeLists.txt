@@ -56,3 +56,8 @@ target_link_libraries(splashcore
 #force static analysis to rerun
 #TODO: automate this for every target?
 add_dependencies(splashcore analysis)
+
+# Installation config
+install(TARGETS splashcore
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib)

@@ -15,3 +15,8 @@ target_link_libraries(splashctl
 #force static analysis to rerun
 #TODO: automate this for every target?
 add_dependencies(splashctl analysis)
+
+# Installation config
+install(TARGETS splashctl
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib)
