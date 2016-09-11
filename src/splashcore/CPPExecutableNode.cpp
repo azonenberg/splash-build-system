@@ -108,6 +108,9 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 
 	//We have source nodes. Create the object nodes.
+	/*
+		$cc -M -MG
+	 */
 
 	//Generate our hash
 	//FIXME: just use our pointer

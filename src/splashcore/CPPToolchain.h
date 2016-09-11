@@ -40,6 +40,13 @@ public:
 	virtual ~CPPToolchain();
 
 protected:
+
+	/**
+		@brief List of directories that we search for system headers
+		
+		Only used for dependency scanning to turn system paths into logical paths
+	 */
+	std::vector<std::string> m_defaultIncludePaths;
 };
 
 #endif

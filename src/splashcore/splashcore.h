@@ -75,6 +75,8 @@
 
 #include "Toolchain.h"
 
+#include "GNUToolchain.h"
+
 #include "BuildFlag.h"
 #include "BuildConfiguration.h"
 #include "BuildSettings.h"

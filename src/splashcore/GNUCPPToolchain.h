@@ -33,7 +33,9 @@
 /**
 	@brief A GNU C++ compiler toolchain
  */
-class GNUCPPToolchain : public CPPToolchain
+class GNUCPPToolchain
+	: public CPPToolchain
+	, public GNUToolchain
 {
 public:
 	GNUCPPToolchain(std::string basepath, std::string triplet);

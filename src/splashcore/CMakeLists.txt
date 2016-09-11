@@ -32,6 +32,7 @@ add_library(splashcore SHARED
 	GNUCToolchain.cpp
 	GNUCPPToolchain.cpp
 	GNULinkerToolchain.cpp
+	GNUToolchain.cpp
 	LinkerToolchain.cpp
 	RemoteToolchain.cpp
 	Toolchain.cpp

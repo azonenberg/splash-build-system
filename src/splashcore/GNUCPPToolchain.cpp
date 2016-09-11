@@ -39,7 +39,7 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 {
 	//Get the full compiler version
 	m_stringVersion = string("GNU C++") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
-	
+
 	//Parse it
 	if(3 != sscanf(m_stringVersion.c_str(), "GNU C++ %4d.%4d.%4d",
 		&m_majorVersion, &m_minorVersion, &m_patchVersion))
@@ -47,23 +47,26 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		//TODO: handle this better, don't abort :P
 		LogFatal("bad G++ version\n");
 	}
-	
+
 	//Some compilers can target other arches if you feed them the right flags.
 	//Thanks to @GyrosGeier for this
 	string cmd =
-		string("/bin/bash -c \"") + 
+		string("/bin/bash -c \"") +
 		basepath + " -print-multi-lib | sed -e 's/.*;//' -e 's/@/ -/g' | while read line; do " +
 		basepath + " \\$line -print-multiarch; done" +
 		string("\"");
 	string extra_arches = ShellCommand(cmd);
 	ParseLines(extra_arches, m_triplets);
-	
+
 	//If no arches found in the last step, fall back to the triplet in the file name
 	if(m_triplets.empty())
 		m_triplets.push_back(triplet);
-	
-	 //TODO: figure out what flags we need to pass to target each one
-		
+
+	//Look up where this toolchain gets its include files from
+	FindDefaultIncludePaths(m_defaultIncludePaths, basepath, true);
+
+	//TODO: figure out what flags we need to pass to target each one
+
 	//Generate the hash
 	//TODO: Anything else to add here?
 	m_hash = sha256(m_stringVersion + triplet);

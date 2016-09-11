@@ -34,47 +34,39 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-GNUCToolchain::GNUCToolchain(string basepath, string triplet)
-	: CToolchain(basepath, TOOLCHAIN_GNU)
+void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bool cpp)
 {
-	//Get the full compiler version
-	m_stringVersion = string("GNU C") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
-
-	//Parse it
-	if(3 != sscanf(m_stringVersion.c_str(), "GNU C %4d.%4d.%4d",
-		&m_majorVersion, &m_minorVersion, &m_patchVersion))
+	//LogDebug("    Finding default include paths\n");
+	
+	//Ask the compiler what the paths are
+	vector<string> lines;
+	string cmd = exe + " -E -Wp,-v ";
+	if(cpp)
+		cmd += "-x c++ ";
+	cmd += "- < /dev/null 2>&1";
+	ParseLines(ShellCommand(cmd), lines);
+	
+	//Look for the beginning of the search path list
+	size_t i = 0;
+	for(; i<lines.size(); i++)
 	{
-		//TODO: handle this better, don't abort :P
-		LogFatal("bad gcc version\n");
+		auto line = lines[i];
+		if(line.find("starts here") != string::npos)
+			break;
 	}
-
-	//Some compilers can target other arches if you feed them the right flags.
-	//Thanks to @GyrosGeier for this
-	string cmd =
-		string("/bin/bash -c \"") +
-		basepath + " -print-multi-lib | sed -e 's/.*;//' -e 's/@/ -/g' | while read line; do " +
-		basepath + " \\$line -print-multiarch; done" +
-		string("\"");
-	string extra_arches = ShellCommand(cmd);
-	ParseLines(extra_arches, m_triplets);
-
-	//If no arches found in the last step, fall back to the triplet in the file name
-	if(m_triplets.empty())
-		m_triplets.push_back(triplet);
-
-	//TODO: figure out what flags we need to pass to target each one
-
-	//Look up where this toolchain gets its include files from
-	FindDefaultIncludePaths(m_defaultIncludePaths, basepath, false);
-
-	//Generate the hash
-	//TODO: Anything else to add here?
-	m_hash = sha256(m_stringVersion + triplet);
+	
+	//Get the actual paths
+	for(; i<lines.size(); i++)
+	{
+		auto line = lines[i];
+		if(line == "End of search list.")
+			break;
+		if(line[0] == '#')
+			continue;
+		paths.push_back(line.substr(1));
+	}
+	
+	//Debug dump
+	//for(auto p : paths)
+	//	LogDebug("        %s\n", p.c_str());
 }
-
-GNUCToolchain::~GNUCToolchain()
-{
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Toolchain properties
