@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 	
 	//Connect to the server
 	LogVerbose("Connecting to server...\n");
-	Socket sock(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	sock.Connect(ctl_server, port);
 	
 	//Get the serverHello

@@ -90,7 +90,8 @@ int main(int argc, char* argv[])
 	g_nodeManager = new NodeManager;
 
 	//Socket server
-	Socket server(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	LogDebug("Listening on TCP port %d...\n", port);
+	Socket server(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if(!server.Bind(port))
 		return -1;
 	if(!server.Listen())

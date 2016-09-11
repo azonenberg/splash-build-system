@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		
-		//Last args without switche is control server.
+		//Last arg without switch is control server.
 		//TODO: mandatory arguments to introduce these?		
 		else
 			ctl_server = argv[i];
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 	
 	//Connect to the server
 	LogVerbose("Connecting to server...\n");
-	Socket sock(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	sock.Connect(ctl_server, port);
 	
 	//Get the serverHello
