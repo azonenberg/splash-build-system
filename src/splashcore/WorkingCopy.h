@@ -54,8 +54,8 @@ public:
 
 protected:
 
-	//Our mutex
-	std::mutex m_mutex;
+	//Our mutex (need to be able to lock when already locked)
+	std::recursive_mutex m_mutex;
 
 	/**
 		@brief Map of relative paths to hashes
