@@ -67,6 +67,22 @@ GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 	//Look up where this toolchain gets its include files from
 	FindDefaultIncludePaths(m_defaultIncludePaths, basepath, false);
 
+	//Set suffixes for WINDOWS
+	if(triplet.find("mingw") != string::npos)
+	{
+		m_exeSuffix = ".exe";
+		m_shlibSuffix = ".dll";
+		m_stlibSuffix = ".lib";
+	}
+
+	//Set suffixes for POSIX
+	else
+	{
+		m_exeSuffix = "";
+		m_shlibSuffix = ".so";
+		m_stlibSuffix = ".a";
+	}
+
 	//Generate the hash
 	//TODO: Anything else to add here?
 	m_hash = sha256(m_stringVersion + triplet);

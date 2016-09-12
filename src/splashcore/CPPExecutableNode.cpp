@@ -108,6 +108,13 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 
 	//We have source nodes. Create the object nodes.
+	//Create a test node first to compute the hash.
+	//If another node with that hash already exists, delete it and use the old node instead.
+	for(auto s : sources)
+	{
+
+	}
+
 	/*
 		$cc -M -MG
 	 */

@@ -62,10 +62,26 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 	if(m_triplets.empty())
 		m_triplets.push_back(triplet);
 
+	//TODO: figure out what flags we need to pass to target each one
+
 	//Look up where this toolchain gets its include files from
 	FindDefaultIncludePaths(m_defaultIncludePaths, basepath, true);
 
-	//TODO: figure out what flags we need to pass to target each one
+	//Set suffixes for WINDOWS
+	if(triplet.find("mingw") != string::npos)
+	{
+		m_exeSuffix = ".exe";
+		m_shlibSuffix = ".dll";
+		m_stlibSuffix = ".lib";
+	}
+
+	//Set suffixes for POSIX
+	else
+	{
+		m_exeSuffix = "";
+		m_shlibSuffix = ".so";
+		m_stlibSuffix = ".a";
+	}
 
 	//Generate the hash
 	//TODO: Anything else to add here?

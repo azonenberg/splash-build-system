@@ -81,7 +81,13 @@ message AddCompiler
 				string	hash		= 3;	//ID hash of the compiler
 				string	versionStr	= 4;	//Human-readable version string
 	repeated	uint32	lang		= 5;	//Array of languages
-	repeated	string	triplet		= 6;
+	repeated	string	triplet		= 6;	//Array of architecture triplets
+
+	//The following flags are only meaningful / present for toolchains that produce native executables.
+	//Must be set to the empty string (not null) for other cases.
+				string	exeSuffix	= 7;	//Executable file suffix, including the dot if required (.exe, empty string, etc)
+				string	shlibSuffix	= 8;	//Shared library suffix, including the dot if required (.dll, .so, etc)
+				string	stlibSuffix = 9;	//Static library suffix, including the dot if required (.lib, .a, etc)
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

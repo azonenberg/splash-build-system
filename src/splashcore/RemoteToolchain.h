@@ -36,7 +36,16 @@
 class RemoteToolchain : public Toolchain
 {
 public:
-	RemoteToolchain(ToolchainType type, std::string hash, std::string sver, int major, int minor, int patch);
+	RemoteToolchain(
+		ToolchainType type,
+		std::string hash,
+		std::string sver,
+		int major,
+		int minor,
+		int patch,
+		std::string exeSuffix,
+		std::string shlibSuffix,
+		std::string stlibSuffix);
 	virtual ~RemoteToolchain();
 
 	void AddLanguage(Language l)

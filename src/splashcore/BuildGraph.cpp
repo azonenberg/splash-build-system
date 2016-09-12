@@ -471,10 +471,10 @@ void BuildGraph::Rebuild()
 	output_dir/architecture/config/name.suffix
  */
 string BuildGraph::GetOutputFilePath(
-	string /*toolchain*/,
+	string toolchain,
 	string config,
 	string arch,
-	string /*type*/,
+	string type,
 	string name)
 {
 	//TODO: make this configurable in the root Splashfile or something?
@@ -484,7 +484,12 @@ string BuildGraph::GetOutputFilePath(
 	path += config + "/";
 	path += name;
 
-	//TODO: apply toolchain-specific suffix for .so, .dll, .exe, etc
+	if(type == "exe")
+		path += toolchain->GetExecutableSuffix();
+	else if(type == "shlib")
+		path += toolchain->GetSharedLibrarySuffix();
+	else if(type == "stlib")
+		path += toolchain->GetStaticLibrarySuffix();
 
 	return path;
 }

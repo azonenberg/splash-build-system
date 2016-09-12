@@ -47,7 +47,7 @@ public:
 	enum ToolchainType
 	{
 		TOOLCHAIN_NULL,		//No compiler (placeholder / least preferred)
-		
+
 		TOOLCHAIN_GNU,		//GNU C/C++
 		TOOLCHAIN_CLANG,	//Clang
 		TOOLCHAIN_ISE,		//Xilinx ISE
@@ -55,10 +55,10 @@ public:
 
 		TOOLCHAIN_LAST		//max toolchain ID
 	};
-	
+
 	Toolchain(std::string basepath, ToolchainType type);
 	virtual ~Toolchain();
-	
+
 	/**
 		@brief Print all of our configuration for debugging
 	 */
@@ -83,7 +83,7 @@ public:
 
 		LANG_MAX				//end marker
 	};
-	
+
 	/**
 		@brief Get the list of languages that we can compile.
 	 */
@@ -104,17 +104,17 @@ public:
 		@brief Get a language ID as a string
 	 */
 	static std::string LangToString(Language lang);
-	
+
 	/**
 		@brief Get the list of languages that we can compile, as strings (for debug)
 	 */
 	void GetSupportedLanguages(std::vector<std::string>& langs);
-	
+
 	/**
 		@brief Get the type of the toolchain as a string (one word)
 	 */
 	std::string GetToolchainType();
-	
+
 	ToolchainType GetType()
 	{ return m_type; }
 
@@ -129,31 +129,31 @@ public:
 	 */
 	std::string GetHash()
 	{ return m_hash; }
-	
+
 	/**
 		@brief Get major toolchain version
 	 */
 	int GetMajorVersion()
 	{ return m_majorVersion; }
-	
+
 	/**
 		@brief Get minor toolchain version
 	 */
 	int GetMinorVersion()
 	{ return m_minorVersion; }
-	
+
 	/**
 		@brief Get patch toolchain version
 	 */
 	int GetPatchVersion()
 	{ return m_patchVersion; }
-	
+
 	/**
 		@brief Get base path of toolchain (debug only, don't expect this to be an exe or dir or anything useful)
 	 */
 	std::string GetBasePath()
 	{ return m_basepath; }
-	
+
 	std::string GetVersionString()
 	{ return m_stringVersion; }
 
@@ -161,7 +161,25 @@ public:
 
 	int CompareVersion(Toolchain* rhs);
 	int CompareVersionAndType(Toolchain* rhs);
-	
+
+	/**
+		@brief Get the suffix, including the dot, used for executable files
+	 */
+	std::string GetExecutableSuffix()
+	{ return m_exeSuffix; }
+
+	/**
+		@brief Get the suffix, including the dot, used for shared libaries
+	 */
+	std::string GetSharedLibrarySuffix()
+	{ return m_shlibSuffix; }
+
+	/**
+		@brief Get the suffix, including the dot, used for static libraries
+	 */
+	std::string GetStaticLibrarySuffix()
+	{ return m_stlibSuffix; }
+
 protected:
 
 	/**
@@ -171,52 +189,73 @@ protected:
 		the base install directory for e.g. an FPGA tool suite.
 	 */
 	std::string m_basepath;
-	
+
 	/**
 		@brief Type of the toolchain (used when a dev requests a specific toolchain by name)
 	 */
 	ToolchainType m_type;
-	
+
 	/**
 		@brief A hash that uniquely identifies this toolchain
-		
+
 		Must be set in the constructor.
 	 */
 	std::string m_hash;
-	
+
 	/**
 		@brief List of architecture triplets we support
-		
+
 		Must be set in the constructor.
 	 */
 	std::vector<std::string> m_triplets;
-	
+
 	/**
 		@brief List of languages we support
-		
+
 		Must be set in the constructor.
 	 */
 	std::vector<Language> m_langs;
-	
+
 	/**
 		@brief Toolchain major version
 	 */
 	int m_majorVersion;
-	
+
 	/**
 		@brief Toolchain minor version
 	 */
 	int m_minorVersion;
-	
+
 	/**
 		@brief Toolchain patch version
 	 */
 	int m_patchVersion;
-	
+
 	/**
 		@brief Toolchain string version. This may include info like distro patches etc
 	 */
 	std::string m_stringVersion;
+
+	/**
+		@brief Suffix, including the dot, used for executable files.
+
+		Must be set in the constructor.
+	 */
+	std::string m_exeSuffix;
+
+	/**
+		@brief Suffix, including the dot, used for shared libraries.
+
+		Must be set in the constructor.
+	 */
+	std::string m_shlibSuffix;
+
+	/**
+		@brief Suffix, including the dot, used for static libraries.
+
+		Must be set in the constructor.
+	 */
+	std::string m_stlibSuffix;
 };
 
 #endif

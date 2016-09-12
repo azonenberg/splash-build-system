@@ -37,7 +37,9 @@ MultiArch:
     # type of compiler to use (generic C++ compiler, no preference on version or suite)
     toolchain:     c++/generic
     
-    # Target type (default for cpp: exe)
+    # Target type (executable)
+    # Other legal values: shared, static
+    type: exe
     
     # array of architectures we're being compiled for
     # The special target "global" pulls in the globally specified targets.
