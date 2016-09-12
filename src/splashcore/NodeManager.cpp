@@ -232,9 +232,13 @@ void NodeManager::RecomputeCompilerHashes()
 			}
 		}
 
+		//Update the global toolchain list
+		bool changed = (m_toolchainsByName != currentToolchains);
+		m_toolchainsByName = currentToolchains;
+
 		/*
 		//DEBUG: Print the final mapping
-		for(auto it : currentToolchains)
+		for(auto it : m_toolchainsByName)
 		{
 			carch c = it.first;
 			string hash = it.second;
@@ -244,10 +248,6 @@ void NodeManager::RecomputeCompilerHashes()
 				c.first.c_str(), c.second.c_str(), tool->GetVersionString().c_str(), hash.c_str());
 		}
 		*/
-
-		//Update the global toolchain list
-		bool changed = (m_toolchainsByName != currentToolchains);
-		m_toolchainsByName = currentToolchains;
 
 		//FIXME: do something more efficient based on what changed
 		//For now, just re-run every build script in every working copy.
@@ -292,7 +292,7 @@ Toolchain* NodeManager::GetAnyToolchainForHash(string hash)
 Toolchain* NodeManager::GetAnyToolchainForName(string arch, string name)
 {
 	//If we do not have such a toolchain, give up
-	carch c(arch, name);
+	carch c(name, arch);
 	if(m_toolchainsByName.find(c) == m_toolchainsByName.end())
 		return NULL;
 
