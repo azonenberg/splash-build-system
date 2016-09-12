@@ -82,7 +82,8 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			(madd.versionnum() >> 0) & 0xff,
 			madd.exesuffix(),
 			madd.shlibsuffix(),
-			madd.stlibsuffix()
+			madd.stlibsuffix(),
+			madd.objsuffix()
 			);
 		
 		//Languages

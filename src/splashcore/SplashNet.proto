@@ -88,6 +88,7 @@ message AddCompiler
 				string	exeSuffix	= 7;	//Executable file suffix, including the dot if required (.exe, empty string, etc)
 				string	shlibSuffix	= 8;	//Shared library suffix, including the dot if required (.dll, .so, etc)
 				string	stlibSuffix = 9;	//Static library suffix, including the dot if required (.lib, .a, etc)
+				string	objSuffix	= 10;	//Object file suffix, including the dot if requied (.obj, .o, etc)
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

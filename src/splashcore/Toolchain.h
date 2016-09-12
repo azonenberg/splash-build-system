@@ -180,6 +180,12 @@ public:
 	std::string GetStaticLibrarySuffix()
 	{ return m_stlibSuffix; }
 
+	/**
+		@brief Get the suffix, including the dot, used for object files
+	 */
+	std::string GetObjectSuffix()
+	{ return m_objSuffix; }
+
 protected:
 
 	/**
@@ -256,6 +262,13 @@ protected:
 		Must be set in the constructor.
 	 */
 	std::string m_stlibSuffix;
+
+	/**
+		@brief Suffix, including the dot, used for object files.
+
+		Must be set in the constructor.
+	 */
+	std::string m_objSuffix;
 };
 
 #endif

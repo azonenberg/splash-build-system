@@ -45,7 +45,8 @@ public:
 		int patch,
 		std::string exeSuffix,
 		std::string shlibSuffix,
-		std::string stlibSuffix);
+		std::string stlibSuffix,
+		std::string objSuffix);
 	virtual ~RemoteToolchain();
 
 	void AddLanguage(Language l)

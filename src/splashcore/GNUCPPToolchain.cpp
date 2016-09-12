@@ -73,6 +73,7 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		m_exeSuffix = ".exe";
 		m_shlibSuffix = ".dll";
 		m_stlibSuffix = ".lib";
+		m_objSuffix = ".obj";
 	}
 
 	//Set suffixes for POSIX
@@ -81,6 +82,7 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		m_exeSuffix = "";
 		m_shlibSuffix = ".so";
 		m_stlibSuffix = ".a";
+		m_objSuffix = ".o";
 	}
 
 	//Generate the hash

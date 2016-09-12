@@ -43,7 +43,8 @@ RemoteToolchain::RemoteToolchain(
 		int patch,
 		string exeSuffix,
 		string shlibSuffix,
-		string stlibSuffix)
+		string stlibSuffix,
+		string objSuffix)
 : Toolchain("", type)
 {
 	m_hash = hash;
@@ -54,6 +55,7 @@ RemoteToolchain::RemoteToolchain(
 	m_exeSuffix = exeSuffix;
 	m_shlibSuffix = shlibSuffix;
 	m_stlibSuffix = stlibSuffix;
+	m_objSuffix = objSuffix;
 }
 
 RemoteToolchain::~RemoteToolchain()

@@ -484,12 +484,14 @@ string BuildGraph::GetOutputFilePath(
 	path += config + "/";
 	path += name;
 
+	/*
 	if(type == "exe")
 		path += toolchain->GetExecutableSuffix();
 	else if(type == "shlib")
 		path += toolchain->GetSharedLibrarySuffix();
 	else if(type == "stlib")
 		path += toolchain->GetStaticLibrarySuffix();
+	*/
 
 	return path;
 }

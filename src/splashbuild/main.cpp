@@ -160,6 +160,7 @@ int main(int argc, char* argv[])
 		madd->set_exesuffix(t->GetExecutableSuffix());
 		madd->set_shlibsuffix(t->GetSharedLibrarySuffix());
 		madd->set_stlibsuffix(t->GetStaticLibrarySuffix());
+		madd->set_objsuffix(t->GetObjectSuffix());
 		auto dlangs = t->GetSupportedLanguages();
 		for(auto x : dlangs)
 			madd->add_lang(x);
