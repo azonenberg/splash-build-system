@@ -53,7 +53,7 @@ BuildGraphNode::BuildGraphNode(
 	string hash)
 	: m_ref(false)
 	, m_graph(graph)
-	, m_toolchain(NULL)
+	, m_toolchain("")
 	, m_hash(hash)
 	, m_arch("generic")
 	, m_config("generic")
