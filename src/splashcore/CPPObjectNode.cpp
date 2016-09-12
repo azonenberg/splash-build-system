@@ -42,7 +42,9 @@ CPPObjectNode::CPPObjectNode(
 	std::string path,
 	std::string toolchain)
 {
-	
+/*
+		$cc -M -MG
+	 */
 }
 
 CPPObjectNode::~CPPObjectNode()

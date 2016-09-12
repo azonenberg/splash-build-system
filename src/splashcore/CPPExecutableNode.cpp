@@ -67,16 +67,17 @@ CPPExecutableNode::CPPExecutableNode(
 	//Collect the compiler flags
 	unordered_set<BuildFlag> compileFlags;
 	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
-	for(auto x : compileFlags)
-		LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
+	//for(auto x : compileFlags)
+	//	LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
 
 	//Look up the source files and see if we have source nodes for them yet
 	vector<BuildGraphNode*> sources;
+	string dir = GetDirOfFile(scriptpath);
 	for(auto it : snode)
 	{
 		//File name is relative to the build script.
 		//Get the actual path name (TODO: canonicalize ../ etc)
-		string fname = (GetDirOfFile(path) + "/" + it.as<std::string>());
+		string fname = (dir + "/" + it.as<std::string>());
 
 		//Now we can check the working copy and see what the file looks like.
 		//Gotta make sure it's there first!
@@ -108,16 +109,23 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 
 	//We have source nodes. Create the object nodes.
-	//Create a test node first to compute the hash.
-	//If another node with that hash already exists, delete it and use the old node instead.
 	for(auto s : sources)
 	{
-		//
-	}
+		//Get the output file name
+		string fname = m_graph->GetIntermediateFilePath(
+			toolchain,
+			config,
+			arch,
+			"object",
+			s->GetFilePath());
 
-	/*
-		$cc -M -MG
-	 */
+		//Create a test node first to compute the hash.
+		//If another node with that hash already exists, delete it and use the old node instead.
+		//TODO: more efficient way of doing this? cache dependencies and do simpler parse or something?
+
+
+		//LogDebug("    Making object file %s\n", fname.c_str());
+	}
 
 	//Generate our hash
 	//FIXME: just use our pointer
