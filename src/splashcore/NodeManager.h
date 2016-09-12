@@ -75,7 +75,7 @@ protected:
 	std::map<clientID, vtool> m_toolchainsByNode;
 
 	//Map from<name, architecture> to compiler hash
-	std::map<carch, std::string> m_toolchainsByHash;
+	std::map<carch, std::string> m_toolchainsByName;
 
 	//List of nodes with any compiler for a given language and target architecture
 	std::map<larch, vnode> m_nodesByLanguage;

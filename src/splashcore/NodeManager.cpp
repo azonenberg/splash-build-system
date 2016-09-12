@@ -222,8 +222,8 @@ void NodeManager::RecomputeCompilerHashes()
 		*/
 
 		//Update the global toolchain list
-		bool changed = (m_toolchainsByHash != currentToolchains);
-		m_toolchainsByHash = currentToolchains;
+		bool changed = (m_toolchainsByName != currentToolchains);
+		m_toolchainsByName = currentToolchains;
 
 		//FIXME: do something more efficient based on what changed
 		//For now, just re-run every build script in every working copy.
