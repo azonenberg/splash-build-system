@@ -4,7 +4,6 @@ add_executable(splashctl
 	BuildClientThread.cpp
 	ClientThread.cpp
 	DevClientThread.cpp
-	NodeManager.cpp
 
 	main.cpp
 )

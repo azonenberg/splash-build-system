@@ -45,8 +45,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "NodeManager.h"
-
 void ClientThread(ZSOCKET sock);
 void BuildClientThread(Socket& s, std::string& hostname, clientID id);
 void DevClientThread(Socket& s, std::string& hostname, clientID id);
