@@ -62,6 +62,11 @@ public:
 	WorkingCopy* GetWorkingCopy(clientID id)
 	{ return m_workingCopies[id]; }
 
+	void Lock();
+	void Unlock();
+
+	Toolchain* GetAnyToolchainForName(std::string arch, std::string name);
+
 protected:
 
 	void RecomputeCompilerHashes();

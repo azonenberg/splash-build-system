@@ -46,6 +46,30 @@ NodeManager::~NodeManager()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mutex operations
+
+
+/**
+	@brief Locks the node manager's mutex. This prevents any database manipulation by other threads.
+
+	It is critical to lock the mute whenever querying a specific toolchain object.
+	Compute nodes can come and go at any time while the mutex is unlocked; pointers may become invalid at any time.
+	Do not retain any node pointers after unlocking the mutex.
+ */
+void NodeManager::Lock()
+{
+	m_mutex.lock();
+}
+
+/**
+	@brief Unlocks the node manager's mutex.
+ */
+void NodeManager::Unlock()
+{
+	m_mutex.unlock();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Database manipulation
 
 /**
@@ -237,9 +261,11 @@ void NodeManager::RecomputeCompilerHashes()
 }
 
 /**
-	@brief Get a pointer to any node's toolchain for the specified architecture.
+	@brief Get a pointer to some node's toolchain for the specified hash.
 
-	MUST be called while m_mutex is locked. Do not rely on the return value after unlocking it.
+	The exact choice of node is unpredictable and should not be relied on.
+
+	MUST be called while m_mutex is locked. Do not use the returned pointer once the mutex is unlocked.
  */
 Toolchain* NodeManager::GetAnyToolchainForHash(string hash)
 {
@@ -254,4 +280,22 @@ Toolchain* NodeManager::GetAnyToolchainForHash(string hash)
 
 	//Look up the toolchain object for that client
 	return m_toolchainsByNode[id][hash];
+}
+
+/**
+	@brief Get a pointer to some node's toolchain for the specified toolchain name and target architecture.
+
+	The exact choice of node is unpredictable and should not be relied on.
+
+	MUST be called while m_mutex is locked. Do not use the returned pointer once the mutex is unlocked.
+ */
+Toolchain* NodeManager::GetAnyToolchainForName(string arch, string name)
+{
+	//If we do not have such a toolchain, give up
+	carch c(arch, name);
+	if(m_toolchainsByName.find(c) == m_toolchainsByName.end())
+		return NULL;
+
+	//We have a hash; get a toolchain for it
+	return GetAnyToolchainForHash(m_toolchainsByName[c]);
 }
