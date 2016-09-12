@@ -468,8 +468,6 @@ void BuildGraph::Rebuild()
 /**
 	@brief Gets the output file name for a *target*.
 
-	TODO: separate function for intermediate build results like object files?
-
 	Overall path looks like this:
 	output_dir/architecture/config/name.suffix
 
@@ -507,6 +505,54 @@ string BuildGraph::GetOutputFilePath(
 		path += chain->GetSharedLibrarySuffix();
 	else if(type == "stlib")
 		path += chain->GetStaticLibrarySuffix();
+	else
+		LogParseError("Unknown type \"%s\"\n", type.c_str());
+
+	g_nodeManager->Unlock();
+	return path;
+}
+
+/**
+	@brief Gets the output file name for an intermediate file.
+
+	Overall path looks like this:
+	output_dir/architecture/config/original_path/original_basename.suffix
+
+	Returns the empty string if the configuration requested cannot be satisfied with any available toolchain.
+ */
+string BuildGraph::GetIntermediateFilePath(
+	string toolchain,
+	string config,
+	string arch,
+	string type,
+	string srcpath)
+{
+	//TODO: make this configurable in the root Splashfile or something?
+	string path = "build/";
+
+	path += arch + "/";
+	path += config + "/";
+
+	path += GetDirOfFile(srcpath);
+	path += "/";
+	path += GetBasenameOfFileWithoutExt(srcpath);
+
+	//Look up a toolchain to query
+	g_nodeManager->Lock();
+	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
+	if(chain == NULL)
+	{
+		LogParseError("Could not find a toolchain of type %s targeting architecture arch %s\n",
+			toolchain.c_str(), arch.c_str());
+		g_nodeManager->Unlock();
+		return "";
+	}
+
+	//Add the type
+	if(type == "object")
+		path += chain->GetObjectSuffix();
+	else
+		LogParseError("Unknown type \"%s\"\n", type.c_str());
 
 	g_nodeManager->Unlock();
 	return path;

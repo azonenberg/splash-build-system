@@ -80,14 +80,12 @@ public:
 		std::string type,
 		std::string name);
 
-	/*
 	std::string GetIntermediateFilePath(
 		std::string toolchain,
 		std::string config,
 		std::string arch,
 		std::string type,
-		std::string name);
-	*/
+		std::string srcpath);
 
 protected:
 	void Rebuild();
