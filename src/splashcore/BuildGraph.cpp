@@ -370,8 +370,11 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		{
 			BuildGraphNode* target = NULL;
 
-			//Create the output path
+			//Look up the output path.
+			//If none could be determined, skip this target for now
 			string exepath = GetOutputFilePath(toolchain, c, a, type, name);
+			if(exepath == "")
+				continue;
 
 			//C/C++ executables
 			if(chaintype == "c++")
@@ -383,13 +386,13 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			else
 			{
 				LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
-				return;
+				continue;
 			}
 
 			if(target == NULL)
 			{
 				LogParseError("No target could be created for architecture %s\n", a.c_str());
-				return;
+				continue;
 			}
 
 			//Add to target list plus global node set
@@ -469,6 +472,8 @@ void BuildGraph::Rebuild()
 
 	Overall path looks like this:
 	output_dir/architecture/config/name.suffix
+
+	Returns the empty string if the configuration requested cannot be satisfied with any available toolchain.
  */
 string BuildGraph::GetOutputFilePath(
 	string toolchain,
@@ -484,14 +489,25 @@ string BuildGraph::GetOutputFilePath(
 	path += config + "/";
 	path += name;
 
-	/*
-	if(type == "exe")
-		path += toolchain->GetExecutableSuffix();
-	else if(type == "shlib")
-		path += toolchain->GetSharedLibrarySuffix();
-	else if(type == "stlib")
-		path += toolchain->GetStaticLibrarySuffix();
-	*/
+	//Look up a toolchain to query
+	g_nodeManager->Lock();
+	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
+	if(chain == NULL)
+	{
+		LogParseError("Could not find a toolchain of type %s targeting architecture arch %s\n",
+			toolchain.c_str(), arch.c_str());
+		g_nodeManager->Unlock();
+		return "";
+	}
 
+	//Figure out the suffix
+	if(type == "exe")
+		path += chain->GetExecutableSuffix();
+	else if(type == "shlib")
+		path += chain->GetSharedLibrarySuffix();
+	else if(type == "stlib")
+		path += chain->GetStaticLibrarySuffix();
+
+	g_nodeManager->Unlock();
 	return path;
 }
