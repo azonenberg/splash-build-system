@@ -114,7 +114,7 @@ protected:
 	/// @brief Human-readable name of this node (for debug messages)
 	std::string m_name;
 	
-	/// @brief Path to the build script this node was declared in (for debug messages)
+	/// @brief Path to the build script this node was declared in (for debug messages and relative paths)
 	std::string m_script;
 
 	/// @brief Path to the file this node creates (or the input file, for source nodes)
