@@ -42,9 +42,10 @@ CPPObjectNode::CPPObjectNode(
 	std::string path,
 	std::string toolchain)
 {
+	LogDebug("Creating CPPObjectNode %s\n", fname.c_str());
 /*
-		$cc -M -MG
-	 */
+	$cc -M -MG
+ */
 }
 
 CPPObjectNode::~CPPObjectNode()
