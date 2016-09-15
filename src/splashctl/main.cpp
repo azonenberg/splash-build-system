@@ -69,9 +69,22 @@ int main(int argc, char* argv[])
 		
 		//Last arg without a switch is the port number
 		//TODO: mandatory arguments to introduce this?
-		//TODO: sanity check that it's numeric
 		else
-			port = atoi(argv[i]);
+		{
+			int tmp = atoi(argv[i]);
+
+			//Sanity check
+			if(tmp == 0)
+			{
+				fprintf(
+					stderr,
+					"ERROR: Don't know what argument \"%s\" is supposed to mean, but it's not a valid port number\n",
+					argv[i]);
+				return 0;
+			}
+			else
+				port = tmp;
+		}
 
 	}
 	
