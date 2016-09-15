@@ -112,18 +112,27 @@ CPPExecutableNode::CPPExecutableNode(
 	for(auto s : sources)
 	{
 		//Get the output file name
+		auto src = s->GetFilePath();
 		string fname = m_graph->GetIntermediateFilePath(
 			toolchain,
 			config,
 			arch,
 			"object",
-			s->GetFilePath());
+			src);
 
 		//Create a test node first to compute the hash.
 		//If another node with that hash already exists, delete it and use the old node instead.
 		//TODO: more efficient way of doing this? cache dependencies and do simpler parse or something?
+		auto obj = new CPPObjectNode(
+			graph,
+			arch,
+			config,
+			src,
+			fname,
+			toolchain);
 
-
+		//DEBUG: get rid of it
+		delete obj;
 		//LogDebug("    Making object file %s\n", fname.c_str());
 	}
 
