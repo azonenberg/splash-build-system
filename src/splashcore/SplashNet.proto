@@ -93,6 +93,12 @@ message AddCompiler
 				string	objSuffix	= 10;	//Object file suffix, including the dot if requied (.obj, .o, etc)
 };
 
+//Request that a build server perform a specific operation
+message BuildCommand
+{
+				string	toolchain	= 1;	//Hash of the toolchain being requested
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 

@@ -27,125 +27,50 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildGraphNode_h
-#define BuildGraphNode_h
+#ifndef Scheduler_h
+#define Scheduler_h
 
 /**
-	@brief A single node in the build graph
+	@brief Server-side scheduler for pushing BuildJob's to nodes
+
+	Basic design:
+
+	As a job comes in, determine if all of the pre-requisites have been met. If not, put it in the waiting list
+	blocking on the first prereq. Once this is met either block on another prereq or move to the ready queue.
+
+	If the job is locked to a specific node (dependency scanning), put it in the queue for that node. Each node has one
+	queue for each priority level.
+
+	If the job is not locked, put it in the global run queue.
+
+	When a node is ready for work, it checks the per-node run queue for max priority jobs, then the global run queue
+	for max priority jobs, then continues down (so per-node jobs have priority over global jobs).
  */
-class BuildGraphNode
+class Scheduler
 {
 public:
-	BuildGraphNode();
-
-	BuildGraphNode(
-		BuildGraph* graph,
-		std::string path,
-		std::string hash
-		);
-
-	BuildGraphNode(
-		BuildGraph* graph,
-		std::string toolchain,
-		std::string arch,
-		std::string config,
-		std::string name,
-		std::string scriptpath,
-		std::string path,
-		YAML::Node& node);
-
-	virtual ~BuildGraphNode();
-
-	/// @brief Get the hash of the node
-	std::string GetHash()
-	{ return m_hash; }
-
-	/// @brief Get the script of the node
-	std::string GetScript()
-	{ return m_script; }
-
-	void GetFlagsForUseAt(
-		BuildFlag::FlagUsage when,
-		std::unordered_set<BuildFlag>& flags);
-
-	/**
-		@brief Status of a single node
-	 */
-	enum NodeStatus
-	{
-		STATUS_READY,		//The node's output is available for use
-		STATUS_BUILDING,	//A build job to generate this node's output is currently in progress
-		STATUS_DIRTY		//This node's output is unavailable, and no job has been submitted
-	};
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Garbage collection during graph rebuilds
-
-	/**
-		@brief Mark the node as referenced
-
-		TODO: Mark our dependencies as referenced (if they're not already)
-	 */
-	void SetRef()
-	{ m_ref = true; }
-
-	/// @brief Mark the node as unreferenced
-	void SetUnref()
-	{ m_ref = false; }
-
-	/// @brief Checks if the node is referenced
-	bool IsReferenced()
-	{ return m_ref; }
-
-	/// @brief Gets the path of our node (relative to the working copy)
-	std::string GetFilePath()
-	{ return m_path; }
+	Scheduler();
+	virtual ~Scheduler();
 
 protected:
 
-	/// @brief Indicates if the node is referenced
-	bool m_ref;
-
-	/// @brief Pointer to our parent graph
-	BuildGraph* m_graph;
-
-	/// @brief The toolchain this node is built with (may be empty string if a source file, etc)
-	std::string m_toolchain;
-
-	/// @brief The hash of this node (must be set in constructor; immutable)
-	std::string m_hash;
-
-	/// @brief Architecture of this node, or "generic" if independent (source file etc)
-	std::string m_arch;
-
-	/// @brief Configuration of this node, or "generic" if independent
-	std::string m_config;
-
-	/// @brief Human-readable name of this node (for debug messages)
-	std::string m_name;
-
-	/// @brief Path to the build script this node was declared in (for debug messages and relative paths)
-	std::string m_script;
-
-	/// @brief Path to the file this node creates (or the input file, for source nodes)
-	std::string m_path;
-
-	/// @brief Flags applied to the node at any step (note that target nodes may have flags for earlier stages too)
-	std::unordered_set<BuildFlag> m_flags;
+	/**
+		@brief Waiting list (jobs we cannot yet run b/c some prereqs are not met)
+	 */
 
 	/**
-		@brief Set of named files we depend on (source files, object files, etc)
-
-		Direct dependencies only, not transitive ones.
+		@brief Jobs currently executing on each node (need to push back to main run queue if the node disconnects)
 	 */
-	std::unordered_set<std::string> m_dependencies;
 
 	/**
-		@brief Indicates that this node is in an "error" state and cannot be built.
-
-		This is used for things like "missing input files" etc
+		@brief Jobs which are locked to a specific node, sorted by priority
 	 */
-	bool m_invalidInput;
+
+	/**
+		@brief Jobs which are currently eligible to run, sorted by priority
+	 */
 };
+
+extern Scheduler* g_scheduler;
 
 #endif
