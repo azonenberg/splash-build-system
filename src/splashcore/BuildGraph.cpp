@@ -121,16 +121,18 @@ void BuildGraph::CollectGarbage()
 /**
 	@brief Updates a build script
 
-	@param path		Relative path of the script
-	@param hash		Cache ID of the new script content
+	@param path			Relative path of the script
+	@param hash			Cache ID of the new script content
+	@param body			True if we should scan the body (file_config is included)
+	@param config		True if we should scan the recursive_config section
  */
-void BuildGraph::UpdateScript(string path, string hash)
+void BuildGraph::UpdateScript(string path, string hash, bool body, bool config)
 {
 	//This is now a known script, keep track of it
 	m_buildScriptPaths[path] = hash;
 
 	//Reload the build script (and its dependencies)
-	InternalUpdateScript(path, hash);
+	InternalUpdateScript(path, hash, body, config);
 
 	//Rebuild the graph to fix up dependencies and delete orphaned nodes
 	Rebuild();
@@ -139,31 +141,34 @@ void BuildGraph::UpdateScript(string path, string hash)
 /**
 	@brief Reloads a build script
  */
-void BuildGraph::InternalUpdateScript(string path, string hash)
+void BuildGraph::InternalUpdateScript(string path, string hash, bool body, bool config)
 {
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
 
 	//Read the new script and execute it
 	//Don't check if the file is in cache already, it was just updated and is thus LRU
-	ParseScript(g_cache->ReadCachedFile(hash), path);
+	ParseScript(g_cache->ReadCachedFile(hash), path, body, config);
 
 	//If we changed a script in a parent directory, go through all of our subdirectories and re-parse them
 	//since recursively inherited configuration may have changed.
 	//TODO: index somehow rather than having to do O(n) search of all known build scripts?
 	//TODO: can we patch the configs in at run time somehow rather than re-running it?
-	string dir = GetDirOfFile(path);
-	for(auto it : m_buildScriptPaths)
+	if(config)
 	{
-		//Path must have our path as a substring, but not be the same script
-		string s = it.first;
-		if( (s.find(dir) != 0) || (s == path) )
-			continue;
+		string dir = GetDirOfFile(path);
+		for(auto it : m_buildScriptPaths)
+		{
+			//Path must have our path as a substring, but not be the same script
+			string s = it.first;
+			if( (s.find(dir) != 0) || (s == path) )
+				continue;
 
-		LogDebug("    Build script %s needs to be re-run to reflect changed recursive configurations\n",
-			s.c_str());
+			LogDebug("    Build script %s needs to be re-run to reflect changed recursive configurations\n",
+				s.c_str());
 
-		InternalUpdateScript(s, m_buildScriptPaths[s]);
+			InternalUpdateScript(s, m_buildScriptPaths[s], body, config);
+		}
 	}
 }
 
@@ -218,8 +223,10 @@ void BuildGraph::InternalRemove(string path)
 
 	@param script		Script content
 	@param path			Relative path of the script (for error messages etc)
+	@param body			True if we should scan the body (file_config is included)
+	@param config		True if we should scan the recursive_config section
  */
-void BuildGraph::ParseScript(const string& script, string path)
+void BuildGraph::ParseScript(const string& script, string path, bool body, bool config)
 {
 	//LogDebug("Loading build script %s\n", path.c_str());
 
@@ -228,7 +235,7 @@ void BuildGraph::ParseScript(const string& script, string path)
 		//Read the root node
 		vector<YAML::Node> nodes = YAML::LoadAll(script);
 		for(auto node : nodes)
-			LoadYAMLDoc(node, path);
+			LoadYAMLDoc(node, path, body, config);
 	}
 	catch(YAML::ParserException exc)
 	{
@@ -241,8 +248,10 @@ void BuildGraph::ParseScript(const string& script, string path)
 
 	@param doc			The document within the build script
 	@param path			Relative path of the script (for error messages etc)
+	@param body			True if we should scan the body (file_config is included)
+	@param config		True if we should scan the recursive_config section
  */
-void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
+void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path, bool body, bool config)
 {
 	for(auto it : doc)
 	{
@@ -250,12 +259,20 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path)
 
 		//Configuration stuff is special
 		if(name == "recursive_config")
-			LoadConfig(it.second, true, path);
+		{
+			if(config)
+				LoadConfig(it.second, true, path);
+		}
+
+		//file_config
 		else if(name == "file_config")
-			LoadConfig(it.second, false, path);
+		{
+			if(body)
+				LoadConfig(it.second, false, path);
+		}
 
 		//Nope, just a target
-		else
+		else if(body)
 			LoadTarget(it.second, name, path);
 	}
 }

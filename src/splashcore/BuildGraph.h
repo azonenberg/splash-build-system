@@ -51,7 +51,7 @@ public:
 	BuildGraph(WorkingCopy* wc);
 	virtual ~BuildGraph();
 
-	void UpdateScript(std::string path, std::string hash);
+	void UpdateScript(std::string path, std::string hash, bool body, bool config);
 	void RemoveScript(std::string path);
 
 	WorkingCopy* GetWorkingCopy()
@@ -90,10 +90,10 @@ public:
 protected:
 	void Rebuild();
 	void InternalRemove(std::string path);
-	void InternalUpdateScript(std::string path, std::string hash);
+	void InternalUpdateScript(std::string path, std::string hash, bool body, bool config);
 	
-	void ParseScript(const std::string& script, std::string path);
-	void LoadYAMLDoc(YAML::Node& doc, std::string path);
+	void ParseScript(const std::string& script, std::string path, bool body, bool config);
+	void LoadYAMLDoc(YAML::Node& doc, std::string path, bool body, bool config);
 	
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);

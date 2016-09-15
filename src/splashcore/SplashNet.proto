@@ -37,6 +37,8 @@ message FileChanged
 {
 	string	fname		= 1;	//path of changed file
 	string	hash		= 2;	//ASCII hex SHA-256 sum of the changed file
+	bool	body		= 3;	//set to true if the file is a build script and we should load the body
+	bool	config		= 4;	//set to true if the file is a build script and we should load the config
 };
 
 //Report that a file was deleted clientside

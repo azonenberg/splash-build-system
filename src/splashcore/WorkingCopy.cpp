@@ -85,18 +85,37 @@ string WorkingCopy::GetFileHash(string path)
 /**
 	@brief Updates a file in the current working copy
 
-	@param path		Relative path of the file
-	@param hash		SHA-256 hash of the file
+	@param path			Relative path of the file
+	@param hash			SHA-256 hash of the file
+	@param body			True if we should re-scan the body (ignored if not a build script)
+	@param config		For a build script: True if we should re-scan the config section.
+						For a source file:  True if we should re-scan dependent build scripts.
  */
-void WorkingCopy::UpdateFile(string path, string hash)
+void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 {
 	m_mutex.lock();
+
+		string buildscript = GetDirOfFile(path) + "/build.yml";
+		bool has_script = HasFile(buildscript);
+
+		//See if we created a new file
+		bool created = (m_fileMap.find(path) == m_fileMap.end());
+
+		//Update our records for the new file before doing anything else
+		//since future processing may depend on this file existing
+		m_fileMap[path] = hash;
 	
 		//If the file is a build.yml, process it
-		if(GetBasenameOfFile(path) == "build.yml")
-			m_graph.UpdateScript(path, hash);
+		bool is_script = (GetBasenameOfFile(path) == "build.yml");
+		if(is_script)
+			m_graph.UpdateScript(path, hash, body, config);
 
-		m_fileMap[path] = hash;
+		//If we created a new source file, and have a build.yml in the directory, re-run its targets
+		//This is necessary if we added references to the script before creating the file.
+		if(created && has_script && !is_script && config)
+			m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false);
+
+		//TODO: Have a list of nodes that depend on each file and re-hash them all?
 
 	m_mutex.unlock();
 }
@@ -145,7 +164,7 @@ void WorkingCopy::RefreshToolchains()
 		for(auto p : paths)
 		{
 			//LogDebug("Re-evaluating build script %s\n", p.c_str());
-			m_graph.UpdateScript(p, m_fileMap[p]);
+			m_graph.UpdateScript(p, m_fileMap[p], true, true);
 		}
 	
 	m_mutex.unlock();
