@@ -126,10 +126,10 @@ CPPExecutableNode::CPPExecutableNode(
 		auto obj = new CPPObjectNode(
 			graph,
 			arch,
-			config,
 			src,
 			fname,
-			toolchain);
+			toolchain,
+			compileFlags);
 
 		//DEBUG: get rid of it
 		delete obj;

@@ -90,10 +90,14 @@ DependencyScanJob* Scheduler::PopScanJob(clientID id)
 	@return		True on a successful scan
 				False if the scan could not complete (parse error, 
  */
-bool Scheduler::ScanDependencies(string fname, string config, string arch, string toolchain)
+bool Scheduler::ScanDependencies(
+	string fname,
+	string arch,
+	string toolchain,
+	unordered_set<BuildFlag> flags )
 {
-	LogDebug("        Scheduler::ScanDependencies (for source file %s, config %s, arch %s, toolchain %s)\n",
-		fname.c_str(), config.c_str(), arch.c_str(), toolchain.c_str() );
+	LogDebug("        Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
+		fname.c_str(), arch.c_str(), toolchain.c_str() );
 
 	//Need mutex locked during scheduling so that if the golden node leaves halfway through
 	//we remain in a consistent state
@@ -112,12 +116,12 @@ bool Scheduler::ScanDependencies(string fname, string config, string arch, strin
 	auto id = g_nodeManager->GetGoldenNodeForToolchain(hash);
 	if(id == 0)
 		return false;
-	string hostname = g_nodeManager->GetWorkingCopy(id)->GetHostname();
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	string hostname = wc->GetHostname();
 	LogDebug("            Golden node for this toolchain is %d (%s)\n", (int)id, hostname.c_str());
 
 	//Create the scan job and submit it
-	//TODO: pass real args
-	DependencyScanJob* job = new DependencyScanJob;
+	DependencyScanJob* job = new DependencyScanJob(fname, wc, toolchain, flags);
 	SubmitScanJob(id, job);
 
 	//Block until the job is done

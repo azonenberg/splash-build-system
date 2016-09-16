@@ -39,10 +39,10 @@ public:
 	CPPObjectNode(
 		BuildGraph* graph,
 		std::string arch,
-		std::string config,
 		std::string fname,
 		std::string path,
-		std::string toolchain
+		std::string toolchain,
+		std::unordered_set<BuildFlag> flags
 	);
 	virtual ~CPPObjectNode();
 

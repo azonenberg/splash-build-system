@@ -47,7 +47,11 @@ public:
 	virtual ~Scheduler();
 
 	//Build graph interface
-	bool ScanDependencies(std::string fname, std::string config, std::string arch, std::string toolchain);
+	bool ScanDependencies(
+		std::string fname,
+		std::string arch,
+		std::string toolchain,
+		std::unordered_set<BuildFlag> flags);
 
 	//Node creation/deletion
 	void RemoveNode(clientID id);

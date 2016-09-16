@@ -37,10 +37,35 @@ class DependencyScanJob : public Job
 {
 public:
 
-	DependencyScanJob();
+	DependencyScanJob(
+		std::string path,
+		WorkingCopy* wc,
+		std::string toolchainHash,
+		std::unordered_set<BuildFlag> flags);
 	virtual ~DependencyScanJob();
 
+	std::string GetPath()
+	{ return m_sourcePath; }
+
+	std::string GetToolchain()
+	{ return m_toolchainHash; }
+
+	const std::unordered_set<BuildFlag>& GetFlags()
+	{ return m_flags; }
+
 protected:
+
+	/// @brief Path of the input file
+	std::string m_sourcePath;
+
+	/// @brief The working copy we're attached to
+	WorkingCopy* m_workingCopy;
+
+	/// @brief Toolchain hash we asked for
+	std::string m_toolchainHash;
+
+	/// @brief Flags this build requires
+	std::unordered_set<BuildFlag> m_flags;
 };
 
 #endif

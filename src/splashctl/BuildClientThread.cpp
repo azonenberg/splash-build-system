@@ -31,6 +31,8 @@
 
 using namespace std;
 
+void ProcessScanJob(Socket& s, DependencyScanJob* job);
+
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Build server %s connected\n", hostname.c_str());
@@ -101,28 +103,33 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 
 	while(true)
 	{
-		//See if we have any jobs to process
+		//See if we have any scan jobs to process
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
-			//TODO
-			LogDebug("[%d] Got a scan job\n", (int)id);
+			ProcessScanJob(s, djob);
+			continue;
 		}
 
-		//Wait a while
+		//TODO: Look for other jobs
+
+		//Wait a while for more work
 		usleep(100);
-
-
-
-
-
-
-		/*
-		//TEMP: Wait forever for messages to show up.
-		//TODO: wait for work to dispatch instead
-		SplashMsg msg;
-		if(!RecvMessage(s, msg, hostname))
-			return;
-		*/
 	}
+}
+
+/**
+	@brief Runs a dependency-scan job
+ */
+void ProcessScanJob(Socket& s, DependencyScanJob* job)
+{
+	string chain = job->GetToolchain();
+	string path = job->GetPath();
+	LogDebug("Got a dependency scan request (file %s, toolchain %s)\n",
+		chain.c_str(), path.c_str());
+	auto flags = job->GetFlags();
+	for(auto f : flags)
+		LogDebug("    Flag: %s\n", static_cast<string>(f).c_str());
+
+	//Send the initial scan request to the client
 }

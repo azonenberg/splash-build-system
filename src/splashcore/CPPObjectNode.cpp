@@ -36,22 +36,24 @@ using namespace std;
 
 CPPObjectNode::CPPObjectNode(
 	BuildGraph* graph,
-	std::string arch,
-	std::string config,
-	std::string fname,
-	std::string path,
-	std::string toolchain)
+	string arch,
+	string fname,
+	string path,
+	string toolchain,
+	unordered_set<BuildFlag> flags)
 {
 	//LogDebug("        Creating CPPObjectNode %s (from source file %s) for config %s, arch %s, toolchain %s\n",
 	//	path.c_str(), fname.c_str(), config.c_str(), arch.c_str(), toolchain.c_str() );
 
 	//$cc -M -MG
 
+	//Figure out the flags we need for this job
+
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
 	//TODO: how do we get the deps back?
 	//TODO: handle generated headers, etc
-	g_scheduler->ScanDependencies(fname, config, arch, toolchain);
+	g_scheduler->ScanDependencies(fname, arch, toolchain, flags);
 }
 
 CPPObjectNode::~CPPObjectNode()
