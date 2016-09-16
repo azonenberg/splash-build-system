@@ -78,12 +78,11 @@ void NodeManager::Unlock()
 clientID NodeManager::AllocateClient(string hostname)
 {
 	clientID id;
+	lock_guard<mutex> lock(m_mutex);
 
-	m_mutex.lock();
-		id = m_nextClientID ++;
-		m_workingCopies[id] = new WorkingCopy;
-		m_workingCopies[id]->SetInfo(hostname, id);
-	m_mutex.unlock();
+	id = m_nextClientID ++;
+	m_workingCopies[id] = new WorkingCopy;
+	m_workingCopies[id]->SetInfo(hostname, id);
 
 	return id;
 }
@@ -93,24 +92,22 @@ clientID NodeManager::AllocateClient(string hostname)
  */
 void NodeManager::RemoveClient(clientID id)
 {
-	m_mutex.lock();
+	lock_guard<mutex> lock(m_mutex);
 
-		auto chains = m_toolchainsByNode[id];
-		for(auto x : chains)
-			delete x.second;
+	auto chains = m_toolchainsByNode[id];
+	for(auto x : chains)
+		delete x.second;
 
-		m_toolchainsByNode.erase(id);
+	m_toolchainsByNode.erase(id);
 
-		for(auto x : m_nodesByLanguage)
-			m_nodesByLanguage[x.first].erase(id);
+	for(auto x : m_nodesByLanguage)
+		m_nodesByLanguage[x.first].erase(id);
 
-		for(auto x : m_nodesByCompiler)
-			m_nodesByCompiler[x.first].erase(id);
+	for(auto x : m_nodesByCompiler)
+		m_nodesByCompiler[x.first].erase(id);
 
-		delete m_workingCopies[id];
-		m_workingCopies.erase(id);
-
-	m_mutex.unlock();
+	delete m_workingCopies[id];
+	m_workingCopies.erase(id);
 
 	//Toolchains may have changed, recompute
 	RecomputeCompilerHashes();
@@ -124,18 +121,16 @@ void NodeManager::RemoveClient(clientID id)
  */
 void NodeManager::AddToolchain(clientID id, Toolchain* chain, bool moreComing)
 {
-	m_mutex.lock();
+	lock_guard<mutex> lock(m_mutex);
 
-		string hash = chain->GetHash();
-		m_toolchainsByNode[id][hash] = chain;
-		auto langs = chain->GetSupportedLanguages();
-		auto triplets = chain->GetTargetTriplets();
-		for(auto l : langs)
-			for(auto t : triplets)
-				m_nodesByLanguage[larch(l, t)].emplace(id);
-		m_nodesByCompiler[hash].emplace(id);
-
-	m_mutex.unlock();
+	string hash = chain->GetHash();
+	m_toolchainsByNode[id][hash] = chain;
+	auto langs = chain->GetSupportedLanguages();
+	auto triplets = chain->GetTargetTriplets();
+	for(auto l : langs)
+		for(auto t : triplets)
+			m_nodesByLanguage[larch(l, t)].emplace(id);
+	m_nodesByCompiler[hash].emplace(id);
 
 	//Toolchains may have changed, recompute
 	if(!moreComing)
@@ -147,117 +142,115 @@ void NodeManager::AddToolchain(clientID id, Toolchain* chain, bool moreComing)
  */
 void NodeManager::RecomputeCompilerHashes()
 {
-	m_mutex.lock();
+	lock_guard<mutex> lock(m_mutex);
 
-		LogDebug("Recomputing compiler hashes\n");
+	LogDebug("Recomputing compiler hashes\n");
 
-		//Make a list of every language/architecture pair we know about.
-		//The list of languages is architecture specific so we need to know what the options are.
-		//It's stupid to wasted time looking for a Verilog compiler for mips-elf.
-		unordered_set<larch> larches;
-		for(auto it : m_nodesByLanguage)
-			larches.emplace(it.first);
+	//Make a list of every language/architecture pair we know about.
+	//The list of languages is architecture specific so we need to know what the options are.
+	//It's stupid to wasted time looking for a Verilog compiler for mips-elf.
+	unordered_set<larch> larches;
+	for(auto it : m_nodesByLanguage)
+		larches.emplace(it.first);
 
-		//Map of toolchain IDs to hashes
-		map<carch, string> currentToolchains;
+	//Map of toolchain IDs to hashes
+	map<carch, string> currentToolchains;
 
-		//For each toolchain we know about, generate the names
-		for(auto x : m_nodesByCompiler)
+	//For each toolchain we know about, generate the names
+	for(auto x : m_nodesByCompiler)
+	{
+		string hash = x.first;
+		Toolchain* tool = GetAnyToolchainForHash(hash);
+		if(tool == NULL)
+			continue;
+
+		//Generate the names for each arch/triplet combination
+		unordered_set<string> names;
+		tool->GetCompilerNames(names);
+		auto triplets = tool->GetTargetTriplets();
+		for(auto arch : triplets)
 		{
-			string hash = x.first;
+			for(auto name : names)
+			{
+				//If nobody has claimed this name/arch yet, take it
+				carch c(name, arch);
+				if(currentToolchains.find(c) == currentToolchains.end())
+				{
+					currentToolchains[c] = hash;
+					continue;
+				}
+
+				//If another node took the tuple already, keep the higher version
+				Toolchain* otherTool = GetAnyToolchainForHash(currentToolchains[c]);
+				if(tool->CompareVersion(otherTool) >= 0)
+					currentToolchains[c] = hash;
+			}
+		}
+
+	}
+
+	//For each language/architecture, find the best toolchain available
+	for(auto x : larches)
+	{
+		//Initial toolchain: nonexistent
+		Toolchain* bestToolchain = NULL;
+		string bestHash = "";
+
+		//Loop over all toolchains we have (TODO: only per language? index this somehow?)
+		for(auto it : m_nodesByCompiler)
+		{
+			//Look up the toolchain object for that client
+			string hash = it.first;
 			Toolchain* tool = GetAnyToolchainForHash(hash);
 			if(tool == NULL)
 				continue;
 
-			//Generate the names for each arch/triplet combination
-			unordered_set<string> names;
-			tool->GetCompilerNames(names);
-			auto triplets = tool->GetTargetTriplets();
-			for(auto arch : triplets)
-			{
-				for(auto name : names)
-				{
-					//If nobody has claimed this name/arch yet, take it
-					carch c(name, arch);
-					if(currentToolchains.find(c) == currentToolchains.end())
-					{
-						currentToolchains[c] = hash;
-						continue;
-					}
+			//If we can't compile our platform with this toolchain it's of no value to us :(
+			if(!tool->IsLanguageSupported(x.first))
+				continue;
+			if(!tool->IsArchitectureSupported(x.second))
+				continue;
 
-					//If another node took the tuple already, keep the higher version
-					Toolchain* otherTool = GetAnyToolchainForHash(currentToolchains[c]);
-					if(tool->CompareVersion(otherTool) >= 0)
-						currentToolchains[c] = hash;
-				}
-			}
+			//See if it's any better than what we have now. Skip it if not
+			if((bestToolchain != NULL) && (tool->CompareVersionAndType(bestToolchain) < 0) )
+				continue;
 
+			bestToolchain = tool;
+			bestHash = hash;
 		}
 
-		//For each language/architecture, find the best toolchain available
-		for(auto x : larches)
+		//Register the generic toolchains
+		if(bestToolchain != NULL)
 		{
-			//Initial toolchain: nonexistent
-			Toolchain* bestToolchain = NULL;
-			string bestHash = "";
-
-			//Loop over all toolchains we have (TODO: only per language? index this somehow?)
-			for(auto it : m_nodesByCompiler)
-			{
-				//Look up the toolchain object for that client
-				string hash = it.first;
-				Toolchain* tool = GetAnyToolchainForHash(hash);
-				if(tool == NULL)
-					continue;
-
-				//If we can't compile our platform with this toolchain it's of no value to us :(
-				if(!tool->IsLanguageSupported(x.first))
-					continue;
-				if(!tool->IsArchitectureSupported(x.second))
-					continue;
-
-				//See if it's any better than what we have now. Skip it if not
-				if((bestToolchain != NULL) && (tool->CompareVersionAndType(bestToolchain) < 0) )
-					continue;
-
-				bestToolchain = tool;
-				bestHash = hash;
-			}
-
-			//Register the generic toolchains
-			if(bestToolchain != NULL)
-			{
-				string lang = MakeStringLowercase(Toolchain::LangToString(x.first));
-				currentToolchains[carch(lang + "/generic", x.second)] = bestHash;
-			}
+			string lang = MakeStringLowercase(Toolchain::LangToString(x.first));
+			currentToolchains[carch(lang + "/generic", x.second)] = bestHash;
 		}
+	}
 
-		//Update the global toolchain list
-		bool changed = (m_toolchainsByName != currentToolchains);
-		m_toolchainsByName = currentToolchains;
+	//Update the global toolchain list
+	bool changed = (m_toolchainsByName != currentToolchains);
+	m_toolchainsByName = currentToolchains;
 
-		/*
-		//DEBUG: Print the final mapping
-		for(auto it : m_toolchainsByName)
-		{
-			carch c = it.first;
-			string hash = it.second;
-			Toolchain* tool = GetAnyToolchainForHash(hash);
+	/*
+	//DEBUG: Print the final mapping
+	for(auto it : m_toolchainsByName)
+	{
+		carch c = it.first;
+		string hash = it.second;
+		Toolchain* tool = GetAnyToolchainForHash(hash);
 
-			LogDebug("%25s for %20s is %25s (%s)\n",
-				c.first.c_str(), c.second.c_str(), tool->GetVersionString().c_str(), hash.c_str());
-		}
-		*/
+		LogDebug("%25s for %20s is %25s (%s)\n",
+			c.first.c_str(), c.second.c_str(), tool->GetVersionString().c_str(), hash.c_str());
+	}
+	*/
 
-		//FIXME: do something more efficient based on what changed
-		//For now, just re-run every build script in every working copy.
-		if(changed)
-		{
-			for(auto it : m_workingCopies)
-				it.second->RefreshToolchains();
-		}
-
-	m_mutex.unlock();
+	//FIXME: do something more efficient based on what changed
+	//For now, just re-run every build script in every working copy.
+	if(changed)
+	{
+		for(auto it : m_workingCopies)
+			it.second->RefreshToolchains();
+	}
 }
 
 /**

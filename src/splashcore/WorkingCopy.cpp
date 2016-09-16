@@ -61,11 +61,8 @@ void WorkingCopy::SetInfo(string hostname, clientID id)
  */
 bool WorkingCopy::HasFile(string path)
 {
-	m_mutex.lock();
-		bool found = (m_fileMap.find(path) != m_fileMap.end());
-	m_mutex.unlock();
-
-	return found;
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return (m_fileMap.find(path) != m_fileMap.end());
 }
 
 /**
@@ -73,10 +70,8 @@ bool WorkingCopy::HasFile(string path)
  */
 string WorkingCopy::GetFileHash(string path)
 {
-	m_mutex.lock();
-		string r = m_fileMap[path];
-	m_mutex.unlock();
-	return r;
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return m_fileMap[path];
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,31 +88,29 @@ string WorkingCopy::GetFileHash(string path)
  */
 void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 {
-	m_mutex.lock();
+	lock_guard<recursive_mutex> lock(m_mutex);
 
-		string buildscript = GetDirOfFile(path) + "/build.yml";
-		bool has_script = HasFile(buildscript);
+	string buildscript = GetDirOfFile(path) + "/build.yml";
+	bool has_script = HasFile(buildscript);
 
-		//See if we created a new file
-		bool created = (m_fileMap.find(path) == m_fileMap.end());
+	//See if we created a new file
+	bool created = (m_fileMap.find(path) == m_fileMap.end());
 
-		//Update our records for the new file before doing anything else
-		//since future processing may depend on this file existing
-		m_fileMap[path] = hash;
-	
-		//If the file is a build.yml, process it
-		bool is_script = (GetBasenameOfFile(path) == "build.yml");
-		if(is_script)
-			m_graph.UpdateScript(path, hash, body, config);
+	//Update our records for the new file before doing anything else
+	//since future processing may depend on this file existing
+	m_fileMap[path] = hash;
 
-		//If we created a new source file, and have a build.yml in the directory, re-run its targets
-		//This is necessary if we added references to the script before creating the file.
-		if(created && has_script && !is_script && config)
-			m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false);
+	//If the file is a build.yml, process it
+	bool is_script = (GetBasenameOfFile(path) == "build.yml");
+	if(is_script)
+		m_graph.UpdateScript(path, hash, body, config);
 
-		//TODO: Have a list of nodes that depend on each file and re-hash them all?
+	//If we created a new source file, and have a build.yml in the directory, re-run its targets
+	//This is necessary if we added references to the script before creating the file.
+	if(created && has_script && !is_script && config)
+		m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false);
 
-	m_mutex.unlock();
+	//TODO: Have a list of nodes that depend on each file and re-hash them all?
 }
 
 /**
@@ -127,15 +120,13 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
  */
 void WorkingCopy::RemoveFile(string path)
 {
-	m_mutex.lock();
+	lock_guard<recursive_mutex> lock(m_mutex);
 		
-		//If the file is a build.yml, process it
-		if(GetBasenameOfFile(path) == "build.yml")
-			m_graph.RemoveScript(path);
+	//If the file is a build.yml, process it
+	if(GetBasenameOfFile(path) == "build.yml")
+		m_graph.RemoveScript(path);
 
-		m_fileMap.erase(path);
-
-	m_mutex.unlock();
+	m_fileMap.erase(path);
 }
 
 /**
@@ -145,27 +136,25 @@ void WorkingCopy::RemoveFile(string path)
  */
 void WorkingCopy::RefreshToolchains()
 {
-	m_mutex.lock();
+	lock_guard<recursive_mutex> lock(m_mutex);
 
-		//Find build scripts
-		vector<string> paths;
-		for(auto it : m_fileMap)
-		{
-			string fname = it.first;
-			if(GetBasenameOfFile(fname) == "build.yml")
-				paths.push_back(fname);
-		}
+	//Find build scripts
+	vector<string> paths;
+	for(auto it : m_fileMap)
+	{
+		string fname = it.first;
+		if(GetBasenameOfFile(fname) == "build.yml")
+			paths.push_back(fname);
+	}
 
-		//Sort the paths lexically
-		//This way we do root dirs first so that we don't waste time doing multiple refreshes
-		sort(paths.begin(), paths.end());
+	//Sort the paths lexically
+	//This way we do root dirs first so that we don't waste time doing multiple refreshes
+	sort(paths.begin(), paths.end());
 
-		//And evaluate them in that order
-		for(auto p : paths)
-		{
-			//LogDebug("Re-evaluating build script %s\n", p.c_str());
-			m_graph.UpdateScript(p, m_fileMap[p], true, true);
-		}
-	
-	m_mutex.unlock();
+	//And evaluate them in that order
+	for(auto p : paths)
+	{
+		//LogDebug("Re-evaluating build script %s\n", p.c_str());
+		m_graph.UpdateScript(p, m_fileMap[p], true, true);
+	}
 }

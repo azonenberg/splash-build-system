@@ -102,13 +102,12 @@ Cache::~Cache()
  */
 bool Cache::IsCached(string id)
 {
-	bool found = false;
-	m_mutex.lock();
-		if(m_cacheIndex.find(id) != m_cacheIndex.end())
-			found = true;
-	m_mutex.unlock();
+	lock_guard<mutex> lock(m_mutex);
 
-	return found;
+	if(m_cacheIndex.find(id) != m_cacheIndex.end())
+		return true;
+
+	return false;
 }
 
 /**
@@ -118,24 +117,18 @@ bool Cache::IsCached(string id)
  */
 bool Cache::ValidateCacheEntry(string id)
 {
-	m_mutex.lock();
+	lock_guard<mutex> lock(m_mutex);
 
 	//If the directory doesn't exist, obviously we have nothing useful there
 	string dir = GetStoragePath(id);
 	if(!DoesDirectoryExist(dir))
-	{
-		m_mutex.unlock();
 		return false;
-	}
 
 	//If we're missing the file or hash, can't possibly be valid
 	string fpath = dir + "/data";
 	string hpath = dir + "/hash";
 	if( !DoesFileExist(fpath) || !DoesFileExist(hpath) )
-	{
-		m_mutex.unlock();
 		return false;
-	}
 
 	//Get the expected hash and compare to the real one
 	//If it's invalid, just get rid of the junk
@@ -146,11 +139,9 @@ bool Cache::ValidateCacheEntry(string id)
 		LogWarning("Cache directory %s is corrupted (hash match failed)\n", id.c_str());
 		ShellCommand(string("rm -I ") + dir + "/*");
 		ShellCommand(string("rm -r ") + dir);
-		m_mutex.unlock();
 		return false;
 	}
 
-	m_mutex.unlock();
 	return true;
 }
 
@@ -170,20 +161,17 @@ string Cache::GetStoragePath(string id)
  */
 string Cache::ReadCachedFile(string id)
 {
-	m_mutex.lock();
+	lock_guard<mutex> lock(m_mutex);
 
-		//Sanity check
-		if(m_cacheIndex.find(id) == m_cacheIndex.end())
-		{
-			m_mutex.unlock();
-			LogError("WARNING: requested file %s is not in cache\n", id.c_str());
-			return "";
-		}
+	//Sanity check
+	if(m_cacheIndex.find(id) == m_cacheIndex.end())
+	{
+		LogError("WARNING: requested file %s is not in cache\n", id.c_str());
+		return "";
+	}
 
-		//Read the file
-		string ret = GetFileContents(GetStoragePath(id) + "/data");
-
-	m_mutex.unlock();
+	//Read the file
+	string ret = GetFileContents(GetStoragePath(id) + "/data");
 
 	return ret;
 }
@@ -199,60 +187,54 @@ string Cache::ReadCachedFile(string id)
  */
 void Cache::AddFile(string /*basename*/, string id, string hash, const char* data, uint64_t len)
 {
-	m_mutex.lock();
+	lock_guard<mutex> lock(m_mutex);
 
-		//Create the directory. If it already exists, delete whatever junk was in there
-		string dirname = GetStoragePath(id);
-		if(DoesDirectoryExist(dirname))
-		{
-			LogWarning("Cache directory %s already exists but was not loaded, removing dead files\n", hash.c_str());
-			ShellCommand(string("rm -I ") + dirname + "/*");
-		}
-		else
-			MakeDirectoryRecursive(dirname, 0600);
+	//Create the directory. If it already exists, delete whatever junk was in there
+	string dirname = GetStoragePath(id);
+	if(DoesDirectoryExist(dirname))
+	{
+		LogWarning("Cache directory %s already exists but was not loaded, removing dead files\n", hash.c_str());
+		ShellCommand(string("rm -I ") + dirname + "/*");
+	}
+	else
+		MakeDirectoryRecursive(dirname, 0600);
 
-		//Write the file data to it
-		string fname = dirname + "/data";
-		FILE* fp = fopen(fname.c_str(), "wb");
-		if(!fp)
-		{
-			m_mutex.unlock();
-			LogWarning("Couldn't create cache file %s\n", fname.c_str());
-			return;
-		}
-		if(len != fwrite(data, 1, len, fp))
-		{
-			fclose(fp);
-			m_mutex.unlock();
-			LogWarning("Couldn't write cache file %s\n", fname.c_str());
-			return;
-		}
+	//Write the file data to it
+	string fname = dirname + "/data";
+	FILE* fp = fopen(fname.c_str(), "wb");
+	if(!fp)
+	{
+		LogWarning("Couldn't create cache file %s\n", fname.c_str());
+		return;
+	}
+	if(len != fwrite(data, 1, len, fp))
+	{
 		fclose(fp);
+		LogWarning("Couldn't write cache file %s\n", fname.c_str());
+		return;
+	}
+	fclose(fp);
 
-		//Write the hash
-		fname = dirname + "/hash";
-		fp = fopen(fname.c_str(), "wb");
-		if(!fp)
-		{
-			m_mutex.unlock();
-			LogWarning("Couldn't create cache file %s\n", fname.c_str());
-			return;
-		}
-		if(64 != fwrite(hash.c_str(), 1, 64, fp))
-		{
-			fclose(fp);
-			m_mutex.unlock();
-			LogWarning("Couldn't write cache file %s\n", fname.c_str());
-			return;
-		}
+	//Write the hash
+	fname = dirname + "/hash";
+	fp = fopen(fname.c_str(), "wb");
+	if(!fp)
+	{
+		LogWarning("Couldn't create cache file %s\n", fname.c_str());
+		return;
+	}
+	if(64 != fwrite(hash.c_str(), 1, 64, fp))
+	{
 		fclose(fp);
+		LogWarning("Couldn't write cache file %s\n", fname.c_str());
+		return;
+	}
+	fclose(fp);
 
-		//TODO: write the atime file?
+	//TODO: write the atime file?
 
-		//Remember that we have this file cached
-		m_cacheIndex.emplace(hash);
+	//Remember that we have this file cached
+	m_cacheIndex.emplace(hash);
 
-		//TODO: add this file's size to the cache, if we went over the cap delete the LRU file
-
-	m_mutex.unlock();
+	//TODO: add this file's size to the cache, if we went over the cap delete the LRU file
 }
