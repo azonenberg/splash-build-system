@@ -50,6 +50,9 @@ public:
 	std::string GetToolchain()
 	{ return m_toolchainHash; }
 
+	WorkingCopy* GetWorkingCopy()
+	{ return m_workingCopy; }
+
 	const std::unordered_set<BuildFlag>& GetFlags()
 	{ return m_flags; }
 

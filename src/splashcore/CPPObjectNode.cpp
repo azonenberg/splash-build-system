@@ -53,7 +53,7 @@ CPPObjectNode::CPPObjectNode(
 	//This will likely require pulling a lot of files from the golden node.
 	//TODO: how do we get the deps back?
 	//TODO: handle generated headers, etc
-	g_scheduler->ScanDependencies(fname, arch, toolchain, flags);
+	g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy());
 }
 
 CPPObjectNode::~CPPObjectNode()

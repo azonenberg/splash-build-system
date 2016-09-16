@@ -88,8 +88,6 @@ string WorkingCopy::GetFileHash(string path)
  */
 void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 {
-	lock_guard<recursive_mutex> lock(m_mutex);
-
 	string buildscript = GetDirOfFile(path) + "/build.yml";
 	bool has_script = HasFile(buildscript);
 
@@ -97,8 +95,12 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 	bool created = (m_fileMap.find(path) == m_fileMap.end());
 
 	//Update our records for the new file before doing anything else
-	//since future processing may depend on this file existing
+	//since future processing may depend on this file existing.
+	//Note that we do *not* want the entire working copy locked after the path update
+	//since dependency scanning might have to read it
+	m_mutex.lock();
 	m_fileMap[path] = hash;
+	m_mutex.unlock();
 
 	//If the file is a build.yml, process it
 	bool is_script = (GetBasenameOfFile(path) == "build.yml");

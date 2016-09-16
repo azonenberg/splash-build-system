@@ -31,7 +31,7 @@
 
 using namespace std;
 
-void ProcessScanJob(Socket& s, DependencyScanJob* job);
+bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
@@ -107,8 +107,12 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
-			ProcessScanJob(s, djob);
-			continue;
+			//Push the job out to the client and run it
+			if(ProcessScanJob(s, hostname, djob))
+				continue;
+
+			//Job FAILED to run (client disconnected?) - update status
+			break;
 		}
 
 		//TODO: Look for other jobs
@@ -121,15 +125,34 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 /**
 	@brief Runs a dependency-scan job
  */
-void ProcessScanJob(Socket& s, DependencyScanJob* job)
+bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 {
+	//Grab the job settings
 	string chain = job->GetToolchain();
 	string path = job->GetPath();
-	LogDebug("Got a dependency scan request (file %s, toolchain %s)\n",
-		chain.c_str(), path.c_str());
+	auto wc = job->GetWorkingCopy();
+	string hash = wc->GetFileHash(path);
 	auto flags = job->GetFlags();
+
+	//Debug dump
+	LogDebug("Got a dependency scan request (file %s, toolchain %s)\n",
+		path.c_str(), chain.c_str());
+	LogDebug("    File hash: %s\n", hash.c_str());
 	for(auto f : flags)
 		LogDebug("    Flag: %s\n", static_cast<string>(f).c_str());
 
 	//Send the initial scan request to the client
+	SplashMsg req;
+	auto reqm = req.mutable_dependencyscan();
+	reqm->set_toolchain(chain);
+	reqm->set_fname(path);
+	reqm->set_filedata(g_cache->ReadCachedFile(hash));
+	for(auto f : flags)
+		reqm->add_flags(f);
+	if(!SendMessage(s, req, hostname))
+	{
+		return false;
+	}
+
+	return true;
 }

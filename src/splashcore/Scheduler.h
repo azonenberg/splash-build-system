@@ -51,7 +51,8 @@ public:
 		std::string fname,
 		std::string arch,
 		std::string toolchain,
-		std::unordered_set<BuildFlag> flags);
+		std::unordered_set<BuildFlag> flags,
+		WorkingCopy* wc);
 
 	//Node creation/deletion
 	void RemoveNode(clientID id);

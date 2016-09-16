@@ -94,7 +94,8 @@ bool Scheduler::ScanDependencies(
 	string fname,
 	string arch,
 	string toolchain,
-	unordered_set<BuildFlag> flags )
+	unordered_set<BuildFlag> flags,
+	WorkingCopy* wc)
 {
 	LogDebug("        Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
 		fname.c_str(), arch.c_str(), toolchain.c_str() );
@@ -116,12 +117,12 @@ bool Scheduler::ScanDependencies(
 	auto id = g_nodeManager->GetGoldenNodeForToolchain(hash);
 	if(id == 0)
 		return false;
-	auto wc = g_nodeManager->GetWorkingCopy(id);
-	string hostname = wc->GetHostname();
+	auto build_wc = g_nodeManager->GetWorkingCopy(id);
+	string hostname = build_wc->GetHostname();
 	LogDebug("            Golden node for this toolchain is %d (%s)\n", (int)id, hostname.c_str());
 
 	//Create the scan job and submit it
-	DependencyScanJob* job = new DependencyScanJob(fname, wc, toolchain, flags);
+	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, flags);
 	SubmitScanJob(id, job);
 
 	//Block until the job is done

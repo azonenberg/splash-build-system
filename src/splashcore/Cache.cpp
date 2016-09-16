@@ -166,7 +166,7 @@ string Cache::ReadCachedFile(string id)
 	//Sanity check
 	if(m_cacheIndex.find(id) == m_cacheIndex.end())
 	{
-		LogError("WARNING: requested file %s is not in cache\n", id.c_str());
+		LogError("Requested file %s is not in cache\n", id.c_str());
 		return "";
 	}
 
@@ -216,21 +216,9 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const char* dat
 	fclose(fp);
 
 	//Write the hash
-	fname = dirname + "/hash";
-	fp = fopen(fname.c_str(), "wb");
-	if(!fp)
-	{
-		LogWarning("Couldn't create cache file %s\n", fname.c_str());
+	if(!PutFileContents(dirname + "/hash", hash))
 		return;
-	}
-	if(64 != fwrite(hash.c_str(), 1, 64, fp))
-	{
-		fclose(fp);
-		LogWarning("Couldn't write cache file %s\n", fname.c_str());
-		return;
-	}
-	fclose(fp);
-
+	
 	//TODO: write the atime file?
 
 	//Remember that we have this file cached

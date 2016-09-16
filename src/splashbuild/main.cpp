@@ -37,6 +37,12 @@ void ShowVersion();
 //map of toolchain hashes to toolchain objects
 map<string, Toolchain*> g_toolchains;
 
+void CleanTempDir();
+void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server);
+
+//Temporary directory we work in
+string g_tmpdir;
+
 /**
 	@brief Program entry point
  */
@@ -76,6 +82,10 @@ int main(int argc, char* argv[])
 			ctl_server = argv[i];
 
 	}
+
+	//Set up temporary directory (TODO: argument for this?)
+	g_tmpdir = "/tmp/splashbuild-tmp";
+	MakeDirectoryRecursive(g_tmpdir, 0700);
 	
 	//Set up logging
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
@@ -173,13 +183,25 @@ int main(int argc, char* argv[])
 	}
 	
 	//Sit around and wait for stuff to come in
+	LogVerbose("\nReady\n\n");
 	while(true)
 	{
 		SplashMsg rxm;
 		if(!RecvMessage(sock, rxm, ctl_server))
 			return 1;
 
-		LogDebug("Got a message\n");
+		auto type = rxm.Payload_case();
+
+		switch(type)
+		{
+			case SplashMsg::kDependencyScan:
+				ProcessDependencyScan(sock, rxm.dependencyscan(), ctl_server);
+				break;
+
+			default:
+				LogDebug("Got an unknown message, ignoring it\n");
+				break;
+		}
 	}
 	
 	//clean up
@@ -190,6 +212,67 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+/**
+	@brief Delete all files in the temp directory
+ */
+void CleanTempDir()
+{
+	string cmd = "rm -rf \"" + g_tmpdir + "/*\"";
+	ShellCommand(cmd.c_str());
+}
+
+/**
+	@brief Process a "dependency scan" message from a client
+ */
+void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
+{
+	LogDebug("Got a dependency scan request\n");
+
+	//Look up the toolchain we need
+	string toolhash = rxm.toolchain();
+	if(g_toolchains.find(toolhash) == g_toolchains.end())
+	{
+		LogError(
+			"Server requested a toolchain that we do not have installed (hash %s)\n"
+			"This should never happen.\n",
+			toolhash.c_str());
+		return;
+	}
+	Toolchain* chain = g_toolchains[toolhash];
+	LogDebug("    Toolchain: %s\n", chain->GetVersionString().c_str());
+
+	//Make sure we have a clean slate to build in
+	LogDebug("    Cleaning temp directory\n");
+	CleanTempDir();
+
+	//Get the relative path of the source file
+	string fname = rxm.fname();
+	string basename = GetBasenameOfFile(fname);
+	string dir = GetDirOfFile(fname);
+	string adir = g_tmpdir + "/" + dir;
+	string aname = g_tmpdir + "/" + fname;
+
+	//Create the relative path as needed
+	LogDebug("    Making build directory %s for source file %s\n", adir.c_str(), basename.c_str());
+	MakeDirectoryRecursive(adir, 0700);
+
+	//Write the source file
+	LogDebug("    Writing source file %s\n", aname.c_str());
+	if(!PutFileContents(aname, rxm.filedata()))
+		return;
+
+	//Look up the flags
+	LogDebug("    Flags:\n");
+	unordered_set<BuildFlag> flags;
+	for(int i=0; i<rxm.flags_size(); i++)
+	{
+		string flag = rxm.flags(i);
+		LogDebug("        %s\n", flag.c_str());
+		flags.emplace(BuildFlag(flag));
+	}
+
+	//Run the scanner proper
+}
 
 void ShowVersion()
 {

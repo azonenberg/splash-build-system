@@ -93,10 +93,14 @@ message AddCompiler
 				string	objSuffix	= 10;	//Object file suffix, including the dot if requied (.obj, .o, etc)
 };
 
-//Request that a build server perform a specific operation
-message BuildCommand
+//Request that a build server perform a dependency scan on a specific source file
+message DependencyScan
 {
 				string	toolchain	= 1;	//Hash of the toolchain being requested
+				string	fname		= 2;	//Name of the file being scanned
+				bytes	fileData	= 3;	//Content of the file being scanned
+	repeated	string	flags		= 4;	//Array of compiler flags which may be important for dependency resolution
+											//(include directories, #define's, etc)
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,14 +110,15 @@ message SplashMsg
 {
 	oneof Payload
 	{
-		ServerHello serverHello = 1;
-		ClientHello clientHello = 2;
-		DevInfo		devInfo		= 3;
-		FileChanged fileChanged	= 4;
-		FileRemoved fileRemoved = 5;
-		FileAck		fileAck		= 6;
-		FileData	fileData	= 7;
-		BuildInfo	buildInfo	= 8;
-		AddCompiler	addCompiler = 9;
+		ServerHello 	serverHello	 	= 1;
+		ClientHello 	clientHello		= 2;
+		DevInfo			devInfo			= 3;
+		FileChanged 	fileChanged		= 4;
+		FileRemoved 	fileRemoved		= 5;
+		FileAck			fileAck			= 6;
+		FileData		fileData		= 7;
+		BuildInfo		buildInfo		= 8;
+		AddCompiler		addCompiler 	= 9;
+		DependencyScan	dependencyScan	= 10;
 	}
 };

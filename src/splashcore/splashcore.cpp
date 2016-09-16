@@ -446,6 +446,27 @@ string GetFileContents(string path)
 	return tmp;
 }
 
+/**
+	@brief Write a file, return false on error
+ */
+bool PutFileContents(string path, string data)
+{
+	FILE* fp = fopen(path.c_str(), "wb");
+	if(!fp)
+	{
+		LogWarning("Couldn't create file %s\n", path.c_str());
+		return false;
+	}
+	if(data.length() != fwrite(data.c_str(), 1, data.length(), fp))
+	{
+		fclose(fp);
+		LogWarning("Couldn't write file %s\n", path.c_str());
+		return false;
+	}
+	fclose(fp);
+	return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hashing
 
