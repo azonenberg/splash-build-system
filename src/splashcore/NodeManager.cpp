@@ -139,11 +139,11 @@ void NodeManager::AddToolchain(clientID id, Toolchain* chain, bool moreComing)
 
 /**
 	@brief Calculate the hash corresponding to each toolchain we know about
+
+	DOES NOT lock the mutex; must be called only after it's locked.
  */
 void NodeManager::RecomputeCompilerHashes()
 {
-	lock_guard<mutex> lock(m_mutex);
-
 	LogDebug("Recomputing compiler hashes\n");
 
 	//Make a list of every language/architecture pair we know about.
