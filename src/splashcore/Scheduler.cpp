@@ -31,6 +31,8 @@
 
 using namespace std;
 
+Scheduler* g_scheduler = NULL;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
@@ -43,3 +45,21 @@ Scheduler::~Scheduler()
 	
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Golden node stuff
+
+/**
+	@brief Immediately schedules a dependency-scan job and blocks until it completes.
+ */
+void Scheduler::ScanDependencies(BuildGraphNode* source, string config, string arch, string toolchain)
+{
+	//string path = source->
+	LogDebug("Scheduler::ScanDependencies\n");
+}
+
+clientID Scheduler::GetGoldenNodeForToolchain(string hash)
+{
+	//FIXME
+	LogWarning("Scheduler::GetGoldenNodeForToolchain unimplemented\n");
+	return 0;
+}

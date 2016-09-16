@@ -101,6 +101,14 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 
 	while(true)
 	{
+		//
+
+
+
+
+
+
+		
 		//TEMP: Wait forever for messages to show up.
 		//TODO: wait for work to dispatch instead
 		SplashMsg msg;

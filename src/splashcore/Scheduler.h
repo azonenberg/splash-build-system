@@ -36,15 +36,9 @@
 	Basic design:
 
 	As a job comes in, determine if all of the pre-requisites have been met. If not, put it in the waiting list
-	blocking on the first prereq. Once this is met either block on another prereq or move to the ready queue.
+	blocking on the first prereq. Once this is met either block on another prereq or move to the run queue.
 
-	If the job is locked to a specific node (dependency scanning), put it in the queue for that node. Each node has one
-	queue for each priority level.
-
-	If the job is not locked, put it in the global run queue.
-
-	When a node is ready for work, it checks the per-node run queue for max priority jobs, then the global run queue
-	for max priority jobs, then continues down (so per-node jobs have priority over global jobs).
+	When a node is ready for work, it checks the the global run queue in decreasing priority order.
  */
 class Scheduler
 {
@@ -52,7 +46,11 @@ public:
 	Scheduler();
 	virtual ~Scheduler();
 
+	void ScanDependencies(BuildGraphNode* source, std::string config, std::string arch, std::string toolchain);
+
 protected:
+
+	clientID GetGoldenNodeForToolchain(std::string hash);
 
 	/**
 		@brief Waiting list (jobs we cannot yet run b/c some prereqs are not met)
@@ -60,10 +58,6 @@ protected:
 
 	/**
 		@brief Jobs currently executing on each node (need to push back to main run queue if the node disconnects)
-	 */
-
-	/**
-		@brief Jobs which are locked to a specific node, sorted by priority
 	 */
 
 	/**

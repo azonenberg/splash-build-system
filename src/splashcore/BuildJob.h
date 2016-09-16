@@ -54,7 +54,7 @@ public:
 		PRIO_COUNT			//Total number of priorities, used for queue management etc
 	};
 
-	BuildJob(Priority prio);
+	BuildJob(/*Priority prio*/);
 	virtual ~BuildJob();
 
 protected:
@@ -85,11 +85,6 @@ protected:
 		@brief Priority of this build job
 	 */
 	Priority m_priority;
-
-	/**
-		@brief Hostname of the node we're required to run on (blank if no restriction)
-	 */
-	std::string m_lockedNode;
 };
 
 extern BuildJob* g_BuildJob;
