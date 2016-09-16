@@ -47,6 +47,8 @@ add_library(splashcore SHARED
 	CPPSourceNode.cpp
 
 	BuildJob.cpp
+	DependencyScanJob.cpp
+	Job.cpp
 	Scheduler.cpp
 
 	splashcore.cpp

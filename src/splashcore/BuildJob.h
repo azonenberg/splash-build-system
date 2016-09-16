@@ -33,7 +33,7 @@
 /**
 	@brief A compile, link, or other operation to be executed by a single node.
  */
-class BuildJob
+class BuildJob : public Job
 {
 public:
 
@@ -86,7 +86,5 @@ protected:
 	 */
 	Priority m_priority;
 };
-
-extern BuildJob* g_BuildJob;
 
 #endif

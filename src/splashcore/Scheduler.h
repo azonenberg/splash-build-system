@@ -46,11 +46,32 @@ public:
 	Scheduler();
 	virtual ~Scheduler();
 
-	void ScanDependencies(BuildGraphNode* source, std::string config, std::string arch, std::string toolchain);
+	//Build graph interface
+	bool ScanDependencies(std::string fname, std::string config, std::string arch, std::string toolchain);
+
+	//Node creation/deletion
+	void RemoveNode(clientID id);
+
+	//Internal helpers
+	void SubmitScanJob(clientID id, DependencyScanJob* job);
+
+	//Node interface
+	DependencyScanJob* PopScanJob(clientID id);
 
 protected:
 
-	clientID GetGoldenNodeForToolchain(std::string hash);
+	/**
+		@brief Mutex used for blocking
+	 */
+	std::recursive_mutex m_mutex;
+
+	//A FIFO of scan jobs waiting to run
+	typedef std::list<DependencyScanJob*> scanqueue;
+
+	/**
+		@brief Dependency scan jobs waiting to run
+	 */
+	std::map<clientID, scanqueue> m_pendingScanJobs;
 
 	/**
 		@brief Waiting list (jobs we cannot yet run b/c some prereqs are not met)

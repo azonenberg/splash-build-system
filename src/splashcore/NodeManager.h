@@ -62,18 +62,22 @@ public:
 	WorkingCopy* GetWorkingCopy(clientID id)
 	{ return m_workingCopies[id]; }
 
-	void Lock();
-	void Unlock();
+	void lock();
+	void unlock();
 
 	Toolchain* GetAnyToolchainForName(std::string arch, std::string name);
+	Toolchain* GetAnyToolchainForHash(std::string hash);
+
+	std::string GetToolchainHash(std::string arch, std::string name);
+
+	clientID GetGoldenNodeForToolchain(std::string hash);
 
 protected:
 
 	void RecomputeCompilerHashes();
-	Toolchain* GetAnyToolchainForHash(std::string hash);
 
 	//Mutex to control access to all node lists
-	std::mutex m_mutex;
+	std::recursive_mutex m_mutex;
 
 	//List of compilers available on each node
 	//This is the authoritative pointer to nodes

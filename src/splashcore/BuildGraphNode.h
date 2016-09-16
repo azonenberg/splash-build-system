@@ -143,7 +143,7 @@ protected:
 	/**
 		@brief Indicates that this node is in an "error" state and cannot be built.
 
-		This is used for things like "missing input files" etc
+		This is used for things like "missing input files" etc.
 	 */
 	bool m_invalidInput;
 };

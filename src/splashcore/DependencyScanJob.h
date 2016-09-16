@@ -27,102 +27,20 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashctl.h"
+#ifndef DependencyScanJob_h
+#define DependencyScanJob_h
 
-using namespace std;
-
-void BuildClientThread(Socket& s, string& hostname, clientID id)
+/**
+	@brief A compile, link, or other operation to be executed by a single node.
+ */
+class DependencyScanJob : public Job
 {
-	LogNotice("Build server %s connected\n", hostname.c_str());
+public:
 
-	//Expect a BuildInfo message
-	SplashMsg binfo;
-	if(!RecvMessage(s, binfo, hostname))
-		return;
-	if(binfo.Payload_case() != SplashMsg::kBuildInfo)
-	{
-		LogWarning("Connection to %s dropped (expected buildInfo, got %d instead)\n",
-			hostname.c_str(), binfo.Payload_case());
-		return;
-	}
-	auto binfom = binfo.buildinfo();
-	
-	//Print stats
-	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
-		hostname.c_str(),
-		binfom.cpucount(),
-		binfom.cpuspeed(),
-		binfom.ramsize(),
-		binfom.numchains()
-		);
+	DependencyScanJob();
+	virtual ~DependencyScanJob();
 
-	//If no toolchains, just quit now
-	if(binfom.numchains() == 0)
-	{
-		LogWarning("Connection from %s dropped (no toolchains found)\n", hostname.c_str());
-		return;
-	}
+protected:
+};
 
-	//Read the toolchains
-	for(unsigned int i=0; i<binfom.numchains(); i++)
-	{
-		//Get the message
-		SplashMsg tadd;
-		if(!RecvMessage(s, tadd, hostname))
-			return;
-		auto madd = tadd.addcompiler();
-		
-		//Create and initialize the toolchain object
-		RemoteToolchain* toolchain = new RemoteToolchain(
-			static_cast<RemoteToolchain::ToolchainType>(madd.compilertype()),
-			madd.hash(),
-			madd.versionstr(),
-			(madd.versionnum() >> 16) & 0xffff,
-			(madd.versionnum() >> 8) & 0xff,
-			(madd.versionnum() >> 0) & 0xff,
-			madd.exesuffix(),
-			madd.shlibsuffix(),
-			madd.stlibsuffix(),
-			madd.objsuffix()
-			);
-		
-		//Languages
-		for(int j=0; j<madd.lang_size(); j++)
-			toolchain->AddLanguage(static_cast<Toolchain::Language>(madd.lang(j)));
-		
-		//Triplets
-		for(int j=0; j<madd.triplet_size(); j++)
-			toolchain->AddTriplet(madd.triplet(j));
-
-		//Register the toolchain in the global indexes
-		bool moreToolchains = (i+1 < binfom.numchains());
-		g_nodeManager->AddToolchain(id, toolchain, moreToolchains);
-	}
-
-	while(true)
-	{
-		//See if we have any jobs to process
-		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
-		if(djob != NULL)
-		{
-			//TODO
-			LogDebug("[%d] Got a scan job\n", (int)id);
-		}
-
-		//Wait a while
-		usleep(100);
-
-
-
-
-
-
-		/*
-		//TEMP: Wait forever for messages to show up.
-		//TODO: wait for work to dispatch instead
-		SplashMsg msg;
-		if(!RecvMessage(s, msg, hostname))
-			return;
-		*/
-	}
-}
+#endif

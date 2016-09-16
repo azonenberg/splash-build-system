@@ -101,6 +101,7 @@ int main(int argc, char* argv[])
 	//Initialize global data structures
 	g_cache = new Cache;
 	g_nodeManager = new NodeManager;
+	g_scheduler = new Scheduler;
 
 	//Socket server
 	LogDebug("Listening on TCP port %d...\n", port);
@@ -118,6 +119,7 @@ int main(int argc, char* argv[])
 	
 	//Cleanup
 	delete g_nodeManager;
+	delete g_scheduler;
 	delete g_cache;
 	return 0;
 }

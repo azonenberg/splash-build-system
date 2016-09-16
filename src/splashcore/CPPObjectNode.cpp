@@ -42,14 +42,16 @@ CPPObjectNode::CPPObjectNode(
 	std::string path,
 	std::string toolchain)
 {
-	LogDebug("        Creating CPPObjectNode %s (from source file %s) for config %s, arch %s, toolchain %s\n",
-		path.c_str(), fname.c_str(), config.c_str(), arch.c_str(), toolchain.c_str() );
+	//LogDebug("        Creating CPPObjectNode %s (from source file %s) for config %s, arch %s, toolchain %s\n",
+	//	path.c_str(), fname.c_str(), config.c_str(), arch.c_str(), toolchain.c_str() );
 
 	//$cc -M -MG
 
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
-
+	//TODO: how do we get the deps back?
+	//TODO: handle generated headers, etc
+	g_scheduler->ScanDependencies(fname, config, arch, toolchain);
 }
 
 CPPObjectNode::~CPPObjectNode()

@@ -38,7 +38,7 @@ NodeManager* g_nodeManager = NULL;
 
 NodeManager::NodeManager()
 {
-	m_nextClientID = 0;
+	m_nextClientID = 1;		//special ID 0 = "undefined" or "no such node"
 }
 
 NodeManager::~NodeManager()
@@ -56,7 +56,7 @@ NodeManager::~NodeManager()
 	Compute nodes can come and go at any time while the mutex is unlocked; pointers may become invalid at any time.
 	Do not retain any node pointers after unlocking the mutex.
  */
-void NodeManager::Lock()
+void NodeManager::lock()
 {
 	m_mutex.lock();
 }
@@ -64,7 +64,7 @@ void NodeManager::Lock()
 /**
 	@brief Unlocks the node manager's mutex.
  */
-void NodeManager::Unlock()
+void NodeManager::unlock()
 {
 	m_mutex.unlock();
 }
@@ -78,7 +78,7 @@ void NodeManager::Unlock()
 clientID NodeManager::AllocateClient(string hostname)
 {
 	clientID id;
-	lock_guard<mutex> lock(m_mutex);
+	lock_guard<recursive_mutex> lock(m_mutex);
 
 	id = m_nextClientID ++;
 	m_workingCopies[id] = new WorkingCopy;
@@ -88,11 +88,14 @@ clientID NodeManager::AllocateClient(string hostname)
 }
 
 /**
-	@brief Delete any toolchains registered to a node
+	@brief Delete any state registered to a node
  */
 void NodeManager::RemoveClient(clientID id)
 {
-	lock_guard<mutex> lock(m_mutex);
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//Cancel all pending jobs for that node
+	g_scheduler->RemoveNode(id);
 
 	auto chains = m_toolchainsByNode[id];
 	for(auto x : chains)
@@ -121,7 +124,7 @@ void NodeManager::RemoveClient(clientID id)
  */
 void NodeManager::AddToolchain(clientID id, Toolchain* chain, bool moreComing)
 {
-	lock_guard<mutex> lock(m_mutex);
+	lock_guard<recursive_mutex> lock(m_mutex);
 
 	string hash = chain->GetHash();
 	m_toolchainsByNode[id][hash] = chain;
@@ -284,11 +287,51 @@ Toolchain* NodeManager::GetAnyToolchainForHash(string hash)
  */
 Toolchain* NodeManager::GetAnyToolchainForName(string arch, string name)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return GetAnyToolchainForHash(GetToolchainHash(arch, name));
+}
+
+/**
+	@brief Gets the current hash of the requested toolchain, or the empty string if it doesn't exist.
+ */
+string NodeManager::GetToolchainHash(string arch, string name)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
 	//If we do not have such a toolchain, give up
 	carch c(name, arch);
 	if(m_toolchainsByName.find(c) == m_toolchainsByName.end())
-		return NULL;
+		return "";
+	return m_toolchainsByName[c];
+}
 
-	//We have a hash; get a toolchain for it
-	return GetAnyToolchainForHash(m_toolchainsByName[c]);
+/**
+	@brief Get the ID of the "golden node" for the specified toolchain hash.
+
+	This functionality is not fully implemented.
+
+	MUST be called while m_mutex is locked. Do not use the returned value once the mutex is unlocked.
+ */
+clientID NodeManager::GetGoldenNodeForToolchain(string hash)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//If we know about the toolchain, but nobody has it, give up
+	if(m_nodesByCompiler.find(hash) == m_nodesByCompiler.end())
+		return 0;
+	auto nodes = m_nodesByCompiler[hash];
+	if(nodes.empty())
+		return 0;
+
+	//If we have only one node, return it.
+	if(nodes.size() == 1)
+		return *nodes.begin();
+
+	//If more than one, print a warning and return the first
+	//TODO: Pick golden node based on explicit config
+	else
+	{
+		LogWarning("WARNING: NodeManager::GetGoldenNodeForToolchain() does not have golden config yet\n");
+		return *nodes.begin();
+	}
 }

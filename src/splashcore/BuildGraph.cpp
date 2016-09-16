@@ -505,13 +505,12 @@ string BuildGraph::GetOutputFilePath(
 	path += name;
 
 	//Look up a toolchain to query
-	g_nodeManager->Lock();
+	lock_guard<NodeManager> lock(*g_nodeManager);
 	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
 	if(chain == NULL)
 	{
 		LogParseError("Could not find a toolchain of type %s targeting architecture arch %s\n",
 			toolchain.c_str(), arch.c_str());
-		g_nodeManager->Unlock();
 		return "";
 	}
 
@@ -525,7 +524,6 @@ string BuildGraph::GetOutputFilePath(
 	else
 		LogParseError("Unknown type \"%s\"\n", type.c_str());
 
-	g_nodeManager->Unlock();
 	return path;
 }
 
@@ -555,13 +553,12 @@ string BuildGraph::GetIntermediateFilePath(
 	path += GetBasenameOfFileWithoutExt(srcpath);
 
 	//Look up a toolchain to query
-	g_nodeManager->Lock();
+	lock_guard<NodeManager> lock(*g_nodeManager);
 	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
 	if(chain == NULL)
 	{
 		LogParseError("Could not find a toolchain of type %s targeting architecture arch %s\n",
 			toolchain.c_str(), arch.c_str());
-		g_nodeManager->Unlock();
 		return "";
 	}
 
@@ -571,6 +568,5 @@ string BuildGraph::GetIntermediateFilePath(
 	else
 		LogParseError("Unknown type \"%s\"\n", type.c_str());
 
-	g_nodeManager->Unlock();
 	return path;
 }
