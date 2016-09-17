@@ -41,6 +41,13 @@ public:
 	GNULinkerToolchain(std::string basepath, std::string triplet);
 	virtual ~GNULinkerToolchain();
 
+	virtual bool ScanDependencies(
+		std::string path,
+		std::string root,
+		std::set<BuildFlag> flags,
+		std::set<std::string>& deps,
+		std::set<std::string>& missing);
+
 protected:
 };
 

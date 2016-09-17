@@ -41,6 +41,13 @@ public:
 	GNUCToolchain(std::string basepath, std::string triplet);
 	virtual ~GNUCToolchain();
 
+	virtual bool ScanDependencies(
+		std::string path,
+		std::string root,
+		std::set<BuildFlag> flags,
+		std::set<std::string>& deps,
+		std::set<std::string>& missing);
+
 protected:
 };
 

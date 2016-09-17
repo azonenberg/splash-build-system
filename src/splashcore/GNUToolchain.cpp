@@ -70,3 +70,17 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 	//for(auto p : paths)
 	//	LogDebug("        %s\n", p.c_str());
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Actual operations
+
+bool GNUToolchain::ScanDependencies(
+	string /*path*/,
+	string /*root*/,
+	set<BuildFlag> /*flags*/,
+	set<string>& /*deps*/,
+	set<string>& /*missing*/)
+{
+	LogError("GNUToolchain::DoScanDependencies() is meaningless for now\n");
+	return false;
+}

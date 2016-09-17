@@ -44,3 +44,17 @@ FPGAToolchain::FPGAToolchain(string basepath, ToolchainType type)
 FPGAToolchain::~FPGAToolchain()
 {
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Actual operations
+
+bool FPGAToolchain::ScanDependencies(
+	string /*path*/,
+	string /*root*/,
+	set<BuildFlag> /*flags*/,
+	set<string>& /*deps*/,
+	set<string>& /*missing*/)
+{
+	LogError("FPGAToolchain::DoScanDependencies() is not yet implemented\n");
+	return false;
+}
