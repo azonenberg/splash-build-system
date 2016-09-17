@@ -171,7 +171,7 @@ bool GNUToolchain::ScanDependencies(
 	//First entry is always the source file itself, so we can skip that
 	//Loop over the other entries and convert them to system/project relative paths
 	//LogDebug("Absolute paths:\n");
-	for(size_t i=/*1*/0; i<files.size(); i++)
+	for(size_t i=1; i<files.size(); i++)
 	{
 		//If the path begins with our working copy directory, trim it off and call the rest the relative path
 		string f = files[i];
