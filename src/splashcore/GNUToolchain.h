@@ -39,13 +39,16 @@ public:
 	void FindDefaultIncludePaths(std::vector<std::string>& paths, std::string exe, bool cpp);
 
 	bool ScanDependencies(
+		std::string exe,
 		std::string path,
 		std::string root,
 		std::set<BuildFlag> flags,
+		const std::vector<std::string>& sysdirs,
 		std::set<std::string>& deps,
 		std::set<std::string>& missing);
 	
 protected:
+	std::string FlagToString(BuildFlag flag);
 };
 
 #endif

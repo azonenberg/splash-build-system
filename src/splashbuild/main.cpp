@@ -43,6 +43,9 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server);
 //Temporary directory we work in
 string g_tmpdir;
 
+//Temporary directory we do builds in
+string g_builddir;
+
 /**
 	@brief Program entry point
  */
@@ -86,6 +89,8 @@ int main(int argc, char* argv[])
 	//Set up temporary directory (TODO: argument for this?)
 	g_tmpdir = "/tmp/splashbuild-tmp";
 	MakeDirectoryRecursive(g_tmpdir, 0700);
+	g_builddir = g_tmpdir + "/build";
+	MakeDirectoryRecursive(g_builddir, 0700);
 	
 	//Set up logging
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
@@ -217,7 +222,7 @@ int main(int argc, char* argv[])
  */
 void CleanTempDir()
 {
-	string cmd = "rm -rf \"" + g_tmpdir + "/*\"";
+	string cmd = "rm -rf \"" + g_builddir + "/*\"";
 	ShellCommand(cmd.c_str());
 }
 
@@ -249,8 +254,10 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	string fname = rxm.fname();
 	string basename = GetBasenameOfFile(fname);
 	string dir = GetDirOfFile(fname);
-	string adir = g_tmpdir + "/" + dir;
-	string aname = g_tmpdir + "/" + fname;
+	string adir = g_builddir + "/" + dir;
+	string aname = g_builddir + "/" + fname;
+
+	//TODO: get file from local cache or something instead?
 
 	//Create the relative path as needed
 	LogDebug("    Making build directory %s for source file %s\n", adir.c_str(), basename.c_str());
@@ -263,7 +270,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 
 	//Look up the flags
 	LogDebug("    Flags:\n");
-	unordered_set<BuildFlag> flags;
+	set<BuildFlag> flags;
 	for(int i=0; i<rxm.flags_size(); i++)
 	{
 		string flag = rxm.flags(i);
@@ -272,6 +279,14 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	}
 
 	//Run the scanner proper
+	set<string> deps;
+	set<string> missing;
+	if(!chain->ScanDependencies(aname, g_builddir, flags, deps, missing))
+	{
+		LogDebug("scan failed\n");
+	}
+	else
+		LogDebug("scan completed\n");
 }
 
 void ShowVersion()

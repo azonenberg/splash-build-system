@@ -37,7 +37,9 @@ using namespace std;
 BuildGraph::BuildGraph(WorkingCopy* wc)
 	: m_workingCopy(wc)
 {
-
+	//TODO: make this configurable in the root Splashfile or something?
+	m_buildArtifactPath = "build";
+	m_sysIncludePath = "__sysinclude__";
 }
 
 BuildGraph::~BuildGraph()
@@ -497,9 +499,7 @@ string BuildGraph::GetOutputFilePath(
 	string type,
 	string name)
 {
-	//TODO: make this configurable in the root Splashfile or something?
-	string path = "build/";
-
+	string path = m_buildArtifactPath + "/";
 	path += arch + "/";
 	path += config + "/";
 	path += name;
@@ -542,9 +542,7 @@ string BuildGraph::GetIntermediateFilePath(
 	string type,
 	string srcpath)
 {
-	//TODO: make this configurable in the root Splashfile or something?
-	string path = "build/";
-
+	string path = m_buildArtifactPath + "/";
 	path += arch + "/";
 	path += config + "/";
 

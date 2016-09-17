@@ -134,13 +134,6 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 	string hash = wc->GetFileHash(path);
 	auto flags = job->GetFlags();
 
-	//Debug dump
-	LogDebug("Got a dependency scan request (file %s, toolchain %s)\n",
-		path.c_str(), chain.c_str());
-	LogDebug("    File hash: %s\n", hash.c_str());
-	for(auto f : flags)
-		LogDebug("    Flag: %s\n", static_cast<string>(f).c_str());
-
 	//Send the initial scan request to the client
 	SplashMsg req;
 	auto reqm = req.mutable_dependencyscan();

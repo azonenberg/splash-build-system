@@ -150,6 +150,13 @@ protected:
 
 	//The nodes (map from hash to pointer)
 	std::map<std::string, BuildGraphNode*> m_nodesByHash;
+
+	//Relative path for build artifacts to go
+	//(also used as logical path for temporary files the client never sees)
+	std::string m_buildArtifactPath;
+
+	//Relative path for system include files
+	std::string m_sysIncludePath;
 };
 
 #endif
