@@ -152,7 +152,7 @@ void NodeManager::RecomputeCompilerHashes()
 	//Make a list of every language/architecture pair we know about.
 	//The list of languages is architecture specific so we need to know what the options are.
 	//It's stupid to wasted time looking for a Verilog compiler for mips-elf.
-	unordered_set<larch> larches;
+	set<larch> larches;
 	for(auto it : m_nodesByLanguage)
 		larches.emplace(it.first);
 
@@ -168,7 +168,7 @@ void NodeManager::RecomputeCompilerHashes()
 			continue;
 
 		//Generate the names for each arch/triplet combination
-		unordered_set<string> names;
+		set<string> names;
 		tool->GetCompilerNames(names);
 		auto triplets = tool->GetTargetTriplets();
 		for(auto arch : triplets)

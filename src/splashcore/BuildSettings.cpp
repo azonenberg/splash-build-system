@@ -101,7 +101,7 @@ BuildSettings::~BuildSettings()
 /**
 	@brief Add our flags to the provided set
  */
-void BuildSettings::GetFlags(string config, unordered_set<BuildFlag>& flags)
+void BuildSettings::GetFlags(string config, set<BuildFlag>& flags)
 {
 	//Apply global flags
 	for(auto x : m_flags)
@@ -112,7 +112,7 @@ void BuildSettings::GetFlags(string config, unordered_set<BuildFlag>& flags)
 		m_configurations[config].GetFlags(flags);
 }
 
-void BuildSettings::GetConfigNames(unordered_set<string>& configs)
+void BuildSettings::GetConfigNames(set<string>& configs)
 {
 	for(auto it : m_configurations)
 		configs.emplace(it.first);

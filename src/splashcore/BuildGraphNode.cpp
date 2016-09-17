@@ -119,7 +119,7 @@ BuildGraphNode::~BuildGraphNode()
  */
 void BuildGraphNode::GetFlagsForUseAt(
 	BuildFlag::FlagUsage when,
-	unordered_set<BuildFlag>& flags)
+	set<BuildFlag>& flags)
 {
 	for(auto f : m_flags)
 	{

@@ -66,7 +66,7 @@ public:
 
 	void GetFlagsForUseAt(
 		BuildFlag::FlagUsage when,
-		std::unordered_set<BuildFlag>& flags);
+		std::set<BuildFlag>& flags);
 
 	/**
 		@brief Status of a single node
@@ -131,14 +131,14 @@ protected:
 	std::string m_path;
 
 	/// @brief Flags applied to the node at any step (note that target nodes may have flags for earlier stages too)
-	std::unordered_set<BuildFlag> m_flags;
+	std::set<BuildFlag> m_flags;
 
 	/**
 		@brief Set of named files we depend on (source files, object files, etc)
 
 		Direct dependencies only, not transitive ones.
 	 */
-	std::unordered_set<std::string> m_dependencies;
+	std::set<std::string> m_dependencies;
 
 	/**
 		@brief Indicates that this node is in an "error" state and cannot be built.

@@ -94,7 +94,7 @@ bool Scheduler::ScanDependencies(
 	string fname,
 	string arch,
 	string toolchain,
-	unordered_set<BuildFlag> flags,
+	set<BuildFlag> flags,
 	WorkingCopy* wc)
 {
 	LogDebug("        Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",

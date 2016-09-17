@@ -40,7 +40,7 @@ CPPObjectNode::CPPObjectNode(
 	string fname,
 	string path,
 	string toolchain,
-	unordered_set<BuildFlag> flags)
+	set<BuildFlag> flags)
 {
 	//LogDebug("        Creating CPPObjectNode %s (from source file %s) for config %s, arch %s, toolchain %s\n",
 	//	path.c_str(), fname.c_str(), config.c_str(), arch.c_str(), toolchain.c_str() );

@@ -71,7 +71,7 @@ public:
 
 	void AddNode(BuildGraphNode* node);
 
-	void GetFlags(std::string toolchain, std::string config, std::string path, std::unordered_set<BuildFlag>& flags);
+	void GetFlags(std::string toolchain, std::string config, std::string path, std::set<BuildFlag>& flags);
 
 	std::string GetOutputFilePath(
 		std::string toolchain,
@@ -103,12 +103,12 @@ protected:
 	void GetConfigNames(
 		std::string toolchain,
 		std::string path,
-		std::unordered_set<std::string>& configs);
+		std::set<std::string>& configs);
 	
 	void GetDefaultArchitecturesForToolchain(
 		std::string toolchain,
 		std::string path,
-		std::unordered_set<std::string>& arches);
+		std::set<std::string>& arches);
 
 	//The working copy of the repository we're attached to (so we can access file content etc)
 	WorkingCopy* m_workingCopy;

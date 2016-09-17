@@ -69,7 +69,7 @@ protected:
 
 		All of these must be in STATUS_READY before we can execute.
 	 */
-	std::unordered_set<BuildGraphNode*> m_inputs;
+	std::set<BuildGraphNode*> m_inputs;
 
 	/**
 		@brief Hash of the toolchain that needs to execute this job
@@ -79,7 +79,7 @@ protected:
 	/**
 		@brief Flags this build requires
 	 */
-	std::unordered_set<BuildFlag> m_flags;
+	std::set<BuildFlag> m_flags;
 
 	/**
 		@brief Priority of this build job

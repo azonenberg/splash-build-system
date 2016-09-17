@@ -47,21 +47,21 @@ public:
 	
 	virtual ~BuildSettings();
 	
-	const std::unordered_set<BuildFlag>& GetFlags() const
+	const std::set<BuildFlag>& GetFlags() const
 	{ return m_flags; }
 	
 	bool InheritFlags() const
 	{ return m_bInheritFlags; }
 	
-	const std::unordered_set<std::string>& GetTriplets() const
+	const std::set<std::string>& GetTriplets() const
 	{ return m_triplets; }
 	
 	bool InheritTriplets() const
 	{ return m_bInheritTriplets; }
 
-	void GetConfigNames(std::unordered_set<std::string>& configs);
+	void GetConfigNames(std::set<std::string>& configs);
 
-	void GetFlags(std::string config, std::unordered_set<BuildFlag>& flags);
+	void GetFlags(std::string config, std::set<BuildFlag>& flags);
 		
 protected:
 
@@ -74,7 +74,7 @@ protected:
 	/**
 		@brief Architecture triplets
 	 */
-	std::unordered_set<std::string> m_triplets;
+	std::set<std::string> m_triplets;
 	
 	/**
 		@brief True if we inherit global flags
@@ -84,7 +84,7 @@ protected:
 	/**
 		@brief Flags that apply regardless of configuration
 	 */
-	std::unordered_set<BuildFlag> m_flags;
+	std::set<BuildFlag> m_flags;
 
 	/**
 		@brief Map of configuration names to configuration objects

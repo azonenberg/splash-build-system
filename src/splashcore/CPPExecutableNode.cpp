@@ -65,7 +65,7 @@ CPPExecutableNode::CPPExecutableNode(
 	WorkingCopy* wc = m_graph->GetWorkingCopy();
 
 	//Collect the compiler flags
-	unordered_set<BuildFlag> compileFlags;
+	set<BuildFlag> compileFlags;
 	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
 	//for(auto x : compileFlags)
 	//	LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());

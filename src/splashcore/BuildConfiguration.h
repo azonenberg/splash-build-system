@@ -42,10 +42,10 @@ public:
 	BuildConfiguration(YAML::Node& node);
 	virtual ~BuildConfiguration();
 
-	void GetFlags(std::unordered_set<BuildFlag>& flags);
+	void GetFlags(std::set<BuildFlag>& flags);
 	
 protected:
-	std::unordered_set<BuildFlag> m_flags;
+	std::set<BuildFlag> m_flags;
 };
 
 #endif

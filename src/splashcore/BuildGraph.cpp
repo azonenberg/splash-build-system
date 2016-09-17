@@ -349,7 +349,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 
 	//See what architecture(s) we're targeting.
 	//Start by pulling in the default architectures
-	unordered_set<string> darches;
+	set<string> darches;
 	GetDefaultArchitecturesForToolchain(toolchain, path, darches);
 
 	//Then look to see if we overrode them
@@ -375,7 +375,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	}
 
 	//See what configurations we might be building for
-	unordered_set<string> configs;
+	set<string> configs;
 	GetConfigNames(toolchain, path, configs);
 
 	//Figure out what kind of target we're creating
@@ -433,7 +433,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	@param path			Path to the build script of the current scope
 	@param arches		Set of architectures we found
  */
-void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string path, unordered_set<string>& arches)
+void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string path, set<string>& arches)
 {
 	m_toolchainSettings[toolchain].GetDefaultArchitectures(arches, path);
 }
@@ -445,7 +445,7 @@ void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string pa
 	@param path			Path to the build script of the current scope
 	@param configs		Set of configurations we found
  */
-void BuildGraph::GetConfigNames(string toolchain, string path, unordered_set<string>& configs)
+void BuildGraph::GetConfigNames(string toolchain, string path, set<string>& configs)
 {
 	m_toolchainSettings[toolchain].GetConfigNames(path, configs);
 }
@@ -458,7 +458,7 @@ void BuildGraph::GetConfigNames(string toolchain, string path, unordered_set<str
 	@param path			Path to the build script of the current scope
 	@param flags		The set of flags. Any flags already in this set are kept.
  */
-void BuildGraph::GetFlags(string toolchain, string config, string path, unordered_set<BuildFlag>& flags)
+void BuildGraph::GetFlags(string toolchain, string config, string path, set<BuildFlag>& flags)
 {
 	m_toolchainSettings[toolchain].GetFlags(config, path, flags);
 }

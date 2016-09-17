@@ -115,7 +115,7 @@ protected:
 };
 
 /**
-	@brief Hash function (for unordered_set)
+	@brief Hash/comparison function (for unordered_set / set)
  */
 namespace std
 {
@@ -123,6 +123,12 @@ namespace std
 	{
 		size_t operator()(const BuildFlag& b) const
 		{ return hash<string>()(static_cast<string>(b)); }
+	};
+
+	template<> struct less<BuildFlag>
+	{
+		size_t operator()(const BuildFlag& a, const BuildFlag& b) const
+		{ return static_cast<string>(a) < static_cast<string>(b); }
 	};
 };
 

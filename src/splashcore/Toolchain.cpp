@@ -190,13 +190,13 @@ void Toolchain::GetSupportedLanguages(vector<string>& langs)
 /**
 	@brief Get the full list of compiler names we implement
  */
-void Toolchain::GetCompilerNames(unordered_set<string>& names)
+void Toolchain::GetCompilerNames(set<string>& names)
 {
 	//Toolchain type
 	string type = MakeStringLowercase(GetToolchainType());
 
 	//Set of languages we support
-	unordered_set<string> langs;
+	set<string> langs;
 	for(auto x : m_langs)
 		langs.emplace(MakeStringLowercase(LangToString(x)));
 

@@ -104,7 +104,7 @@ string ToolchainSettings::GetBuildScriptPath(string dir)
 
 	Note that the flags set is NOT cleared beforehand since we might want to append to existing stuff
  */
-void ToolchainSettings::GetFlags(string config, string path, unordered_set<BuildFlag>& flags)
+void ToolchainSettings::GetFlags(string config, string path, set<BuildFlag>& flags)
 {
 	//Split the path up into segments
 	list<string> dirs;
@@ -131,7 +131,7 @@ void ToolchainSettings::GetFlags(string config, string path, unordered_set<Build
 /**
 	@brief Find every named configuration we might be targeting
  */
-void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& configs)
+void ToolchainSettings::GetConfigNames(string path, set<string>& configs)
 {
 	//Split the path up into segments
 	list<string> dirs;
@@ -165,7 +165,7 @@ void ToolchainSettings::GetConfigNames(string path, unordered_set<string>& confi
 /**
 	@brief Get all of the default architectures (not specified in a specific target) for the given build path
  */
-void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, string path)
+void ToolchainSettings::GetDefaultArchitectures(set<string>& arches, string path)
 {
 	//Split the path up into segments
 	list<string> dirs;
@@ -192,7 +192,7 @@ void ToolchainSettings::GetDefaultArchitectures(unordered_set<string>& arches, s
 	GetDefaultArchitectures_helper(m_fileSettings[path], arches);
 }
 
-void ToolchainSettings::GetDefaultArchitectures_helper(const BuildSettings& settings, unordered_set<string>& arches)
+void ToolchainSettings::GetDefaultArchitectures_helper(const BuildSettings& settings, set<string>& arches)
 {
 	//If the flags do not include "global", clear whatever was there before
 	if(!settings.InheritTriplets())

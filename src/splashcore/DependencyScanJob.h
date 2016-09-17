@@ -41,7 +41,7 @@ public:
 		std::string path,
 		WorkingCopy* wc,
 		std::string toolchainHash,
-		std::unordered_set<BuildFlag> flags);
+		std::set<BuildFlag> flags);
 	virtual ~DependencyScanJob();
 
 	std::string GetPath()
@@ -53,7 +53,7 @@ public:
 	WorkingCopy* GetWorkingCopy()
 	{ return m_workingCopy; }
 
-	const std::unordered_set<BuildFlag>& GetFlags()
+	const std::set<BuildFlag>& GetFlags()
 	{ return m_flags; }
 
 protected:
@@ -68,7 +68,7 @@ protected:
 	std::string m_toolchainHash;
 
 	/// @brief Flags this build requires
-	std::unordered_set<BuildFlag> m_flags;
+	std::set<BuildFlag> m_flags;
 };
 
 #endif

@@ -42,12 +42,12 @@ public:
 	void PurgeConfig(std::string path);
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	
-	void GetDefaultArchitectures(std::unordered_set<std::string>& arches, std::string path);
-	void GetConfigNames(std::string path, std::unordered_set<std::string>& configs);
-	void GetFlags(std::string config, std::string path, std::unordered_set<BuildFlag>& flags);
+	void GetDefaultArchitectures(std::set<std::string>& arches, std::string path);
+	void GetConfigNames(std::string path, std::set<std::string>& configs);
+	void GetFlags(std::string config, std::string path, std::set<BuildFlag>& flags);
 	
 protected:
-	void GetDefaultArchitectures_helper(const BuildSettings& settings, std::unordered_set<std::string>& arches);
+	void GetDefaultArchitectures_helper(const BuildSettings& settings, std::set<std::string>& arches);
 
 	void SegmentPath(std::string path, std::list<std::string>& dirs);
 	std::string GetBuildScriptPath(std::string dir);

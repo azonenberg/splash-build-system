@@ -38,7 +38,7 @@ DependencyScanJob::DependencyScanJob(
 	string path,
 	WorkingCopy* wc,
 	string toolchainHash,
-	unordered_set<BuildFlag> flags )
+	set<BuildFlag> flags )
 	: m_sourcePath(path)
 	, m_workingCopy(wc)
 	, m_toolchainHash(toolchainHash)
