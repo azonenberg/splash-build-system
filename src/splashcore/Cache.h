@@ -55,7 +55,7 @@
 class Cache
 {
 public:
-	Cache();
+	Cache(std::string cachename);
 	virtual ~Cache();
 
 	enum ObjectStates

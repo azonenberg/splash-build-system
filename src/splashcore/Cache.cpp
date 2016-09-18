@@ -36,7 +36,7 @@ Cache* g_cache = NULL;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-Cache::Cache()
+Cache::Cache(string cachename)
 {
 	LogVerbose("Initializing cache subsystem...\n");
 
@@ -47,7 +47,7 @@ Cache::Cache()
 	string home = getenv("HOME");
 	if(!DoesDirectoryExist(home))
 		LogFatal("home dir does not exist\n");
-	m_cachePath = home + "/.splash/splashctl-cache";
+	m_cachePath = home + "/.splash/cache-" + cachename;
 
 	//If the cache directory does not exist, create it
 	if(!DoesDirectoryExist(m_cachePath))

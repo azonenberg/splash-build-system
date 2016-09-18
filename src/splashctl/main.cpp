@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 	}
 	
 	//Initialize global data structures
-	g_cache = new Cache;
+	g_cache = new Cache("splashctl");
 	g_nodeManager = new NodeManager;
 	g_scheduler = new Scheduler;
 
