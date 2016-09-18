@@ -37,7 +37,7 @@ void ShowVersion();
 //map of toolchain hashes to toolchain objects
 map<string, Toolchain*> g_toolchains;
 
-void CleanTempDir();
+void CleanBuildDir();
 void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server);
 
 //Temporary directory we work in
@@ -186,6 +186,10 @@ int main(int argc, char* argv[])
 		if(!SendMessage(sock, tadd, ctl_server))
 			return 1;
 	}
+
+	//Initialize the cache
+	//TODO: Separate caches for each instance if we multithread? Or one + sharing?
+	g_cache = new Cache("splashbuild");
 	
 	//Sit around and wait for stuff to come in
 	LogVerbose("\nReady\n\n");
@@ -210,6 +214,7 @@ int main(int argc, char* argv[])
 	}
 	
 	//clean up
+	delete g_cache;
 	for(auto x : g_toolchains)
 		delete x.second;
 	g_toolchains.clear();
@@ -218,9 +223,9 @@ int main(int argc, char* argv[])
 }
 
 /**
-	@brief Delete all files in the temp directory
+	@brief Delete all files in the build directory
  */
-void CleanTempDir()
+void CleanBuildDir()
 {
 	string cmd = "rm -rf \"" + g_builddir + "/*\"";
 	ShellCommand(cmd.c_str());
@@ -248,7 +253,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 
 	//Make sure we have a clean slate to build in
 	LogDebug("    Cleaning temp directory\n");
-	CleanTempDir();
+	CleanBuildDir();
 
 	//Get the relative path of the source file
 	string fname = rxm.fname();
@@ -257,15 +262,55 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	string adir = g_builddir + "/" + dir;
 	string aname = g_builddir + "/" + fname;
 
-	//TODO: get file from local cache or something instead?
-
 	//Create the relative path as needed
 	LogDebug("    Making build directory %s for source file %s\n", adir.c_str(), basename.c_str());
 	MakeDirectoryRecursive(adir, 0700);
 
+	//See if we have the file in our local cache
+	string hash = rxm.hash();
+	if(!g_cache->IsCached(hash))
+	{
+		//Ask for the file
+		LogDebug("        Source file %s is not in cache, requesting it from server\n", hash.c_str());
+		SplashMsg creq;
+		auto creqm = creq.mutable_contentrequestbyhash();
+		creqm->add_hash(hash);
+		if(!SendMessage(sock, creq, server))
+			return;
+
+		//Wait for a response
+		SplashMsg dat;
+		if(!RecvMessage(sock, dat, server))
+			return;
+		if(dat.Payload_case() != SplashMsg::kContentResponse)
+		{
+			LogError("Got an unexpected message (should be ContentResponse)\n");
+			return;
+		}
+		auto res = dat.contentresponse();
+		if(res.data_size() != 1)
+		{
+			LogError("Got an unexpected message (should be ContentResponse of size 1)\n");
+			return;
+		}
+
+		//Process it
+		auto entry = res.data(0);
+		if(entry.status() != true)
+		{
+			LogError("File was not in cache on server (this is stupid, we were just told it was)\n");
+			return;
+		}
+		string edat = entry.data();
+		g_cache->AddFile(fname, hash, sha256(edat), edat.c_str(), edat.size());
+	}
+
+	//It's in cache now, read it
+	string data = g_cache->ReadCachedFile(hash);
+
 	//Write the source file
 	LogDebug("    Writing source file %s\n", aname.c_str());
-	if(!PutFileContents(aname, rxm.filedata()))
+	if(!PutFileContents(aname, data))
 		return;
 
 	//Look up the flags

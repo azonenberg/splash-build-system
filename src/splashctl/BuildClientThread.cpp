@@ -32,6 +32,7 @@
 using namespace std;
 
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
+bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
@@ -48,7 +49,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		return;
 	}
 	auto binfom = binfo.buildinfo();
-	
+
 	//Print stats
 	LogVerbose("Build server %s has %d CPU cores, speed %d, RAM capacity %d MB, %d toolchains installed\n",
 		hostname.c_str(),
@@ -73,7 +74,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		if(!RecvMessage(s, tadd, hostname))
 			return;
 		auto madd = tadd.addcompiler();
-		
+
 		//Create and initialize the toolchain object
 		RemoteToolchain* toolchain = new RemoteToolchain(
 			static_cast<RemoteToolchain::ToolchainType>(madd.compilertype()),
@@ -87,11 +88,11 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			madd.stlibsuffix(),
 			madd.objsuffix()
 			);
-		
+
 		//Languages
 		for(int j=0; j<madd.lang_size(); j++)
 			toolchain->AddLanguage(static_cast<Toolchain::Language>(madd.lang(j)));
-		
+
 		//Triplets
 		for(int j=0; j<madd.triplet_size(); j++)
 			toolchain->AddTriplet(madd.triplet(j));
@@ -139,13 +140,69 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 	auto reqm = req.mutable_dependencyscan();
 	reqm->set_toolchain(chain);
 	reqm->set_fname(path);
-	reqm->set_filedata(g_cache->ReadCachedFile(hash));
+	reqm->set_hash(hash);
 	for(auto f : flags)
 		reqm->add_flags(f);
 	if(!SendMessage(s, req, hostname))
-	{
 		return false;
+
+	//Let the client do its thing
+	while(true)
+	{
+		//Get a response. It's either "done" or "get more files"
+		SplashMsg rxm;
+		if(!RecvMessage(s, rxm, hostname))
+			return false;
+
+		auto type = rxm.Payload_case();
+
+		switch(type)
+		{
+			//Asking for more data
+			case SplashMsg::kContentRequestByHash:
+				if(!ProcessContentRequest(s, hostname, rxm))
+					return false;
+				break;
+
+			//Whatever it is, it makes no sense
+			default:
+				LogError("Unknown / garbage message type\n");
+				return false;
+		}
 	}
+
+	//reqm->set_filedata(g_cache->ReadCachedFile(hash));
+
+	return true;
+}
+
+bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg)
+{
+	auto creq = msg.contentrequestbyhash();
+
+	//Create the response message
+	SplashMsg reply;
+	auto replym = reply.mutable_contentresponse();
+	for(int i=0; i<creq.hash_size(); i++)
+	{
+		FileContent* entry = replym->add_data();
+
+		//Return error if the file isn't in the cache
+		string h = creq.hash(i);
+		if(!g_cache->IsCached(h))
+			entry->set_status(false);
+
+		//Otherwise, add the content
+		else
+		{
+			entry->set_status(true);
+			entry->set_data(g_cache->ReadCachedFile(h));
+		}
+	}
+
+	//and send it
+	if(!SendMessage(s, reply, hostname))
+		return false;
 
 	return true;
 }
