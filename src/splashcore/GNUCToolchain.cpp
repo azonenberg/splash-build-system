@@ -104,8 +104,7 @@ bool GNUCToolchain::ScanDependencies(
 	string path,
 	string root,
 	set<BuildFlag> flags,
-	set<string>& deps,
-	set<string>& missing)
+	set<string>& deps)
 {
-	return GNUToolchain::ScanDependencies(m_basepath, path, root, flags, m_defaultIncludePaths, deps, missing);
+	return GNUToolchain::ScanDependencies(m_basepath, path, root, flags, m_defaultIncludePaths, deps);
 }

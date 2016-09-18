@@ -44,8 +44,7 @@ public:
 		std::string root,
 		std::set<BuildFlag> flags,
 		const std::vector<std::string>& sysdirs,
-		std::set<std::string>& deps,
-		std::set<std::string>& missing);
+		std::set<std::string>& deps);
 	
 protected:
 	std::string FlagToString(BuildFlag flag);

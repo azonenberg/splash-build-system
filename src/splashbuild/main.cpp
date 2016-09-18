@@ -280,13 +280,14 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 
 	//Run the scanner proper
 	set<string> deps;
-	set<string> missing;
-	if(!chain->ScanDependencies(aname, g_builddir, flags, deps, missing))
+	if(!chain->ScanDependencies(aname, g_builddir, flags, deps))
 	{
 		LogDebug("scan failed\n");
+		return;
 	}
-	else
-		LogDebug("scan completed\n");
+
+	//Send it back to the server
+	LogDebug("scan completed\n");
 }
 
 void ShowVersion()

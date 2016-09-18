@@ -118,8 +118,7 @@ bool GNUToolchain::ScanDependencies(
 	string root,
 	set<BuildFlag> flags,
 	const vector<string>& sysdirs,
-	set<string>& deps,
-	set<string>& missing)
+	set<string>& deps)
 {
 	//Make the full scan command line
 	string cmdline = exe + " -M -MG ";
@@ -175,7 +174,6 @@ bool GNUToolchain::ScanDependencies(
 	{
 		//If the path begins with our working copy directory, trim it off and call the rest the relative path
 		string f = files[i];
-		LogDebug("    %s\n", f.c_str());
 		if(f.find(root) == 0)
 		{
 			//LogDebug("        local dir\n");
@@ -210,12 +208,9 @@ bool GNUToolchain::ScanDependencies(
 		deps.emplace(f);
 	}
 
-	LogDebug("Relative paths:\n");
+	LogDebug("    Project-relative dependency paths:\n");
 	for(auto f : deps)
-		LogDebug("    %s\n", f.c_str());
+		LogDebug("        %s\n", f.c_str());
 
-	//TODO: Detect which files we do not have in cache and report them as missing
-
-	//TODO: decide if all is good
 	return true;
 }
