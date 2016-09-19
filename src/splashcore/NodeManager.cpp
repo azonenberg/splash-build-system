@@ -331,7 +331,7 @@ clientID NodeManager::GetGoldenNodeForToolchain(string hash)
 	//TODO: Pick golden node based on explicit config
 	else
 	{
-		LogWarning("WARNING: NodeManager::GetGoldenNodeForToolchain() does not have golden config yet\n");
+		LogWarning("NodeManager::GetGoldenNodeForToolchain() does not have golden config yet\n");
 		return *nodes.begin();
 	}
 }

@@ -87,7 +87,8 @@ bool GNULinkerToolchain::ScanDependencies(
 	string /*path*/,
 	string /*root*/,
 	set<BuildFlag> /*flags*/,
-	set<string>& /*deps*/)
+	set<string>& /*deps*/,
+	map<string, string>& /*dephashes*/)
 {
 	LogError("GNULinkerToolchain::ScanDependencies() is meaningless for now\n");
 	return false;

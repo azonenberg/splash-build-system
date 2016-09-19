@@ -33,6 +33,7 @@ using namespace std;
 
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
 bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg);
+bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
@@ -164,18 +165,46 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 					return false;
 				break;
 
+			//Done, we have the dependencies
+			case SplashMsg::kDependencyResults:
+				if(!ProcessDependencyResults(s, hostname, rxm, job))
+					return false;
+				return true;
+
 			//Whatever it is, it makes no sense
 			default:
 				LogError("Unknown / garbage message type\n");
 				return false;
 		}
 	}
+}
 
-	//reqm->set_filedata(g_cache->ReadCachedFile(hash));
+/**
+	@brief Crunch data coming out of DependencyResults packet
+ */
+bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job)
+{
+	//If the scan failed, we can't do anything else
+	auto res = msg.dependencyresults();
+	if(!res.result())
+		return false;
 
+	//Crunch the results
+	for(int i=0; i<res.deps_size(); i++)
+	{
+		auto dep = res.deps(i);
+		string h = dep.hash();
+		string f = dep.fname();
+		LogDebug("    %-50s has hash %s\n", f.c_str(), h.c_str());
+	}
+
+	//all good
 	return true;
 }
 
+/**
+	@brief Respond to a ContentRequest message
+ */
 bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg)
 {
 	auto creq = msg.contentrequestbyhash();

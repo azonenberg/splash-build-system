@@ -118,7 +118,8 @@ bool GNUToolchain::ScanDependencies(
 	string root,
 	set<BuildFlag> flags,
 	const vector<string>& sysdirs,
-	set<string>& deps)
+	set<string>& deps,
+	map<string, string>& dephashes)
 {
 	//Make the full scan command line
 	string cmdline = exe + " -M -MG ";
@@ -179,6 +180,7 @@ bool GNUToolchain::ScanDependencies(
 			//LogDebug("        local dir\n");
 			f = f.substr(root.length() + 1);
 			deps.emplace(f);
+			dephashes[f] = sha256_file(files[i]);
 			continue;
 		}
 
@@ -206,6 +208,7 @@ bool GNUToolchain::ScanDependencies(
 		//LogDebug("        system dir %s\n", longest_prefix.c_str());
 		f = string("__sysinclude__/") + f.substr(longest_prefix.length() + 1);
 		deps.emplace(f);
+		dephashes[f] = sha256_file(files[i]);
 	}
 
 	LogDebug("    Project-relative dependency paths:\n");

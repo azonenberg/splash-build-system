@@ -323,16 +323,31 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 		flags.emplace(BuildFlag(flag));
 	}
 
+	//Format the return message
+	SplashMsg reply;
+	auto replym = reply.mutable_dependencyresults();
+
 	//Run the scanner proper
 	set<string> deps;
-	if(!chain->ScanDependencies(aname, g_builddir, flags, deps))
+	map<string, string> hashes;
+	if(!chain->ScanDependencies(aname, g_builddir, flags, deps, hashes))
 	{
-		LogDebug("scan failed\n");
+		LogDebug("    scan failed\n");
+		replym->set_result(false);
+		SendMessage(sock, reply, server);
 		return;
 	}
 
-	//Send it back to the server
-	LogDebug("scan completed\n");
+	//Successful completion of the scan, crunch the results
+	LogDebug("    scan completed\n");
+	replym->set_result(true);
+	for(auto d : deps)
+	{
+		auto rd = replym->add_deps();
+		rd->set_fname(d);
+		rd->set_hash(hashes[d]);
+	}
+	SendMessage(sock, reply, server);
 }
 
 void ShowVersion()

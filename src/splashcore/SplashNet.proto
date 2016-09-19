@@ -109,6 +109,7 @@ message ContentRequestByHash
 	repeated	string	hash		= 1;	//list of hashes being requested
 };
 
+//Content of a single file
 message FileContent
 {
 				bytes	data		= 1;	//Content of the file (if status = true)
@@ -119,6 +120,21 @@ message FileContent
 message ContentResponse
 {
 	repeated	FileContent	data	= 1;	//Array of files being requested
+};
+
+//A single dependency
+message Dependency
+{
+				string	hash		= 1;	//Hash of the file.
+											//This is important for system headers, etc not in the actual working copy
+				string	fname		= 2;	//Relative path of the file
+};
+
+//The result of a dependencyScan job
+message DependencyResults
+{
+	repeated	Dependency	deps	= 1;	//list of results
+				bool		result	= 2;	//true if successful, false if syntax error etc
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -140,5 +156,6 @@ message SplashMsg
 		DependencyScan			dependencyScan			= 10;
 		ContentRequestByHash	contentRequestByHash	= 11;
 		ContentResponse			contentResponse			= 12;
+		DependencyResults		dependencyResults		= 13;
 	}
 };

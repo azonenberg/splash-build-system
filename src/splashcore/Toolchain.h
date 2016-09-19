@@ -190,7 +190,8 @@ public:
 		std::string path,
 		std::string root,
 		std::set<BuildFlag> flags,
-		std::set<std::string>& deps) =0;
+		std::set<std::string>& deps,
+		std::map<std::string, std::string>& dephashes) =0;
 
 protected:
 
