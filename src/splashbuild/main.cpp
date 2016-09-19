@@ -203,8 +203,15 @@ int main(int argc, char* argv[])
 
 		switch(type)
 		{
+			//Requesting a dependency scan
 			case SplashMsg::kDependencyScan:
 				ProcessDependencyScan(sock, rxm.dependencyscan(), ctl_server);
+				break;
+
+			//Asking for more data
+			case SplashMsg::kContentRequestByHash:
+				if(!ProcessContentRequest(sock, ctl_server, rxm))
+					return false;
 				break;
 
 			default:
@@ -272,36 +279,9 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	{
 		//Ask for the file
 		LogDebug("        Source file %s is not in cache, requesting it from server\n", hash.c_str());
-		SplashMsg creq;
-		auto creqm = creq.mutable_contentrequestbyhash();
-		creqm->add_hash(hash);
-		if(!SendMessage(sock, creq, server))
+		string edat;
+		if(!GetRemoteFileByHash(sock, server, hash, edat))
 			return;
-
-		//Wait for a response
-		SplashMsg dat;
-		if(!RecvMessage(sock, dat, server))
-			return;
-		if(dat.Payload_case() != SplashMsg::kContentResponse)
-		{
-			LogError("Got an unexpected message (should be ContentResponse)\n");
-			return;
-		}
-		auto res = dat.contentresponse();
-		if(res.data_size() != 1)
-		{
-			LogError("Got an unexpected message (should be ContentResponse of size 1)\n");
-			return;
-		}
-
-		//Process it
-		auto entry = res.data(0);
-		if(entry.status() != true)
-		{
-			LogError("File was not in cache on server (this is stupid, we were just told it was)\n");
-			return;
-		}
-		string edat = entry.data();
 		g_cache->AddFile(fname, hash, sha256(edat), edat.c_str(), edat.size());
 	}
 

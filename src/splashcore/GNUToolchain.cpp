@@ -179,36 +179,46 @@ bool GNUToolchain::ScanDependencies(
 		{
 			//LogDebug("        local dir\n");
 			f = f.substr(root.length() + 1);
-			deps.emplace(f);
-			dephashes[f] = sha256_file(files[i]);
-			continue;
 		}
 
 		//No go - loop over the system include paths
-		string longest_prefix = "";
-		for(auto dir : sysdirs)
+		else
 		{
-			if(f.find(dir) != 0)
-				continue;
+			string longest_prefix = "";
+			for(auto dir : sysdirs)
+			{
+				if(f.find(dir) != 0)
+					continue;
 
-			if(dir.length() > longest_prefix.length())
-				longest_prefix = dir;
+				if(dir.length() > longest_prefix.length())
+					longest_prefix = dir;
+			}
+
+			//If it's not in the project dir OR a system path, we have a problem.
+			//Including random headers by absolute path is not portable!
+			if(longest_prefix == "")
+			{
+				LogError("Path %s could not be resolved to a system or project include directory\n",
+					f.c_str());
+				return false;
+			}
+			
+			//Trim off the prefix and go
+			//LogDebug("        system dir %s\n", longest_prefix.c_str());
+			f = string("__sysinclude__/") + f.substr(longest_prefix.length() + 1);
 		}
 
-		//If it's not in the project dir OR a system path, we have a problem.
-		//Including random headers by absolute path is not portable!
-		if(longest_prefix == "")
-		{
-			LogError("Path %s could not be resolved to a system or project include directory\n",
-				f.c_str());
-			return false;
-		}
+		//TODO: Don't even read the file if we already have it in the cache?
+		
+		//Add file to cache
+		string data = GetFileContents(files[i]);
+		string hash = sha256(data);
+		if(!g_cache->IsCached(hash))
+			g_cache->AddFile(f, hash, hash, data.c_str(), data.size());
 
-		//Trim off the prefix and go
-		//LogDebug("        system dir %s\n", longest_prefix.c_str());
-		f = string("__sysinclude__/") + f.substr(longest_prefix.length() + 1);
+		//Add virtual path to output dep list
 		deps.emplace(f);
-		dephashes[f] = sha256_file(files[i]);
+		dephashes[f] = hash;
 	}
 
 	LogDebug("    Project-relative dependency paths:\n");

@@ -32,7 +32,6 @@
 using namespace std;
 
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
-bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg);
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
@@ -180,7 +179,7 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 }
 
 /**
-	@brief Crunch data coming out of DependencyResults packet
+	@brief Crunch data coming out of a DependencyResults packet
  */
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job)
 {
@@ -196,42 +195,22 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		string h = dep.hash();
 		string f = dep.fname();
 		LogDebug("    %-50s has hash %s\n", f.c_str(), h.c_str());
+
+		//For each file, see if we have it in the cache already.
+		//If not, ask the client for it.
+		//TODO: do batched requests to cut latency
+		if(!g_cache->IsCached(h))
+		{
+			string edat;
+			if(!GetRemoteFileByHash(s, hostname, h, edat))
+				return false;
+			g_cache->AddFile(f, h, sha256(edat), edat.c_str(), edat.size());
+		}
+
+		//Now that the file is in cache server side, add it to the dependency list
+		//TODO: how do we handle multiple levels of includes?
 	}
 
 	//all good
-	return true;
-}
-
-/**
-	@brief Respond to a ContentRequest message
- */
-bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg)
-{
-	auto creq = msg.contentrequestbyhash();
-
-	//Create the response message
-	SplashMsg reply;
-	auto replym = reply.mutable_contentresponse();
-	for(int i=0; i<creq.hash_size(); i++)
-	{
-		FileContent* entry = replym->add_data();
-
-		//Return error if the file isn't in the cache
-		string h = creq.hash(i);
-		if(!g_cache->IsCached(h))
-			entry->set_status(false);
-
-		//Otherwise, add the content
-		else
-		{
-			entry->set_status(true);
-			entry->set_data(g_cache->ReadCachedFile(h));
-		}
-	}
-
-	//and send it
-	if(!SendMessage(s, reply, hostname))
-		return false;
-
 	return true;
 }

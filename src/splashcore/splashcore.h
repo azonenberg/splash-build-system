@@ -158,6 +158,12 @@ std::string GetFileContents(std::string path);
 bool PutFileContents(std::string path, std::string data);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Helpers for commonly used network transactions
+
+bool GetRemoteFileByHash(Socket& sock, std::string server, std::string hash, std::string& content);
+bool ProcessContentRequest(Socket& s, std::string& hostname, SplashMsg& msg);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global data
 
 extern std::map<std::string, Toolchain*> g_toolchains;

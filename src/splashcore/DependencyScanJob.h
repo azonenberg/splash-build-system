@@ -31,7 +31,7 @@
 #define DependencyScanJob_h
 
 /**
-	@brief A compile, link, or other operation to be executed by a single node.
+	@brief A request to perform a dependency scan
  */
 class DependencyScanJob : public Job
 {

@@ -506,3 +506,79 @@ string sha256_file(string path)
 	delete[] buf;
 	return sha256(tmp);
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Common network stuff
+
+/**
+	@brief Send a single-file ContentRequest
+ */
+bool GetRemoteFileByHash(Socket& sock, string server, string hash, string& content)
+{
+	SplashMsg creq;
+	auto creqm = creq.mutable_contentrequestbyhash();
+	creqm->add_hash(hash);
+	if(!SendMessage(sock, creq, server))
+		return false;
+
+	//Wait for a response
+	SplashMsg dat;
+	if(!RecvMessage(sock, dat, server))
+		return false;
+	if(dat.Payload_case() != SplashMsg::kContentResponse)
+	{
+		LogError("Got an unexpected message (should be ContentResponse)\n");
+		return false;
+	}
+	auto res = dat.contentresponse();
+	if(res.data_size() != 1)
+	{
+		LogError("Got an unexpected message (should be ContentResponse of size 1)\n");
+		return false;
+	}
+
+	//Process it
+	auto entry = res.data(0);
+	if(entry.status() != true)
+	{
+		LogError("File was not in cache on server (this is stupid, we were just told it was)\n");
+		return false;
+	}
+	content = entry.data();
+	return true;
+}
+
+/**
+	@brief Respond to a ContentRequest message
+ */
+bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg)
+{
+	auto creq = msg.contentrequestbyhash();
+
+	//Create the response message
+	SplashMsg reply;
+	auto replym = reply.mutable_contentresponse();
+	for(int i=0; i<creq.hash_size(); i++)
+	{
+		FileContent* entry = replym->add_data();
+
+		//Return error if the file isn't in the cache
+		string h = creq.hash(i);
+		//LogDebug("Got a request for hash %s\n", h.c_str());
+		if(!g_cache->IsCached(h))
+			entry->set_status(false);
+
+		//Otherwise, add the content
+		else
+		{
+			entry->set_status(true);
+			entry->set_data(g_cache->ReadCachedFile(h));
+		}
+	}
+
+	//and send it
+	if(!SendMessage(s, reply, hostname))
+		return false;
+
+	return true;
+}

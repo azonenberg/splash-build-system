@@ -77,7 +77,10 @@ Cache::Cache(string cachename)
 				//The object ID is what goes in our table, not the file hash
 				string oid = GetBasenameOfFile(dir);
 				if(!ValidateCacheEntry(oid))
+				{
+					LogWarning("Cache entry %s is not valid\n", oid.c_str());
 					continue;
+				}
 
 				//Cache entry is valid, add to the cache table
 				m_cacheIndex.emplace(oid);
