@@ -259,7 +259,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	LogDebug("    Toolchain: %s\n", chain->GetVersionString().c_str());
 
 	//Make sure we have a clean slate to build in
-	LogDebug("    Cleaning temp directory\n");
+	//LogDebug("    Cleaning temp directory\n");
 	CleanBuildDir();
 
 	//Get the relative path of the source file
@@ -270,7 +270,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	string aname = g_builddir + "/" + fname;
 
 	//Create the relative path as needed
-	LogDebug("    Making build directory %s for source file %s\n", adir.c_str(), basename.c_str());
+	//LogDebug("    Making build directory %s for source file %s\n", adir.c_str(), basename.c_str());
 	MakeDirectoryRecursive(adir, 0700);
 
 	//See if we have the file in our local cache
@@ -294,14 +294,9 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 		return;
 
 	//Look up the flags
-	LogDebug("    Flags:\n");
 	set<BuildFlag> flags;
 	for(int i=0; i<rxm.flags_size(); i++)
-	{
-		string flag = rxm.flags(i);
-		LogDebug("        %s\n", flag.c_str());
-		flags.emplace(BuildFlag(flag));
-	}
+		flags.emplace(BuildFlag(rxm.flags(i)));
 
 	//Format the return message
 	SplashMsg reply;
@@ -312,7 +307,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	map<string, string> hashes;
 	if(!chain->ScanDependencies(aname, g_builddir, flags, deps, hashes))
 	{
-		LogDebug("    scan failed\n");
+		LogDebug("    Scan failed\n");
 		replym->set_result(false);
 		SendMessage(sock, reply, server);
 		return;
@@ -321,7 +316,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	//TODO: If the scan found files we're missing, ask for them!
 
 	//Successful completion of the scan, crunch the results
-	LogDebug("    scan completed\n");
+	LogDebug("    Scan completed\n");
 	replym->set_result(true);
 	for(auto d : deps)
 	{

@@ -55,7 +55,6 @@ BuildGraph::~BuildGraph()
 	for(auto it : m_nodesByHash)
 		delete it.second;
 	m_nodesByHash.clear();
-	m_nodesByPath.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,6 +66,12 @@ BuildGraph::TargetMap& BuildGraph::GetTargetMap(ArchConfig config)
 		return *m_targets[config];
 
 	return *(m_targets[config] = new TargetMap);
+}
+
+BuildGraphNode* BuildGraph::GetNodeWithPath(std::string fname)
+{
+	auto hash = m_workingCopy->GetFileHash(fname);
+	return m_nodesByHash[hash];
 }
 
 /**
@@ -111,7 +116,6 @@ void BuildGraph::CollectGarbage()
 	//LogDebug("    Deleting unreferenced nodes\n");
 	for(auto hash : garbage)
 	{
-		m_nodesByPath.erase(m_nodesByHash[hash]->GetFilePath());
 		delete m_nodesByHash[hash];
 		m_nodesByHash.erase(hash);
 	}
@@ -301,8 +305,12 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
  */
 void BuildGraph::AddNode(BuildGraphNode* node)
 {
+	//Add the node
 	m_nodesByHash[node->GetHash()] = node;
-	m_nodesByPath[node->GetFilePath()] = node;
+
+	//Put it in the working copy
+	//Don't re-scan anything though
+	m_workingCopy->UpdateFile(node->GetFilePath(), node->GetHash(), false, false);
 }
 
 /**
@@ -417,6 +425,10 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			//Add to target list plus global node set
 			GetTargetMap(ArchConfig(a, c))[name] = target;
 			AddNode(target);
+
+			//DEBUG: Dump it
+			LogDebug("    Target created, dumping dependency tree\n");
+			target->PrintInfo(1);
 		}
 	}
 

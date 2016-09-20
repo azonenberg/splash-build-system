@@ -48,6 +48,15 @@ public:
 		BuildGraph* graph,
 		std::string toolchain,
 		std::string arch,
+		std::string name,
+		std::string path,
+		std::set<BuildFlag> flags
+		);
+
+	BuildGraphNode(
+		BuildGraph* graph,
+		std::string toolchain,
+		std::string arch,
 		std::string config,
 		std::string name,
 		std::string scriptpath,
@@ -78,6 +87,16 @@ public:
 		STATUS_DIRTY		//This node's output is unavailable, and no job has been submitted
 	};
 
+	/// @brief Gets the path of our node (relative to the working copy)
+	std::string GetFilePath()
+	{ return m_path; }
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Debug helpers
+
+	void PrintInfo(int indentLevel = 0);
+	std::string GetIndent(int level);
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Garbage collection during graph rebuilds
 
@@ -96,10 +115,6 @@ public:
 	/// @brief Checks if the node is referenced
 	bool IsReferenced()
 	{ return m_ref; }
-
-	/// @brief Gets the path of our node (relative to the working copy)
-	std::string GetFilePath()
-	{ return m_path; }
 
 protected:
 
@@ -136,9 +151,18 @@ protected:
 	/**
 		@brief Set of named files we depend on (source files, object files, etc)
 
-		Direct dependencies only, not transitive ones.
+		The dependency list consists of files used, directly or otherwise, by this build step only. For example:
+		* An object file depends on the source and headers (including headers included indirectly).
+		* An executable depends on objects, but not sources.
 	 */
 	std::set<std::string> m_dependencies;
+
+	/**
+		@brief Set of named files we feed directly to the compiler.
+
+		This should always be a strict subset of m_dependencies.
+	 */
+	std::set<std::string> m_sources;
 
 	/**
 		@brief Indicates that this node is in an "error" state and cannot be built.

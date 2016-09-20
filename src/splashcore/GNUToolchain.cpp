@@ -223,9 +223,11 @@ bool GNUToolchain::ScanDependencies(
 		dephashes[f] = hash;
 	}
 
+	/*
 	LogDebug("    Project-relative dependency paths:\n");
 	for(auto f : deps)
 		LogDebug("        %s\n", f.c_str());
+	*/
 
 	return true;
 }

@@ -41,43 +41,71 @@ CPPObjectNode::CPPObjectNode(
 	string path,
 	string toolchain,
 	set<BuildFlag> flags)
+	: BuildGraphNode(graph, toolchain, arch, fname, path, flags)
 {
 	LogDebug("        Creating CPPObjectNode %s (from source file %s) for arch %s, toolchain %s\n",
 		path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
 
-
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
 	//TODO: handle generated headers, etc
+	//If the scan fails, give up and declare us un-buildable
 	set<string> deps;
-	g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy(), deps);
-
-	//Add source nodes if we don't have them already
-	auto wc = graph->GetWorkingCopy();
-	for(auto d : deps)
+	if(!g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy(), deps))
 	{
-		string h = wc->GetFileHash(d);
-
-		//Already there
-		if(graph->HasNodeWithHash(h))
-			LogDebug("            File %s has hash %s, already in graph\n", d.c_str(), h.c_str());
-
-		//Create new node
-		else
-		{
-			LogDebug("            File %s has hash %s, adding to graph\n", d.c_str(), h.c_str());
-			graph->AddNode(new CPPSourceNode(graph, d, h));
-		}
-
-		//TODO: Add to our list of inputs
+		m_invalidInput = true;
+		return;
 	}
 
-	/*
-	//Dump the output
-	LogDebug("    CPPObjectNode: dep scan done\n");
+	//Add a dependency for the source file itself
+	auto wc = graph->GetWorkingCopy();
+	auto h = wc->GetFileHash(fname);
+	if(!graph->HasNodeWithHash(h))
+		graph->AddNode(new CPPSourceNode(graph, fname, h));
+	m_sources.emplace(fname);
+	m_dependencies.emplace(fname);
+
+	//Add source nodes if we don't have them already
 	for(auto d : deps)
-		LogDebug("        %s\n", d.c_str());
+	{
+		auto h = wc->GetFileHash(d);
+
+		//Create a new node if needed
+		if(!graph->HasNodeWithHash(h))
+			graph->AddNode(new CPPSourceNode(graph, d, h));
+
+		//Either way, we have the node now. Add it to our list of inputs.
+		m_dependencies.emplace(d);
+	}
+
+	//Dump the output
+	/*
+	for(auto d : m_dependencies)
+	{
+		auto h = wc->GetFileHash(d);
+		LogDebug("            dependency %s (%s)\n",
+			d.c_str(),
+			h.c_str());
+	}
 	*/
+
+	//Calculate our hash.
+	//Dependencies and flags are obvious
+	string hashin;
+	for(auto d : m_dependencies)
+		hashin += wc->GetFileHash(d);
+	for(auto f : flags)
+		hashin += sha256(f);
+
+	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
+	hashin += g_nodeManager->GetToolchainHash(arch, toolchain);
+	hashin += sha256(arch);
+
+	//Do not hash the output file name.
+	//Having multiple files with identical inputs merged into a single node is *desirable*.
+
+	//Done, calculate final hash
+	m_hash = sha256(hashin);
 }
 
 CPPObjectNode::~CPPObjectNode()

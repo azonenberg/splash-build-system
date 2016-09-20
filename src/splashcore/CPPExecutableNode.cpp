@@ -125,7 +125,7 @@ CPPExecutableNode::CPPExecutableNode(
 		//Create a test node first to compute the hash.
 		//If another node with that hash already exists, delete it and use the old node instead.
 		//TODO: more efficient way of doing this? cache dependencies and do simpler parse or something?
-		auto obj = new CPPObjectNode(
+		BuildGraphNode* obj = new CPPObjectNode(
 			graph,
 			arch,
 			src,
@@ -133,16 +133,48 @@ CPPExecutableNode::CPPExecutableNode(
 			toolchain,
 			compileFlags);
 
-		//DEBUG: get rid of it
-		delete obj;
-		//LogDebug("    Making object file %s\n", fname.c_str());
+		//If we have a node for this hash already, delete it and use the existing one
+		string h = obj->GetHash();
+		if(m_graph->HasNodeWithHash(h))
+		{
+			delete obj;
+			obj = m_graph->GetNodeWithHash(h);
+		}
+
+		//It's new, keep it and add to the graph
+		else
+			graph->AddNode(obj);
+
+		//Either way we have the node now. Add to our list of sources.
+		m_sources.emplace(fname);
+		m_dependencies.emplace(fname);
 	}
 
-	//Generate our hash
-	//FIXME: just use our pointer
-	char tmp[32];
-	snprintf(tmp, sizeof(tmp), "%p", this);
-	m_hash = sha256(tmp);
+	//Collect the linker flags
+	GetFlagsForUseAt(BuildFlag::LINK_TIME, m_flags);
+
+	//TODO: Loop over the linker flags, see if any of them request a specific library, add to dependencies
+
+	//TODO: The toolchain specified for us is the OBJECT FILE generation toolchain.
+	//How do we find the LINKER to use?
+
+	//Calculate our hash.
+	//Dependencies and flags are obvious
+	string hashin;
+	for(auto d : m_dependencies)
+		hashin += wc->GetFileHash(d);
+	for(auto f : m_flags)
+		hashin += sha256(f);
+
+	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
+	hashin += g_nodeManager->GetToolchainHash(arch, toolchain);
+	hashin += sha256(arch);
+
+	//Do not hash the output file name.
+	//Having multiple files with identical inputs merged into a single node is *desirable*.
+
+	//Done, calculate final hash
+	m_hash = sha256(hashin);
 }
 
 CPPExecutableNode::~CPPExecutableNode()

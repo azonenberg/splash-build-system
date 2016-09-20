@@ -69,6 +69,11 @@ public:
 	BuildGraphNode* GetNodeWithHash(std::string hash)
 	{ return m_nodesByHash[hash]; }
 
+	/**
+		@brief Find the node with a given path
+	 */
+	BuildGraphNode* GetNodeWithPath(std::string fname);
+
 	void AddNode(BuildGraphNode* node);
 
 	void GetFlags(std::string toolchain, std::string config, std::string path, std::set<BuildFlag>& flags);
@@ -143,10 +148,6 @@ protected:
 
 	//helper to create stuff
 	TargetMap& GetTargetMap(ArchConfig config);
-
-	//Alternate index of nodes (map from file name to pointer)
-	//TODO: properly handle multiple nodes mapping to same binary if we don't GC all the time?
-	std::map<std::string, BuildGraphNode*> m_nodesByPath;
 
 	//The nodes (map from hash to pointer)
 	std::map<std::string, BuildGraphNode*> m_nodesByHash;

@@ -65,6 +65,30 @@ BuildGraphNode::BuildGraphNode(
 }
 
 /**
+	@brief Constructor for nodes which are object files or equivalent
+ */
+BuildGraphNode::BuildGraphNode(
+	BuildGraph* graph,
+	string toolchain,
+	string arch,
+	string name,
+	string path,
+	set<BuildFlag> flags)
+	: m_ref(false)
+	, m_graph(graph)
+	, m_toolchain(toolchain)
+	, m_arch(arch)
+	, m_config("generic")
+	, m_name(name)
+	, m_script("")
+	, m_path(path)
+	, m_flags(flags)
+	, m_invalidInput(false)
+{
+
+}
+
+/**
 	@brief Constructor for nodes which are targets or tests
  */
 BuildGraphNode::BuildGraphNode(
@@ -91,7 +115,7 @@ BuildGraphNode::BuildGraphNode(
 	if(node["flags"])
 	{
 		auto nflags = node["flags"];
-	
+
 		for(auto it : nflags)
 		{
 			//If the flag is "global" pull in the upstream flags
@@ -108,11 +132,28 @@ BuildGraphNode::BuildGraphNode(
 
 BuildGraphNode::~BuildGraphNode()
 {
-	
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
+
+string BuildGraphNode::GetIndent(int level)
+{
+	string ret;
+	for(int i=0; i<level; i++)
+		ret += "    ";
+	return ret;
+}
+
+void BuildGraphNode::PrintInfo(int indentLevel)
+{
+	string padded_path = GetIndent(indentLevel) + m_path;
+	LogDebug("%-85s [%s]\n", padded_path.c_str(), m_hash.c_str());
+
+	for(auto d : m_dependencies)
+		m_graph->GetNodeWithPath(d)->PrintInfo(indentLevel + 1);
+}
 
 /**
 	@brief Figures out what flags are applicable to a particular point in the build process
