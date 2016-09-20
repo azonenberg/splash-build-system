@@ -49,6 +49,13 @@ public:
 	
 protected:
 	std::string FlagToString(BuildFlag flag);
+
+	/**
+		@brief Virtual include path we use for system include files.
+
+		We use this instead of an absolute path because it's portable across systems.
+	 */
+	std::string m_virtualSystemIncludePath;
 };
 
 #endif

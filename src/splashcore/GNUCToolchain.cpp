@@ -88,6 +88,8 @@ GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 	//Generate the hash
 	//TODO: Anything else to add here?
 	m_hash = sha256(m_stringVersion + triplet);
+
+	m_virtualSystemIncludePath = "__sysinclude__/" + str_replace(" ", "_", m_stringVersion) + "_" + triplet;
 }
 
 GNUCToolchain::~GNUCToolchain()

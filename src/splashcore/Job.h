@@ -50,6 +50,10 @@ public:
 
 	Status GetStatus();
 
+	void SetDone();
+	void SetCanceled();
+	void SetRunning();
+
 protected:
 
 	/// @brief The mutex used to synchronize updates

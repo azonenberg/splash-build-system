@@ -56,6 +56,17 @@ public:
 	const std::set<BuildFlag>& GetFlags()
 	{ return m_flags; }
 
+	void AddDependency(std::string fname, std::string hash)
+	{ m_output[fname] = hash; }
+
+	/**
+		@brief Gets a read-only pointer to the scan results
+
+		Only valid if the job is on "completed" state
+	 */
+	const std::map<std::string, std::string>& GetOutput()
+	{ return m_output; }
+
 protected:
 
 	/// @brief Path of the input file
@@ -69,6 +80,14 @@ protected:
 
 	/// @brief Flags this build requires
 	std::set<BuildFlag> m_flags;
+
+	/**
+		@brief OUTPUT of the scan
+
+		Map of <fname, hash>.
+		The hash is needed b/c we may have system headers, etc
+	 */
+	std::map<std::string, std::string> m_output;
 };
 
 #endif

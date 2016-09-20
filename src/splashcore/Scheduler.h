@@ -52,7 +52,8 @@ public:
 		std::string arch,
 		std::string toolchain,
 		std::set<BuildFlag> flags,
-		WorkingCopy* wc);
+		WorkingCopy* wc,
+		std::set<std::string>& deps);
 
 	//Node creation/deletion
 	void RemoveNode(clientID id);

@@ -318,6 +318,8 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 		return;
 	}
 
+	//TODO: If the scan found files we're missing, ask for them!
+
 	//Successful completion of the scan, crunch the results
 	LogDebug("    scan completed\n");
 	replym->set_result(true);

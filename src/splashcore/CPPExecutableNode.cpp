@@ -105,7 +105,9 @@ CPPExecutableNode::CPPExecutableNode(
 		}
 
 		//Nope, need to create one
-		sources.push_back(new CPPSourceNode(m_graph, fname, hash));
+		auto src = new CPPSourceNode(m_graph, fname, hash);
+		graph->AddNode(src);
+		sources.push_back(src);
 	}
 
 	//We have source nodes. Create the object nodes.

@@ -84,6 +84,8 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	//Optimization flags
 	if(s == "optimize/none")
 		return "-O0";
+	else if(s == "optimize/speed")
+		return "-O2";
 
 	//Debug info flags
 	else if(s == "debug/gdb")
@@ -205,7 +207,7 @@ bool GNUToolchain::ScanDependencies(
 			
 			//Trim off the prefix and go
 			//LogDebug("        system dir %s\n", longest_prefix.c_str());
-			f = string("__sysinclude__/") + f.substr(longest_prefix.length() + 1);
+			f = m_virtualSystemIncludePath + "/" + f.substr(longest_prefix.length() + 1);
 		}
 
 		//TODO: Don't even read the file if we already have it in the cache?

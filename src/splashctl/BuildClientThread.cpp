@@ -108,15 +108,21 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
+			//Tell the dev client that the scan is in progress
+			djob->SetRunning();
+
 			//Push the job out to the client and run it
 			if(ProcessScanJob(s, hostname, djob))
+			{
+				djob->SetDone();
 				continue;
+			}
 
 			//Job FAILED to run (client disconnected?) - update status
-			break;
+			djob->SetCanceled();
 		}
 
-		//TODO: Look for other jobs
+		//TODO: Look for actual compile jobs
 
 		//Wait a while for more work
 		usleep(100);
@@ -194,7 +200,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		auto dep = res.deps(i);
 		string h = dep.hash();
 		string f = dep.fname();
-		LogDebug("    %-50s has hash %s\n", f.c_str(), h.c_str());
+		//LogDebug("    %-50s has hash %s\n", f.c_str(), h.c_str());
 
 		//For each file, see if we have it in the cache already.
 		//If not, ask the client for it.
@@ -208,7 +214,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		}
 
 		//Now that the file is in cache server side, add it to the dependency list
-		//TODO: how do we handle multiple levels of includes?
+		job->AddDependency(f, h);
 	}
 
 	//all good

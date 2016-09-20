@@ -42,18 +42,42 @@ CPPObjectNode::CPPObjectNode(
 	string toolchain,
 	set<BuildFlag> flags)
 {
-	//LogDebug("        Creating CPPObjectNode %s (from source file %s) for config %s, arch %s, toolchain %s\n",
-	//	path.c_str(), fname.c_str(), config.c_str(), arch.c_str(), toolchain.c_str() );
+	LogDebug("        Creating CPPObjectNode %s (from source file %s) for arch %s, toolchain %s\n",
+		path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
 
-	//$cc -M -MG
-
-	//Figure out the flags we need for this job
 
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
-	//TODO: how do we get the deps back?
 	//TODO: handle generated headers, etc
-	g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy());
+	set<string> deps;
+	g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy(), deps);
+
+	//Add source nodes if we don't have them already
+	auto wc = graph->GetWorkingCopy();
+	for(auto d : deps)
+	{
+		string h = wc->GetFileHash(d);
+
+		//Already there
+		if(graph->HasNodeWithHash(h))
+			LogDebug("            File %s has hash %s, already in graph\n", d.c_str(), h.c_str());
+
+		//Create new node
+		else
+		{
+			LogDebug("            File %s has hash %s, adding to graph\n", d.c_str(), h.c_str());
+			graph->AddNode(new CPPSourceNode(graph, d, h));
+		}
+
+		//TODO: Add to our list of inputs
+	}
+
+	/*
+	//Dump the output
+	LogDebug("    CPPObjectNode: dep scan done\n");
+	for(auto d : deps)
+		LogDebug("        %s\n", d.c_str());
+	*/
 }
 
 CPPObjectNode::~CPPObjectNode()

@@ -52,3 +52,21 @@ Job::Status Job::GetStatus()
 	lock_guard<mutex> lock(m_mutex);
 	return m_status;
 }
+
+void Job::SetDone()
+{
+	lock_guard<mutex> lock(m_mutex);
+	m_status = STATUS_DONE;
+}
+
+void Job::SetCanceled()
+{
+	lock_guard<mutex> lock(m_mutex);
+	m_status = STATUS_CANCELED;
+}
+
+void Job::SetRunning()
+{
+	lock_guard<mutex> lock(m_mutex);
+	m_status = STATUS_RUNNING;
+}

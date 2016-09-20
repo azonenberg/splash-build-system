@@ -156,6 +156,7 @@ protected:
 	std::string m_buildArtifactPath;
 
 	//Relative path for system include files
+	//One directory per toolchain (TODO: use hash instead of version+triplet?)
 	std::string m_sysIncludePath;
 };
 

@@ -95,7 +95,8 @@ bool Scheduler::ScanDependencies(
 	string arch,
 	string toolchain,
 	set<BuildFlag> flags,
-	WorkingCopy* wc)
+	WorkingCopy* wc,
+	set<string>& deps)
 {
 	LogDebug("        Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
 		fname.c_str(), arch.c_str(), toolchain.c_str() );
@@ -131,18 +132,30 @@ bool Scheduler::ScanDependencies(
 	while(status != Job::STATUS_DONE)
 	{
 		//If the job was canceled, our scan isn't going to happen so die
-		//TODO: Delete the job so we don't leak memory
 		status = job->GetStatus();
 		if(status == Job::STATUS_CANCELED)
+		{
+			LogWarning("Job canceled\n");
+			delete job;
 			return false;
+		}
 
 		//Block for 250 us (typical slow LAN round trip time)
 		usleep(250);
 	}
+	//LogDebug("Job done\n");
 
-	LogDebug("Job done\n");
+	//Add dependencies to the working copy as needed
+	auto output = job->GetOutput();
+	for(auto it : output)
+		wc->UpdateFile(it.first, it.second, false, false);
 
-	//TODO: Delete the job so we don't leak memory
+	//Return the list of dependencies
+	for(auto it : output)
+		deps.emplace(it.first);
+
+	//Clean up so we don't leak memory
+	delete job;
 
 	//Done
 	return true;
