@@ -32,6 +32,8 @@
 
 using namespace std;
 
+void LoadConfigEntry(string name, YAML::Node& node, string& server, int& port);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug instrumentation
 
@@ -42,6 +44,85 @@ double GetTime()
 	double d = static_cast<double>(t.tv_nsec) / 1E9f;
 	d += t.tv_sec;
 	return d;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Working copy configuration
+
+void LoadConfig(string& projectRoot, string& server, int& port)
+{
+	//Search for the .splash directory for this project
+	string dir = CanonicalizePath(".");
+	while(dir != "/")
+	{
+		string search = dir + "/.splash";
+		if(DoesDirectoryExist(search))
+		{
+			projectRoot = dir;
+			break;
+		}
+
+		dir = CanonicalizePath(dir + "/..");
+	}
+
+	//If it doesn't exist, return error and quit
+	if(projectRoot.empty())
+	{
+		LogError("No .splash directory found. Please run \"splash init <control server>\" from working copy root\n");
+		exit(1);
+	}
+
+	//Read and parse the config
+	string fname = projectRoot + "/.splash/config.yml";
+	if(!DoesFileExist(fname))
+	{
+		LogError("Could not open %s. Please run \"splash init <control server>\" from working copy root\n",
+			fname.c_str());
+		exit(1);
+	}
+	string yaml = GetFileContents(fname);
+	try
+	{
+		vector<YAML::Node> docs = YAML::LoadAll(yaml);
+
+		//Loop over the nodes and crunch it
+		for(auto doc : docs)
+		{
+			for(auto it : doc)
+				LoadConfigEntry(it.first.as<string>(), it.second, server, port);
+		}
+	}
+	catch(YAML::ParserException exc)
+	{
+		LogError("YAML parsing failed: %s\n", exc.what());
+		exit(1);
+	}
+}
+
+/**
+	@brief Load a single entry from a config block
+ */
+void LoadConfigEntry(string name, YAML::Node& node, string& server, int& port)
+{
+	//Server config
+	if(name == "server")
+	{
+		//Should have host and port
+		for(auto jt : node)
+		{
+			string aname = jt.first.as<string>();
+			if(aname == "port")
+				port = jt.second.as<int>();
+			else if(aname == "host")
+				server = jt.second.as<string>();
+			else
+				LogDebug("Unrecognized config attribute %s (in server section)\n", aname.c_str());
+		}
+	}
+
+	//anything else? unimplemented, ignore
+	else
+		LogWarning("Unrecognized config declaration %s\n", name.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

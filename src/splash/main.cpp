@@ -42,8 +42,6 @@ string g_rootDir;
 //Map of watch descriptors to directory names
 map<int, string> g_watchMap;
 
-void LoadConfig();
-
 int ProcessInitCommand(const vector<string>& args);
 
 /**
@@ -51,12 +49,7 @@ int ProcessInitCommand(const vector<string>& args);
  */
 int main(int argc, char* argv[])
 {
-	string ctl_server;
-
 	Severity console_verbosity = Severity::NOTICE;
-
-	//TODO: argument for this?
-	int port = 49000;
 
 	//Parse command-line arguments
 	string cmd = "";
@@ -105,7 +98,9 @@ int main(int argc, char* argv[])
 		return ProcessInitCommand(args);
 
 	//Load the configuration so we know where the server is, etc
-	LoadConfig();
+	int port;
+	string ctl_server;
+	LoadConfig(g_rootDir, ctl_server, port);
 
 	/*
 	//Connect to the server
@@ -191,32 +186,6 @@ int ProcessInitCommand(const vector<string>& args)
 	
 	//We're good
 	return 0;
-}
-
-void LoadConfig()
-{
-	//Search for the .splash directory for this project
-	string dir = CanonicalizePath(".");
-	while(dir != "/")
-	{
-		string search = dir + "/.splash";
-		if(DoesDirectoryExist(search))
-		{
-			g_rootDir = search;
-			break;
-		}
-
-		dir = CanonicalizePath(dir + "/..");
-	}
-
-	//If it doesn't exist, return error and quit
-	if(g_rootDir.empty())
-	{
-		LogError("No .splash directory found. Please run \"splash init <control server>\" from working copy root\n");
-		exit(1);
-	}
-
-	//TODO: load config.yml
 }
 
 void ShowVersion()
