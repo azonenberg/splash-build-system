@@ -47,12 +47,7 @@ map<int, string> g_watchMap;
  */
 int main(int argc, char* argv[])
 {
-	string ctl_server;
-	
 	Severity console_verbosity = Severity::NOTICE;
-	
-	//TODO: argument for this?
-	int port = 49000;
 	
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
@@ -75,13 +70,12 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 		
-		//Last two args without switches are source dir and control server.
-		//TODO: mandatory arguments to introduce these?		
-		else if(g_rootDir == "")				
-			g_rootDir = argv[i];
-		
-		else	
-			ctl_server = argv[i];
+		//Bad argument
+		else
+		{
+			ShowUsage();
+			return 1;
+		}
 
 	}
 	
@@ -94,6 +88,11 @@ int main(int argc, char* argv[])
 		ShowVersion();
 		printf("\n");
 	}
+
+	//Load the configuration so we know where the server is, etc
+	int port;
+	string ctl_server;
+	LoadConfig(g_rootDir, ctl_server, port);
 	
 	//Connect to the server
 	LogVerbose("Connecting to server...\n");
@@ -221,6 +220,6 @@ void ShowVersion()
 
 void ShowUsage()
 {
-	printf("Usage: splashdev srcdir ctlserver\n");
+	printf("Usage: splashdev [standard log arguments]\n");
 	exit(0);
 }
