@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 			cmd = s;
 
 		else
-			args.push_back(s);		
+			args.push_back(s);
 	}
 
 	//Set up logging
@@ -98,15 +98,13 @@ int main(int argc, char* argv[])
 		return ProcessInitCommand(args);
 
 	//Load the configuration so we know where the server is, etc
-	int port;
-	string ctl_server;
-	LoadConfig(g_rootDir, ctl_server, port);
+	g_clientSettings = new ClientSettings;
 
-	/*
 	//Connect to the server
 	LogVerbose("Connecting to server...\n");
 	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	sock.Connect(ctl_server, port);
+	string ctl_server = g_clientSettings->GetServerHostname();
+	sock.Connect(ctl_server, g_clientSettings->GetServerPort());
 
 	//Get the serverHello
 	SplashMsg shi;
@@ -146,8 +144,9 @@ int main(int argc, char* argv[])
 	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
 	if(!SendMessage(sock, devi, ctl_server))
 		return 1;
-	*/
 
+	//Clean up and finish
+	delete g_clientSettings;
 	return 0;
 }
 
@@ -179,11 +178,14 @@ int ProcessInitCommand(const vector<string>& args)
 
 	//Write the final config.yml
 	string cfgpath = splashdir + "/config.yml";
-	string config = "server: \n";
+	string config = "server:\n";
 	config +=		"    host: " + server + "\n";
 	config +=		"    port: " + port + "\n";
+	config +=       "\n";
+	config +=		"client:\n";
+	config +=		"    uuid: \"" + ShellCommand("uuidgen -r") + "\"\n";
 	PutFileContents(cfgpath, config);
-	
+
 	//We're good
 	return 0;
 }

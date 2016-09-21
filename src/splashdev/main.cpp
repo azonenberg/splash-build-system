@@ -36,9 +36,6 @@ using namespace std;
 void ShowUsage();
 void ShowVersion();
 
-//Project root directory
-string g_rootDir;
-
 //Map of watch descriptors to directory names
 map<int, string> g_watchMap;
 
@@ -48,28 +45,28 @@ map<int, string> g_watchMap;
 int main(int argc, char* argv[])
 {
 	Severity console_verbosity = Severity::NOTICE;
-	
+
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
 	{
 		string s(argv[i]);
-		
+
 		//Let the logger eat its args first
 		if(ParseLoggerArguments(i, argc, argv, console_verbosity))
 			continue;
-		
+
 		else if(s == "--help")
 		{
 			ShowUsage();
 			return 0;
 		}
-		
+
 		else if(s == "--version")
 		{
 			ShowVersion();
 			return 0;
 		}
-		
+
 		//Bad argument
 		else
 		{
@@ -78,7 +75,7 @@ int main(int argc, char* argv[])
 		}
 
 	}
-	
+
 	//Set up logging
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
@@ -90,15 +87,14 @@ int main(int argc, char* argv[])
 	}
 
 	//Load the configuration so we know where the server is, etc
-	int port;
-	string ctl_server;
-	LoadConfig(g_rootDir, ctl_server, port);
-	
+	g_clientSettings = new ClientSettings;
+
 	//Connect to the server
 	LogVerbose("Connecting to server...\n");
 	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	sock.Connect(ctl_server, port);
-	
+	string ctl_server = g_clientSettings->GetServerHostname();
+	sock.Connect(ctl_server, g_clientSettings->GetServerPort());
+
 	//Get the serverHello
 	SplashMsg shi;
 	if(!RecvMessage(sock, shi, ctl_server))
@@ -137,19 +133,18 @@ int main(int argc, char* argv[])
 	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
 	if(!SendMessage(sock, devi, ctl_server))
 		return 1;
-	
+
 	//Recursively send file-changed notifications for everything in our working directory
 	//(in case anything changed while we weren't running)
 	LogVerbose("Sending initial change notifications...\n");
-	g_rootDir = CanonicalizePath(g_rootDir);
-	SendChangeNotificationForDir(sock, g_rootDir);
-	
+	SendChangeNotificationForDir(sock, g_clientSettings->GetProjectRoot());
+
 	//Open the source directory and start an inotify watcher on it and all subdirectories
 	int hnotify = inotify_init();
 	if(hnotify < 0)
 		LogFatal("Couldn't start inotify\n");
-	LogNotice("Watching for changes to source files in: %s\n", g_rootDir.c_str());
-	WatchDirRecursively(hnotify, g_rootDir);
+	LogNotice("Watching for changes to source files in: %s\n", g_clientSettings->GetProjectRoot().c_str());
+	WatchDirRecursively(hnotify, g_clientSettings->GetProjectRoot());
 
 	//TODO: signal handler so we can quit gracefully
 
@@ -162,21 +157,21 @@ int main(int argc, char* argv[])
 		ssize_t len = read(hnotify, ebuf, buflen);
 		if(len <= 0)
 			break;
-			
+
 		ssize_t offset = 0;
 		while(offset < len)
 		{
 			inotify_event* evt = reinterpret_cast<inotify_event*>(ebuf + offset);
-			
+
 			//Skip events without a filename, or hidden files
 			if( (evt->len != 0) && (evt->name[0] != '.') )
 				WatchedFileChanged(sock, evt->mask, g_watchMap[evt->wd] + "/" + evt->name);
-			
+
 			//Go on to the next one
 			offset += sizeof(inotify_event) + evt->len;
 		}
 	}
-	
+
 	//Done
 	close(hnotify);
 	return 0;
@@ -188,7 +183,7 @@ int main(int argc, char* argv[])
 void WatchDirRecursively(int hnotify, string dir)
 {
 	//LogDebug("    Recursively watching directory %s\n", dir.c_str());
-	
+
 	//Watch changes to the directory
 	int wd;
 	if(0 > (wd = inotify_add_watch(
@@ -198,9 +193,9 @@ void WatchDirRecursively(int hnotify, string dir)
 	{
 		LogFatal("Failed to watch directory %s\n", dir.c_str());
 	}
-	
+
 	g_watchMap[wd] = dir;
-	
+
 	//Look for any subdirs and watch them
 	vector<string> subdirs;
 	FindSubdirs(dir, subdirs);

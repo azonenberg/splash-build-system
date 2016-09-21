@@ -27,25 +27,58 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashdev_h
-#define splashdev_h
+#ifndef ClientSettings_h
+#define ClientSettings_h
 
-#include "../splashcore/splashcore.h"
-#include "../log/log.h"
-#include "../xptools/Socket.h"
+/**
+	@brief Settings for this client (stored in $WORKING_COPY/.splash/config.yml)
+ */
+class ClientSettings
+{
+public:
 
-#include <stdio.h>
-#include <stdlib.h>
+	ClientSettings();
 
-#include <string>
+	virtual ~ClientSettings();
 
-#include <sys/inotify.h>
+	/// @brief Return project root directory
+	std::string GetProjectRoot()
+	{ return m_projectRoot; }
 
-void WatchDirRecursively(int hnotify, std::string dir);
-void WatchedFileChanged(Socket& s, int type, std::string str);
+	/// @brief Return server hostname
+	std::string GetServerHostname()
+	{ return m_serverHostname; }
 
-void SendChangeNotificationForDir(Socket& s, std::string path);
-void SendChangeNotificationForFile(Socket& s, std::string path, bool body = true, bool config = true);
-void SendDeletionNotificationForFile(Socket& s, std::string path);
+	/// @brief Return server port
+	int GetServerPort()
+	{ return m_serverPort; }
+
+	/// @brief Return client UUID
+	std::string GetUUID()
+	{ return m_uuid; }
+
+protected:
+
+	void LoadConfigEntry(std::string name, YAML::Node& node);
+
+	/// @brief Root directory of the current working copy
+	std::string m_projectRoot;
+
+	/// @brief Hostname of the server
+	std::string m_serverHostname;
+
+	/// @brief Port number of the server
+	int m_serverPort;
+
+	/// @brief UUID of this client
+	std::string m_uuid;
+};
+
+/**
+	@brief The global settings object.
+
+	Must be explicitly created by the end application (defaults to NULL).
+ */
+extern ClientSettings* g_clientSettings;
 
 #endif

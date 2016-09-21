@@ -88,8 +88,9 @@ void SendChangeNotificationForFile(Socket& s, string path, bool body, bool confi
 
 	//Get path relative to project root
 	string fname = path;
-	if(fname.find(g_rootDir) == 0)
-		fname = fname.substr(g_rootDir.length() + 1);	//add 1 to trim trailing /
+	string root = g_clientSettings->GetProjectRoot();
+	if(fname.find(root) == 0)
+		fname = fname.substr(root.length() + 1);	//add 1 to trim trailing /
 	else
 		LogWarning("Changed file %s is not within project root\n", path.c_str());
 
@@ -135,8 +136,9 @@ void SendDeletionNotificationForFile(Socket& s, std::string path)
 {
 	//Get path relative to project root
 	string fname = path;
-	if(fname.find(g_rootDir) == 0)
-		fname = fname.substr(g_rootDir.length() + 1);	//add 1 to trim trailing /
+	string root = g_clientSettings->GetProjectRoot();
+	if(fname.find(root) == 0)
+		fname = fname.substr(root.length() + 1);	//add 1 to trim trailing /
 	else
 		LogWarning("Deleted file %s is not within project root\n", path.c_str());
 

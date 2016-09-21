@@ -51,6 +51,8 @@ add_library(splashcore SHARED
 	Job.cpp
 	Scheduler.cpp
 
+	ClientSettings.cpp
+
 	splashcore.cpp
 )
 

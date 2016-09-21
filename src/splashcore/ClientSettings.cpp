@@ -27,25 +27,110 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef splashdev_h
-#define splashdev_h
+#include "splashcore.h"
 
-#include "../splashcore/splashcore.h"
-#include "../log/log.h"
-#include "../xptools/Socket.h"
+using namespace std;
 
-#include <stdio.h>
-#include <stdlib.h>
+ClientSettings* g_clientSettings = NULL;
 
-#include <string>
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
 
-#include <sys/inotify.h>
+/**
+	@brief Default constructor (for splash/splashdev)
+ */
+ClientSettings::ClientSettings()
+{
+	//Search for the .splash directory for this project
+	string dir = CanonicalizePath(".");
+	while(dir != "/")
+	{
+		string search = dir + "/.splash";
+		if(DoesDirectoryExist(search))
+		{
+			m_projectRoot = dir;
+			break;
+		}
 
-void WatchDirRecursively(int hnotify, std::string dir);
-void WatchedFileChanged(Socket& s, int type, std::string str);
+		dir = CanonicalizePath(dir + "/..");
+	}
 
-void SendChangeNotificationForDir(Socket& s, std::string path);
-void SendChangeNotificationForFile(Socket& s, std::string path, bool body = true, bool config = true);
-void SendDeletionNotificationForFile(Socket& s, std::string path);
+	//If it doesn't exist, return error and quit
+	if(m_projectRoot.empty())
+	{
+		LogError("No .splash directory found. Please run \"splash init <control server>\" from working copy root\n");
+		exit(1);
+	}
 
-#endif
+	//Read and parse the config
+	string fname = m_projectRoot + "/.splash/config.yml";
+	if(!DoesFileExist(fname))
+	{
+		LogError("Could not open %s. Please run \"splash init <control server>\" from working copy root\n",
+			fname.c_str());
+		exit(1);
+	}
+	string yaml = GetFileContents(fname);
+	try
+	{
+		vector<YAML::Node> docs = YAML::LoadAll(yaml);
+
+		//Loop over the nodes and crunch it
+		for(auto doc : docs)
+		{
+			for(auto it : doc)
+				LoadConfigEntry(it.first.as<string>(), it.second);
+		}
+	}
+	catch(YAML::ParserException exc)
+	{
+		LogError("YAML parsing failed: %s\n", exc.what());
+		exit(1);
+	}
+}
+
+//TODO: Constructor that loads from command line args (for splashbuild)
+
+ClientSettings::~ClientSettings()
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Config file parsing helpers
+
+void ClientSettings::LoadConfigEntry(string name, YAML::Node& node)
+{
+	//Server config
+	if(name == "server")
+	{
+		//Should have host and port
+		for(auto jt : node)
+		{
+			string aname = jt.first.as<string>();
+			if(aname == "port")
+				m_serverPort = jt.second.as<int>();
+			else if(aname == "host")
+				m_serverHostname = jt.second.as<string>();
+			else
+				LogDebug("Unrecognized config attribute %s (in server section)\n", aname.c_str());
+		}
+	}
+
+	//Client config
+	else if(name == "client")
+	{
+		//Should have UUID
+		for(auto jt : node)
+		{
+			string aname = jt.first.as<string>();
+			if(aname == "uuid")
+				m_uuid = jt.second.as<string>();
+			else
+				LogDebug("Unrecognized config attribute %s (in client section)\n", aname.c_str());
+		}
+	}
+
+	//anything else? unimplemented, ignore
+	else
+		LogWarning("Unrecognized config declaration %s\n", name.c_str());
+}
