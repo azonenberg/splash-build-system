@@ -42,6 +42,10 @@ string g_rootDir;
 //Map of watch descriptors to directory names
 map<int, string> g_watchMap;
 
+void LoadConfig();
+
+int ProcessInitCommand(const vector<string>& args);
+
 /**
 	@brief Program entry point
  */
@@ -55,6 +59,8 @@ int main(int argc, char* argv[])
 	int port = 49000;
 
 	//Parse command-line arguments
+	string cmd = "";
+	vector<string> args;
 	for(int i=1; i<argc; i++)
 	{
 		string s(argv[i]);
@@ -75,14 +81,12 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
-		//Last two args without switches are source dir and control server.
-		//TODO: mandatory arguments to introduce these?
-		else if(g_rootDir == "")
-			g_rootDir = argv[i];
+		//Whatever it is, it's a command (TODO handle args)
+		else if(cmd.empty())
+			cmd = s;
 
 		else
-			ctl_server = argv[i];
-
+			args.push_back(s);		
 	}
 
 	//Set up logging
@@ -95,6 +99,15 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 
+	//If the command is "init" we have to process it BEFORE loading the config or connecting to the server
+	//since the config doesn't yet exist!
+	if(cmd == "init")
+		return ProcessInitCommand(args);
+
+	//Load the configuration so we know where the server is, etc
+	LoadConfig();
+
+	/*
 	//Connect to the server
 	LogVerbose("Connecting to server...\n");
 	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
@@ -138,8 +151,72 @@ int main(int argc, char* argv[])
 	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
 	if(!SendMessage(sock, devi, ctl_server))
 		return 1;
+	*/
 
 	return 0;
+}
+
+/**
+	@brief Handles "splash init"
+ */
+int ProcessInitCommand(const vector<string>& args)
+{
+	//Sanity check
+	if(args.size() < 1)
+	{
+		LogError("Missing arguments. Usage:  \"splash init <control server> [control server port]\"\n");
+		return 1;
+	}
+
+	//Assume the current directory is the working copy root
+	string dir = CanonicalizePath(".");
+	LogNotice("Initializing working copy at %s\n", dir.c_str());
+
+	//Make the config directory
+	string splashdir = dir  + "/.splash";
+	MakeDirectoryRecursive(splashdir, 0700);
+
+	//Parse the args
+	string server = args[0];	//TODO: force to be valid hostname
+	string port = "49000";
+	if(args.size() > 1)
+		port = args[1];			//TODO: force to be integer
+
+	//Write the final config.yml
+	string cfgpath = splashdir + "/config.yml";
+	string config = "server: \n";
+	config +=		"    host: " + server + "\n";
+	config +=		"    port: " + port + "\n";
+	PutFileContents(cfgpath, config);
+	
+	//We're good
+	return 0;
+}
+
+void LoadConfig()
+{
+	//Search for the .splash directory for this project
+	string dir = CanonicalizePath(".");
+	while(dir != "/")
+	{
+		string search = dir + "/.splash";
+		if(DoesDirectoryExist(search))
+		{
+			g_rootDir = search;
+			break;
+		}
+
+		dir = CanonicalizePath(dir + "/..");
+	}
+
+	//If it doesn't exist, return error and quit
+	if(g_rootDir.empty())
+	{
+		LogError("No .splash directory found. Please run \"splash init <control server>\" from working copy root\n");
+		exit(1);
+	}
+
+	//TODO: load config.yml
 }
 
 void ShowVersion()
