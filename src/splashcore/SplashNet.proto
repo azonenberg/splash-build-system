@@ -18,8 +18,9 @@ message ClientHello
 
 	enum ClientType
 	{
-		CLIENT_DEVELOPER = 0;
-		CLIENT_BUILD = 1;
+		CLIENT_DEVELOPER = 0;	//splashdev
+		CLIENT_BUILD = 1;		//splashbuild
+		CLIENT_UI = 2;			//splash
 	};
 	uint32	type		= 3;	//type of client
 

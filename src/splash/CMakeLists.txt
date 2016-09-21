@@ -1,22 +1,17 @@
 include_directories(${CMAKE_BINARY_DIR}/protobufs)
 
-add_executable(splashctl
-	BuildClientThread.cpp
-	ClientThread.cpp
-	DevClientThread.cpp
-	UIClientThread.cpp
-
+add_executable(splash
 	main.cpp
 )
 
-target_link_libraries(splashctl
+target_link_libraries(splash
 	rt splashcore log xptools pthread)
 
 #force static analysis to rerun
 #TODO: automate this for every target?
-add_dependencies(splashctl analysis)
+add_dependencies(splash analysis)
 
 # Installation config
-install(TARGETS splashctl
+install(TARGETS splash
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib)

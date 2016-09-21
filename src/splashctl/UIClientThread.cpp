@@ -28,97 +28,50 @@
 ***********************************************************************************************************************/
 
 #include "splashctl.h"
-#include <ext/stdio_filebuf.h>
 
 using namespace std;
 
-void ClientThread(ZSOCKET sock)
+void UIClientThread(Socket& s, string& hostname, clientID id)
 {
-	Socket s(sock);
+	LogNotice("Developer client %s connected\n", hostname.c_str());
 
-	string client_hostname = "[no hostname]";
-	//LogDebug("New connection received from %s\n", client_hostname.c_str());
-
-	//Send a server hello
-	SplashMsg shi;
-	auto shim = shi.mutable_serverhello();
-	shim->set_magic(SPLASH_PROTO_MAGIC);
-	shim->set_version(SPLASH_PROTO_VERSION);
-	if(!SendMessage(s, shi, client_hostname))
+	//Expect a DevInfo message
+	SplashMsg dinfo;
+	if(!RecvMessage(s, dinfo, hostname))
 		return;
-
-	//Get a client hello
-	SplashMsg chi;
-	if(!RecvMessage(s, chi, client_hostname))
-		return;
-	if(chi.Payload_case() != SplashMsg::kClientHello)
+	if(dinfo.Payload_case() != SplashMsg::kDevInfo)
 	{
-		LogWarning("Connection from %s dropped (expected clientHello, got %d instead)\n",
-			client_hostname.c_str(), chi.Payload_case());
+		LogWarning("Connection to %s dropped (expected devInfo, got %d instead)\n",
+			hostname.c_str(), dinfo.Payload_case());
 		return;
 	}
-	auto chim = chi.clienthello();
-	if(chim.magic() != SPLASH_PROTO_MAGIC)
+	auto dinfom = dinfo.devinfo();
+	LogVerbose("    (architecture is %s)\n", dinfom.arch().c_str());
+
+	while(true)
 	{
-		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chim.version() != SPLASH_PROTO_VERSION)
-	{
-		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	client_hostname = chim.hostname();
-
-	//If hostname is alphanumeric or - chars, fail
-	for(size_t i=0; i<client_hostname.length(); i++)
-	{
-		auto c = client_hostname[i];
-		if(isalnum(c) || (c == '-') )
-			continue;
-
-		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
-		return;
-	}
-
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
-
-	//Protocol-specific processing
-	switch(chim.type())
-	{
-		case ClientHello::CLIENT_DEVELOPER:
-
-			//Process client traffic
-			DevClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
+		//Expect fileChanged or fileRemoved messages
+		SplashMsg msg;
+		if(!RecvMessage(s, msg, hostname))
 			break;
 
-		case ClientHello::CLIENT_BUILD:
+		switch(msg.Payload_case())
+		{
+			/*
+			case SplashMsg::kFileChanged:
+				if(!OnFileChanged(s, msg.filechanged(), hostname, id))
+					return;
+				break;
 
-			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
-			break;
-
-		case ClientHello::CLIENT_UI:
-
-			//Process client traffic
-			UIClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer client %s disconnected\n", client_hostname.c_str());
-			break;
-
-		default:
-			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
-			break;
+			case SplashMsg::kFileRemoved:
+				if(!OnFileRemoved(msg.fileremoved(), hostname, id))
+					return;
+				break;
+			*/
+			default:
+				LogWarning("Connection to %s [%d] dropped (bad message type in event header)\n",
+					hostname.c_str(), id);
+				return;
+		}
 	}
 }

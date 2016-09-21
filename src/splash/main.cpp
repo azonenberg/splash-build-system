@@ -27,98 +27,133 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashctl.h"
+#include "splash.h"
+#include <splashcore/SplashNet.pb.h>
 #include <ext/stdio_filebuf.h>
 
 using namespace std;
 
-void ClientThread(ZSOCKET sock)
+void ShowUsage();
+void ShowVersion();
+
+//Project root directory
+string g_rootDir;
+
+//Map of watch descriptors to directory names
+map<int, string> g_watchMap;
+
+/**
+	@brief Program entry point
+ */
+int main(int argc, char* argv[])
 {
-	Socket s(sock);
+	string ctl_server;
 
-	string client_hostname = "[no hostname]";
-	//LogDebug("New connection received from %s\n", client_hostname.c_str());
+	Severity console_verbosity = Severity::NOTICE;
 
-	//Send a server hello
-	SplashMsg shi;
-	auto shim = shi.mutable_serverhello();
-	shim->set_magic(SPLASH_PROTO_MAGIC);
-	shim->set_version(SPLASH_PROTO_VERSION);
-	if(!SendMessage(s, shi, client_hostname))
-		return;
+	//TODO: argument for this?
+	int port = 49000;
 
-	//Get a client hello
-	SplashMsg chi;
-	if(!RecvMessage(s, chi, client_hostname))
-		return;
-	if(chi.Payload_case() != SplashMsg::kClientHello)
+	//Parse command-line arguments
+	for(int i=1; i<argc; i++)
 	{
-		LogWarning("Connection from %s dropped (expected clientHello, got %d instead)\n",
-			client_hostname.c_str(), chi.Payload_case());
-		return;
-	}
-	auto chim = chi.clienthello();
-	if(chim.magic() != SPLASH_PROTO_MAGIC)
-	{
-		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chim.version() != SPLASH_PROTO_VERSION)
-	{
-		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	client_hostname = chim.hostname();
+		string s(argv[i]);
 
-	//If hostname is alphanumeric or - chars, fail
-	for(size_t i=0; i<client_hostname.length(); i++)
-	{
-		auto c = client_hostname[i];
-		if(isalnum(c) || (c == '-') )
+		//Let the logger eat its args first
+		if(ParseLoggerArguments(i, argc, argv, console_verbosity))
 			continue;
 
-		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
-		return;
+		else if(s == "--help")
+		{
+			ShowUsage();
+			return 0;
+		}
+
+		else if(s == "--version")
+		{
+			ShowVersion();
+			return 0;
+		}
+
+		//Last two args without switches are source dir and control server.
+		//TODO: mandatory arguments to introduce these?
+		else if(g_rootDir == "")
+			g_rootDir = argv[i];
+
+		else
+			ctl_server = argv[i];
+
 	}
 
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
+	//Set up logging
+	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
-	//Protocol-specific processing
-	switch(chim.type())
+	//Print header
+	if(console_verbosity >= Severity::NOTICE)
 	{
-		case ClientHello::CLIENT_DEVELOPER:
-
-			//Process client traffic
-			DevClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
-			break;
-
-		case ClientHello::CLIENT_BUILD:
-
-			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
-			break;
-
-		case ClientHello::CLIENT_UI:
-
-			//Process client traffic
-			UIClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer client %s disconnected\n", client_hostname.c_str());
-			break;
-
-		default:
-			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
-			break;
+		ShowVersion();
+		printf("\n");
 	}
+
+	//Connect to the server
+	LogVerbose("Connecting to server...\n");
+	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	sock.Connect(ctl_server, port);
+
+	//Get the serverHello
+	SplashMsg shi;
+	if(!RecvMessage(sock, shi, ctl_server))
+		return 1;
+	if(shi.Payload_case() != SplashMsg::kServerHello)
+	{
+		LogWarning("Connection dropped (expected serverHello, got %d instead)\n",
+			shi.Payload_case());
+		return 1;
+	}
+	auto shim = shi.serverhello();
+	if(shim.magic() != SPLASH_PROTO_MAGIC)
+	{
+		LogWarning("Connection dropped (bad magic number in serverHello)\n");
+		return 1;
+	}
+	if(shim.version() != SPLASH_PROTO_VERSION)
+	{
+		LogWarning("Connection dropped (bad version number in serverHello)\n");
+		return 1;
+	}
+
+	//Send the clientHello
+	SplashMsg chi;
+	auto chim = chi.mutable_clienthello();
+	chim->set_magic(SPLASH_PROTO_MAGIC);
+	chim->set_version(SPLASH_PROTO_VERSION);
+	chim->set_type(ClientHello::CLIENT_UI);
+	chim->set_hostname(ShellCommand("hostname", true));
+	if(!SendMessage(sock, chi, ctl_server))
+		return 1;
+
+	//Send the devInfo
+	SplashMsg devi;
+	auto devim = devi.mutable_devinfo();
+	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
+	if(!SendMessage(sock, devi, ctl_server))
+		return 1;
+
+	return 0;
+}
+
+void ShowVersion()
+{
+	printf(
+		"SPLASH workstation client by Andrew D. Zonenberg.\n"
+		"\n"
+		"License: 3-clause BSD\n"
+		"This is free software: you are free to change and redistribute it.\n"
+		"There is NO WARRANTY, to the extent permitted by law.\n");
+}
+
+void ShowUsage()
+{
+	printf("Usage: splash ARG_TODO\n");
+	exit(0);
 }

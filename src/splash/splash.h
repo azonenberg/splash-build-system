@@ -27,98 +27,20 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashctl.h"
-#include <ext/stdio_filebuf.h>
+#ifndef splash_h
+#define splash_h
 
-using namespace std;
+#include "../splashcore/splashcore.h"
+#include "../log/log.h"
+#include "../xptools/Socket.h"
 
-void ClientThread(ZSOCKET sock)
-{
-	Socket s(sock);
+#include <stdio.h>
+#include <stdlib.h>
 
-	string client_hostname = "[no hostname]";
-	//LogDebug("New connection received from %s\n", client_hostname.c_str());
+#include <string>
 
-	//Send a server hello
-	SplashMsg shi;
-	auto shim = shi.mutable_serverhello();
-	shim->set_magic(SPLASH_PROTO_MAGIC);
-	shim->set_version(SPLASH_PROTO_VERSION);
-	if(!SendMessage(s, shi, client_hostname))
-		return;
+#include <sys/inotify.h>
 
-	//Get a client hello
-	SplashMsg chi;
-	if(!RecvMessage(s, chi, client_hostname))
-		return;
-	if(chi.Payload_case() != SplashMsg::kClientHello)
-	{
-		LogWarning("Connection from %s dropped (expected clientHello, got %d instead)\n",
-			client_hostname.c_str(), chi.Payload_case());
-		return;
-	}
-	auto chim = chi.clienthello();
-	if(chim.magic() != SPLASH_PROTO_MAGIC)
-	{
-		LogWarning("Connection from %s dropped (bad magic number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	if(chim.version() != SPLASH_PROTO_VERSION)
-	{
-		LogWarning("Connection from %s dropped (bad version number in clientHello)\n", client_hostname.c_str());
-		return;
-	}
-	client_hostname = chim.hostname();
+extern std::string g_rootDir;
 
-	//If hostname is alphanumeric or - chars, fail
-	for(size_t i=0; i<client_hostname.length(); i++)
-	{
-		auto c = client_hostname[i];
-		if(isalnum(c) || (c == '-') )
-			continue;
-
-		LogWarning("Connection from %s dropped (bad character in hostname)\n", client_hostname.c_str());
-		return;
-	}
-
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
-
-	//Protocol-specific processing
-	switch(chim.type())
-	{
-		case ClientHello::CLIENT_DEVELOPER:
-
-			//Process client traffic
-			DevClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
-			break;
-
-		case ClientHello::CLIENT_BUILD:
-
-			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
-			break;
-
-		case ClientHello::CLIENT_UI:
-
-			//Process client traffic
-			UIClientThread(s, client_hostname, id);
-
-			//Clean up
-			g_nodeManager->RemoveClient(id);
-			LogVerbose("Developer client %s disconnected\n", client_hostname.c_str());
-			break;
-
-		default:
-			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
-			break;
-	}
-}
+#endif
