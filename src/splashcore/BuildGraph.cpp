@@ -58,18 +58,44 @@ BuildGraph::~BuildGraph()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Accessors
+
+/**
+	@brief Check if we have a node with a given hash
+ */
+bool BuildGraph::HasNodeWithHash(string hash)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return m_nodesByHash.find(hash) != m_nodesByHash.end();
+}
+
+/**
+	@brief Find the node with a given hash
+ */
+BuildGraphNode* BuildGraph::GetNodeWithHash(string hash)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return m_nodesByHash[hash];
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Garbage collection and target helper stuff
 
 BuildGraph::TargetMap& BuildGraph::GetTargetMap(ArchConfig config)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
 	if(m_targets.find(config) != m_targets.end())
 		return *m_targets[config];
 
 	return *(m_targets[config] = new TargetMap);
 }
 
+/**
+	@brief Find the node with a given path
+ */
 BuildGraphNode* BuildGraph::GetNodeWithPath(std::string fname)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
 	auto hash = m_workingCopy->GetFileHash(fname);
 	return m_nodesByHash[hash];
 }
@@ -81,6 +107,8 @@ BuildGraphNode* BuildGraph::GetNodeWithPath(std::string fname)
  */
 void BuildGraph::CollectGarbage()
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
+
 	//LogDebug("Collecting garbage\n");
 
 	//First pass: Mark all nodes unreferenced
@@ -134,6 +162,8 @@ void BuildGraph::CollectGarbage()
  */
 void BuildGraph::UpdateScript(string path, string hash, bool body, bool config)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
+
 	//This is now a known script, keep track of it
 	m_buildScriptPaths[path] = hash;
 
@@ -185,6 +215,8 @@ void BuildGraph::InternalUpdateScript(string path, string hash, bool body, bool 
  */
 void BuildGraph::RemoveScript(string path)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
+
 	//This is no longer a known script
 	m_buildScriptPaths.erase(path);
 
@@ -449,6 +481,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
  */
 void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string path, set<string>& arches)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
 	m_toolchainSettings[toolchain].GetDefaultArchitectures(arches, path);
 }
 
@@ -461,6 +494,7 @@ void BuildGraph::GetDefaultArchitecturesForToolchain(string toolchain, string pa
  */
 void BuildGraph::GetConfigNames(string toolchain, string path, set<string>& configs)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
 	m_toolchainSettings[toolchain].GetConfigNames(path, configs);
 }
 
@@ -474,6 +508,7 @@ void BuildGraph::GetConfigNames(string toolchain, string path, set<string>& conf
  */
 void BuildGraph::GetFlags(string toolchain, string config, string path, set<BuildFlag>& flags)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
 	m_toolchainSettings[toolchain].GetFlags(config, path, flags);
 }
 
@@ -511,13 +546,15 @@ string BuildGraph::GetOutputFilePath(
 	string type,
 	string name)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
+
 	string path = m_buildArtifactPath + "/";
 	path += arch + "/";
 	path += config + "/";
 	path += name;
 
 	//Look up a toolchain to query
-	lock_guard<NodeManager> lock(*g_nodeManager);
+	lock_guard<NodeManager> lock2(*g_nodeManager);
 	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
 	if(chain == NULL)
 	{
@@ -554,6 +591,8 @@ string BuildGraph::GetIntermediateFilePath(
 	string type,
 	string srcpath)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
+
 	string path = m_buildArtifactPath + "/";
 	path += arch + "/";
 	path += config + "/";
@@ -563,7 +602,7 @@ string BuildGraph::GetIntermediateFilePath(
 	path += GetBasenameOfFileWithoutExt(srcpath);
 
 	//Look up a toolchain to query
-	lock_guard<NodeManager> lock(*g_nodeManager);
+	lock_guard<NodeManager> lock2(*g_nodeManager);
 	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
 	if(chain == NULL)
 	{

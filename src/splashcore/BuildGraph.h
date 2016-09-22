@@ -39,9 +39,6 @@ class WorkingCopy;
 /**
 	@brief A DAG of buildable objects
 	
-	Not even remotely thread safe yet.
-	TODO: see if we need to be, or if we can run everything in the client thread
-
 	TODO: eventually consider having some of the graph nodes (source files etc) be shared across working copies
 	to reduce memory usage in large projects
  */
@@ -54,24 +51,16 @@ public:
 	void UpdateScript(std::string path, std::string hash, bool body, bool config);
 	void RemoveScript(std::string path);
 
+	/**
+		@brief Gets the working copy.
+
+		No mutexing needed as this pointer cannot change once the object is created.
+	 */
 	WorkingCopy* GetWorkingCopy()
 	{ return m_workingCopy; }
 
-	/**
-		@brief Check if we have a node with a given hash
-	 */
-	bool HasNodeWithHash(std::string hash)
-	{ return m_nodesByHash.find(hash) != m_nodesByHash.end(); }
-
-	/**
-		@brief Find the node with a given hash
-	 */
-	BuildGraphNode* GetNodeWithHash(std::string hash)
-	{ return m_nodesByHash[hash]; }
-
-	/**
-		@brief Find the node with a given path
-	 */
+	bool HasNodeWithHash(std::string hash);
+	BuildGraphNode* GetNodeWithHash(std::string hash);
 	BuildGraphNode* GetNodeWithPath(std::string fname);
 
 	void AddNode(BuildGraphNode* node);

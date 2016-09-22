@@ -32,6 +32,8 @@
 
 /**
 	@brief A single node in the build graph
+
+	TODO: make thread safe
  */
 class BuildGraphNode
 {
