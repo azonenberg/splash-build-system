@@ -84,6 +84,10 @@ void ClientThread(ZSOCKET sock)
 	//Assign a unique ID to the client
 	clientID id = g_nodeManager->AllocateClient(client_hostname);
 
+	//Get the client-assigned UUID, if any
+	string uuid = chim.uuid();
+	LogDebug("uuid = %s\n", uuid.c_str());
+
 	//Protocol-specific processing
 	switch(chim.type())
 	{

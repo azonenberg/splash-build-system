@@ -571,6 +571,7 @@ bool ConnectToServer(Socket& sock, ClientHello::ClientType type)
 	chim->set_version(SPLASH_PROTO_VERSION);
 	chim->set_type(type);
 	chim->set_hostname(ShellCommand("hostname", true));
+	chim->set_uuid(g_clientSettings->GetUUID());
 	if(!SendMessage(sock, chi))
 		return false;
 
