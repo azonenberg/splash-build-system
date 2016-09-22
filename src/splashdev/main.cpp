@@ -90,48 +90,15 @@ int main(int argc, char* argv[])
 	g_clientSettings = new ClientSettings;
 
 	//Connect to the server
-	LogVerbose("Connecting to server...\n");
 	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	string ctl_server = g_clientSettings->GetServerHostname();
-	sock.Connect(ctl_server, g_clientSettings->GetServerPort());
-
-	//Get the serverHello
-	SplashMsg shi;
-	if(!RecvMessage(sock, shi, ctl_server))
-		return 1;
-	if(shi.Payload_case() != SplashMsg::kServerHello)
-	{
-		LogWarning("Connection dropped (expected serverHello, got %d instead)\n",
-			shi.Payload_case());
-		return 1;
-	}
-	auto shim = shi.serverhello();
-	if(shim.magic() != SPLASH_PROTO_MAGIC)
-	{
-		LogWarning("Connection dropped (bad magic number in serverHello)\n");
-		return 1;
-	}
-	if(shim.version() != SPLASH_PROTO_VERSION)
-	{
-		LogWarning("Connection dropped (bad version number in serverHello)\n");
-		return 1;
-	}
-
-	//Send the clientHello
-	SplashMsg chi;
-	auto chim = chi.mutable_clienthello();
-	chim->set_magic(SPLASH_PROTO_MAGIC);
-	chim->set_version(SPLASH_PROTO_VERSION);
-	chim->set_type(ClientHello::CLIENT_DEVELOPER);
-	chim->set_hostname(ShellCommand("hostname", true));
-	if(!SendMessage(sock, chi, ctl_server))
+	if(!ConnectToServer(sock, ClientHello::CLIENT_DEVELOPER))
 		return 1;
 
 	//Send the devInfo
 	SplashMsg devi;
 	auto devim = devi.mutable_devinfo();
 	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
-	if(!SendMessage(sock, devi, ctl_server))
+	if(!SendMessage(sock, devi))
 		return 1;
 
 	//Recursively send file-changed notifications for everything in our working directory
@@ -174,6 +141,7 @@ int main(int argc, char* argv[])
 
 	//Done
 	close(hnotify);
+	delete g_clientSettings;
 	return 0;
 }
 

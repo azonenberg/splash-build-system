@@ -50,6 +50,22 @@ double GetTime()
 /**
 	@brief Convenience wrapper for sending protobuf messages and printing errors if things go bad
  */
+bool SendMessage(Socket& s, const SplashMsg& msg)
+{
+	return SendMessage(s, msg, g_clientSettings->GetServerHostname());
+}
+
+/**
+	@brief Convenience wrapper for receiving protobuf messages and printing errors if things go bad
+ */
+bool RecvMessage(Socket& s, SplashMsg& msg)
+{
+	return RecvMessage(s, msg, g_clientSettings->GetServerHostname());
+}
+
+/**
+	@brief Convenience wrapper for sending protobuf messages and printing errors if things go bad
+ */
 bool SendMessage(Socket& s, const SplashMsg& msg, string hostname)
 {
 	string buf;
@@ -511,19 +527,70 @@ string sha256_file(string path)
 // Common network stuff
 
 /**
+	@brief Connects to the server and sends the hello transactions
+ */
+bool ConnectToServer(Socket& sock, ClientHello::ClientType type)
+{
+	//Connect to the server
+	LogVerbose("Connecting to server...\n");
+	string ctl_server = g_clientSettings->GetServerHostname();
+	sock.Connect(ctl_server, g_clientSettings->GetServerPort());
+
+	//Get the serverHello
+	SplashMsg shi;
+	if(!RecvMessage(sock, shi))
+		return false;
+	if(shi.Payload_case() != SplashMsg::kServerHello)
+	{
+		LogWarning("Connection to %s:%d dropped (expected serverHello, got %d instead)\n",
+			ctl_server.c_str(),
+			g_clientSettings->GetServerPort(),
+			shi.Payload_case());
+		return false;
+	}
+	auto shim = shi.serverhello();
+	if(shim.magic() != SPLASH_PROTO_MAGIC)
+	{
+		LogWarning("Connection to %s:%d dropped (bad magic number in serverHello)\n",
+			ctl_server.c_str(),
+			g_clientSettings->GetServerPort());
+		return false;
+	}
+	if(shim.version() != SPLASH_PROTO_VERSION)
+	{
+		LogWarning("Connection to %s:%d dropped (bad version number in serverHello)\n",
+			ctl_server.c_str(),
+			g_clientSettings->GetServerPort());
+		return false;
+	}
+
+	//Send the clientHello
+	SplashMsg chi;
+	auto chim = chi.mutable_clienthello();
+	chim->set_magic(SPLASH_PROTO_MAGIC);
+	chim->set_version(SPLASH_PROTO_VERSION);
+	chim->set_type(type);
+	chim->set_hostname(ShellCommand("hostname", true));
+	if(!SendMessage(sock, chi))
+		return false;
+
+	return true;
+}
+
+/**
 	@brief Send a single-file ContentRequest
  */
-bool GetRemoteFileByHash(Socket& sock, string server, string hash, string& content)
+bool GetRemoteFileByHash(Socket& sock, string hostname, string hash, string& content)
 {
 	SplashMsg creq;
 	auto creqm = creq.mutable_contentrequestbyhash();
 	creqm->add_hash(hash);
-	if(!SendMessage(sock, creq, server))
+	if(!SendMessage(sock, creq, hostname))
 		return false;
 
 	//Wait for a response
 	SplashMsg dat;
-	if(!RecvMessage(sock, dat, server))
+	if(!RecvMessage(sock, dat, hostname))
 		return false;
 	if(dat.Payload_case() != SplashMsg::kContentResponse)
 	{
@@ -551,7 +618,7 @@ bool GetRemoteFileByHash(Socket& sock, string server, string hash, string& conte
 /**
 	@brief Respond to a ContentRequest message
  */
-bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg)
+bool ProcessContentRequest(Socket& s, string remote, SplashMsg& msg)
 {
 	auto creq = msg.contentrequestbyhash();
 
@@ -577,7 +644,7 @@ bool ProcessContentRequest(Socket& s, string& hostname, SplashMsg& msg)
 	}
 
 	//and send it
-	if(!SendMessage(s, reply, hostname))
+	if(!SendMessage(s, reply, remote))
 		return false;
 
 	return true;

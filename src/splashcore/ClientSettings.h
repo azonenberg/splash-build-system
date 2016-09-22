@@ -38,6 +38,7 @@ class ClientSettings
 public:
 
 	ClientSettings();
+	ClientSettings(std::string host, int port);
 
 	virtual ~ClientSettings();
 

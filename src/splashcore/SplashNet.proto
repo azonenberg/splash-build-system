@@ -25,6 +25,11 @@ message ClientHello
 	uint32	type		= 3;	//type of client
 
 	string	hostname	= 4;	//hostname for debug messages
+
+	string	uuid		= 5;	//UUID of the client.
+								//The UUID for a build server doesn't matter for now as long as it's unique.
+								//UUIDs are used to link splashdev and splash instances together so
+								//they must be the same for any given client.
 };
 
 //Report basic information about a developer client

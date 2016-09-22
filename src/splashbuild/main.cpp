@@ -38,7 +38,7 @@ void ShowVersion();
 map<string, Toolchain*> g_toolchains;
 
 void CleanBuildDir();
-void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server);
+void ProcessDependencyScan(Socket& sock, DependencyScan rxm);
 
 //Temporary directory we work in
 string g_tmpdir;
@@ -51,11 +51,10 @@ string g_builddir;
  */
 int main(int argc, char* argv[])
 {
-	string ctl_server;
-	
 	Severity console_verbosity = Severity::NOTICE;
 	
 	//TODO: argument for this?
+	string ctl_server;
 	int port = 49000;
 	
 	//Parse command-line arguments
@@ -101,42 +100,13 @@ int main(int argc, char* argv[])
 		ShowVersion();
 		printf("\n");
 	}
-	
-	//Connect to the server
-	LogVerbose("Connecting to server...\n");
-	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	sock.Connect(ctl_server, port);
-	
-	//Get the serverHello
-	SplashMsg shi;
-	if(!RecvMessage(sock, shi, ctl_server))
-		return 1;
-	if(shi.Payload_case() != SplashMsg::kServerHello)
-	{
-		LogWarning("Connection dropped (expected serverHello, got %d instead)\n",
-			shi.Payload_case());
-		return 1;
-	}
-	auto shim = shi.serverhello();
-	if(shim.magic() != SPLASH_PROTO_MAGIC)
-	{
-		LogWarning("Connection dropped (bad magic number in serverHello)\n");
-		return 1;
-	}
-	if(shim.version() != SPLASH_PROTO_VERSION)
-	{
-		LogWarning("Connection dropped (bad version number in serverHello)\n");
-		return 1;
-	}
 
-	//Send the clientHello
-	SplashMsg chi;
-	auto chim = chi.mutable_clienthello();
-	chim->set_magic(SPLASH_PROTO_MAGIC);
-	chim->set_version(SPLASH_PROTO_VERSION);
-	chim->set_type(ClientHello::CLIENT_BUILD);
-	chim->set_hostname(ShellCommand("hostname", true));
-	if(!SendMessage(sock, chi, ctl_server))
+	//Set up the config object from our arguments
+	g_clientSettings = new ClientSettings(ctl_server, port);
+
+	//Connect to the server
+	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	if(!ConnectToServer(sock, ClientHello::CLIENT_BUILD))
 		return 1;
 	
 	//Look for compilers
@@ -196,7 +166,7 @@ int main(int argc, char* argv[])
 	while(true)
 	{
 		SplashMsg rxm;
-		if(!RecvMessage(sock, rxm, ctl_server))
+		if(!RecvMessage(sock, rxm))
 			return 1;
 
 		auto type = rxm.Payload_case();
@@ -205,12 +175,12 @@ int main(int argc, char* argv[])
 		{
 			//Requesting a dependency scan
 			case SplashMsg::kDependencyScan:
-				ProcessDependencyScan(sock, rxm.dependencyscan(), ctl_server);
+				ProcessDependencyScan(sock, rxm.dependencyscan());
 				break;
 
 			//Asking for more data
 			case SplashMsg::kContentRequestByHash:
-				if(!ProcessContentRequest(sock, ctl_server, rxm))
+				if(!ProcessContentRequest(sock, g_clientSettings->GetServerHostname(), rxm))
 					return false;
 				break;
 
@@ -225,6 +195,7 @@ int main(int argc, char* argv[])
 	for(auto x : g_toolchains)
 		delete x.second;
 	g_toolchains.clear();
+	delete g_clientSettings;
 	
 	return 0;
 }
@@ -241,7 +212,7 @@ void CleanBuildDir()
 /**
 	@brief Process a "dependency scan" message from a client
  */
-void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
+void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 {
 	LogDebug("Got a dependency scan request\n");
 
@@ -280,7 +251,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 		//Ask for the file
 		LogDebug("        Source file %s is not in cache, requesting it from server\n", hash.c_str());
 		string edat;
-		if(!GetRemoteFileByHash(sock, server, hash, edat))
+		if(!GetRemoteFileByHash(sock, g_clientSettings->GetServerHostname(), hash, edat))
 			return;
 		g_cache->AddFile(fname, hash, sha256(edat), edat.c_str(), edat.size());
 	}
@@ -309,7 +280,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 	{
 		LogDebug("    Scan failed\n");
 		replym->set_result(false);
-		SendMessage(sock, reply, server);
+		SendMessage(sock, reply);
 		return;
 	}
 
@@ -324,7 +295,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm, string server)
 		rd->set_fname(d);
 		rd->set_hash(hashes[d]);
 	}
-	SendMessage(sock, reply, server);
+	SendMessage(sock, reply);
 }
 
 void ShowVersion()

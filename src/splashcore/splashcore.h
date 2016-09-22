@@ -120,6 +120,9 @@
 
 #include <splashcore/SplashNet.pb.h>
 
+bool SendMessage(Socket& s, const SplashMsg& msg);
+bool RecvMessage(Socket& s, SplashMsg& msg);
+
 bool SendMessage(Socket& s, const SplashMsg& msg, std::string hostname);
 bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 
@@ -162,8 +165,10 @@ bool PutFileContents(std::string path, std::string data);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Helpers for commonly used network transactions
 
-bool GetRemoteFileByHash(Socket& sock, std::string server, std::string hash, std::string& content);
-bool ProcessContentRequest(Socket& s, std::string& hostname, SplashMsg& msg);
+bool ConnectToServer(Socket& sock, ClientHello::ClientType type);
+
+bool GetRemoteFileByHash(Socket& sock, std::string hostname, std::string hash, std::string& content);
+bool ProcessContentRequest(Socket& s, std::string remote, SplashMsg& msg);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global data

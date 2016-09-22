@@ -89,6 +89,17 @@ ClientSettings::ClientSettings()
 	}
 }
 
+/**
+	@brief Constructor used by splashbuild
+ */
+ClientSettings::ClientSettings(string host, int port)
+{
+	m_projectRoot = "/dev/null";	//TODO
+	m_serverHostname = host;
+	m_serverPort = port;
+	m_uuid = ShellCommand("uuidgen -r");
+}
+
 //TODO: Constructor that loads from command line args (for splashbuild)
 
 ClientSettings::~ClientSettings()
