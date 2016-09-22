@@ -33,7 +33,7 @@ using namespace std;
 
 void UIClientThread(Socket& s, string& hostname, clientID id)
 {
-	LogNotice("Developer client %s connected\n", hostname.c_str());
+	LogNotice("Developer client %s (%s) connected\n", hostname.c_str(), id.c_str());
 
 	//Expect a DevInfo message
 	SplashMsg dinfo;
@@ -69,8 +69,8 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
 				break;
 			*/
 			default:
-				LogWarning("Connection to %s [%d] dropped (bad message type in event header)\n",
-					hostname.c_str(), id);
+				LogWarning("Connection to %s [%s] dropped (bad message type in event header)\n",
+					hostname.c_str(), id.c_str());
 				return;
 		}
 	}

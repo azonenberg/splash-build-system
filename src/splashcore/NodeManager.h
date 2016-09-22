@@ -54,7 +54,7 @@ public:
 	NodeManager();
 	virtual ~NodeManager();
 
-	clientID AllocateClient(std::string hostname);
+	void AllocateClient(std::string hostname, std::string uuid);
 	void RemoveClient(clientID id);
 
 	void AddToolchain(clientID id, Toolchain* chain, bool moreComing);
@@ -94,8 +94,6 @@ protected:
 
 	//The working copies of the repository for each client
 	std::map<clientID, WorkingCopy*> m_workingCopies;
-
-	clientID m_nextClientID;
 };
 
 /**

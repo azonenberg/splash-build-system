@@ -116,11 +116,11 @@ bool Scheduler::ScanDependencies(
 
 	//Find which node is supposed to run this job
 	auto id = g_nodeManager->GetGoldenNodeForToolchain(hash);
-	if(id == 0)
+	if(id.empty())
 		return false;
 	auto build_wc = g_nodeManager->GetWorkingCopy(id);
 	string hostname = build_wc->GetHostname();
-	LogDebug("            Golden node for this toolchain is %d (%s)\n", (int)id, hostname.c_str());
+	LogDebug("            Golden node for this toolchain is %s (%s)\n", id.c_str(), hostname.c_str());
 
 	//Create the scan job and submit it
 	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, flags);

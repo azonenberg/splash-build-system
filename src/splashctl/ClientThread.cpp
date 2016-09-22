@@ -81,12 +81,9 @@ void ClientThread(ZSOCKET sock)
 		return;
 	}
 
-	//Assign a unique ID to the client
-	clientID id = g_nodeManager->AllocateClient(client_hostname);
-
 	//Get the client-assigned UUID, if any
 	string uuid = chim.uuid();
-	LogDebug("uuid = %s\n", uuid.c_str());
+	g_nodeManager->AllocateClient(client_hostname, uuid);
 
 	//Protocol-specific processing
 	switch(chim.type())
@@ -94,30 +91,30 @@ void ClientThread(ZSOCKET sock)
 		case ClientHello::CLIENT_DEVELOPER:
 
 			//Process client traffic
-			DevClientThread(s, client_hostname, id);
+			DevClientThread(s, client_hostname, uuid);
 
 			//Clean up
-			g_nodeManager->RemoveClient(id);
+			g_nodeManager->RemoveClient(uuid);
 			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
 			break;
 
 		case ClientHello::CLIENT_BUILD:
 
 			//Process client traffic
-			BuildClientThread(s, client_hostname, id);
+			BuildClientThread(s, client_hostname, uuid);
 
 			//Clean up
-			g_nodeManager->RemoveClient(id);
+			g_nodeManager->RemoveClient(uuid);
 			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
 			break;
 
 		case ClientHello::CLIENT_UI:
 
 			//Process client traffic
-			UIClientThread(s, client_hostname, id);
+			UIClientThread(s, client_hostname, uuid);
 
 			//Clean up
-			g_nodeManager->RemoveClient(id);
+			g_nodeManager->RemoveClient(uuid);
 			LogVerbose("Developer client %s disconnected\n", client_hostname.c_str());
 			break;
 

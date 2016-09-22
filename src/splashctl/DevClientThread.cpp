@@ -36,7 +36,7 @@ bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id);
 
 void DevClientThread(Socket& s, string& hostname, clientID id)
 {
-	LogNotice("Developer workstation %s connected\n", hostname.c_str());
+	LogNotice("Developer workstation %s (%s) connected\n", hostname.c_str(), id.c_str());
 	
 	//Expect a DevInfo message
 	SplashMsg dinfo;

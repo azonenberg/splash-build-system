@@ -31,7 +31,7 @@
 #define WorkingCopy_h
 
 //unique ID for a client
-typedef uint64_t clientID;
+typedef std::string clientID;
 
 /**
 	@brief An individual client's working copy

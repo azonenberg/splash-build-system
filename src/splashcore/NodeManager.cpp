@@ -38,7 +38,6 @@ NodeManager* g_nodeManager = NULL;
 
 NodeManager::NodeManager()
 {
-	m_nextClientID = 1;		//special ID 0 = "undefined" or "no such node"
 }
 
 NodeManager::~NodeManager()
@@ -75,16 +74,11 @@ void NodeManager::unlock()
 /**
 	@brief Allocate a new client ID
  */
-clientID NodeManager::AllocateClient(string hostname)
+void NodeManager::AllocateClient(string hostname, string uuid)
 {
-	clientID id;
 	lock_guard<recursive_mutex> lock(m_mutex);
-
-	id = m_nextClientID ++;
-	m_workingCopies[id] = new WorkingCopy;
-	m_workingCopies[id]->SetInfo(hostname, id);
-
-	return id;
+	m_workingCopies[uuid] = new WorkingCopy;
+	m_workingCopies[uuid]->SetInfo(hostname, uuid);
 }
 
 /**
