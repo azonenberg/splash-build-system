@@ -115,6 +115,9 @@ protected:
 		std::string path,
 		std::set<std::string>& arches);
 
+	//Our mutex (need to be able to lock when already locked)
+	std::recursive_mutex m_mutex;
+
 	//The working copy of the repository we're attached to (so we can access file content etc)
 	WorkingCopy* m_workingCopy;
 		
