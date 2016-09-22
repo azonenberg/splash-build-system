@@ -67,11 +67,19 @@ public:
 
 	virtual ~BuildGraphNode();
 
-	/// @brief Get the hash of the node
+	/**
+		@brief Get the hash of the node
+
+		No mutexing needed as this is static after object creation
+	 */
 	std::string GetHash()
 	{ return m_hash; }
 
-	/// @brief Get the script of the node
+	/**
+		@brief Get the script of the node
+
+		No mutexing needed as this is static after object creation
+	 */
 	std::string GetScript()
 	{ return m_script; }
 
@@ -89,7 +97,11 @@ public:
 		STATUS_DIRTY		//This node's output is unavailable, and no job has been submitted
 	};
 
-	/// @brief Gets the path of our node (relative to the working copy)
+	/**
+		@brief Gets the path of our node (relative to the working copy)
+
+		No mutexing needed as this is static after object creation
+	 */
 	std::string GetFilePath()
 	{ return m_path; }
 
@@ -102,23 +114,14 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Garbage collection during graph rebuilds
 
-	/**
-		@brief Mark the node as referenced
-
-		TODO: Mark our dependencies as referenced (if they're not already)
-	 */
-	void SetRef()
-	{ m_ref = true; }
-
-	/// @brief Mark the node as unreferenced
-	void SetUnref()
-	{ m_ref = false; }
-
-	/// @brief Checks if the node is referenced
-	bool IsReferenced()
-	{ return m_ref; }
+	void SetRef();
+	void SetUnref();
+	bool IsReferenced();
 
 protected:
+
+	//Our mutex (need to be able to lock when already locked)
+	std::recursive_mutex m_mutex;
 
 	/// @brief Indicates if the node is referenced
 	bool m_ref;

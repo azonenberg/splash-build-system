@@ -136,6 +136,34 @@ BuildGraphNode::~BuildGraphNode()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// GC reference marking
+
+/**
+	@brief Mark the node as referenced
+
+	TODO: Mark our dependencies as referenced (if they're not already)
+ */
+void BuildGraphNode::SetRef()
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	m_ref = true;
+}
+
+/// @brief Mark the node as unreferenced
+void BuildGraphNode::SetUnref()
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	m_ref = false;
+}
+
+/// @brief Checks if the node is referenced
+bool BuildGraphNode::IsReferenced()
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return m_ref;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 
 string BuildGraphNode::GetIndent(int level)
@@ -148,6 +176,7 @@ string BuildGraphNode::GetIndent(int level)
 
 void BuildGraphNode::PrintInfo(int indentLevel)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
 	string padded_path = GetIndent(indentLevel) + m_path;
 	LogDebug("%-85s [%s]\n", padded_path.c_str(), m_hash.c_str());
 
@@ -162,6 +191,7 @@ void BuildGraphNode::GetFlagsForUseAt(
 	BuildFlag::FlagUsage when,
 	set<BuildFlag>& flags)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
 	for(auto f : m_flags)
 	{
 		if(f.IsUsedAt(when))
