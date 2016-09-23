@@ -143,6 +143,23 @@ message DependencyResults
 				bool		result	= 2;	//true if successful, false if syntax error etc
 };
 
+//Client request for various kinds of data
+message InfoRequest
+{
+	enum RequestType
+	{
+		TARGET_LIST		= 0;	//Get list of all targets (not split by arch/config)
+		CONFIG_LIST		= 1;	//Get list of all configurations we have at least one target for
+		ARCH_LIST		= 2;	//Get list of all architectures we have at least one target for
+		TARGET_ARCHES	= 3;	//Get list of architectures for a given target
+		TARGET_CONFIGS	= 4;	//Get list of configurations for a given target
+	};
+
+				uint32		type	= 1;	//Type of query
+
+				uint32		query	= 2;	//The name of the object being queried, if applicable
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
