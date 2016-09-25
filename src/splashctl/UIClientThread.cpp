@@ -32,8 +32,10 @@
 using namespace std;
 
 bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID id);
-bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
+
+bool OnArchListRequest(Socket& s, string& hostname, clientID id);
 bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
+bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
 
 /**
 	@brief Processes a "splash" connection
@@ -89,13 +91,17 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 {
 	switch(msg.type())
 	{
-		//target-list request
-		case InfoRequest::TARGET_LIST:
-			return OnTargetListRequest(s, hostname, id);
+		//arch-list request
+		case InfoRequest::ARCH_LIST:
+			return OnArchListRequest(s, hostname, id);
 
 		//config-list request
 		case InfoRequest::CONFIG_LIST:
 			return OnConfigListRequest(s, hostname, id);
+
+		//target-list request
+		case InfoRequest::TARGET_LIST:
+			return OnTargetListRequest(s, hostname, id);
 
 		//Something garbage
 		default:
@@ -103,6 +109,50 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 					hostname.c_str(), id.c_str());
 			return false;
 	}
+
+	return true;
+}
+
+/**
+	@brief Processes a "splash list-arches" request
+ */
+bool OnArchListRequest(Socket& s, string& hostname, clientID id)
+{
+	//No need to lock the node manager etc b/c once we connect the state is refcounted and can't be deletd
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	BuildGraph& graph = wc->GetGraph();
+	set<string> arches;
+	graph.GetArches(arches);
+
+	//Go send the list to the client
+	SplashMsg result;
+	auto resultm = result.mutable_archlist();
+	for(auto a : arches)
+		resultm->add_arches(a);
+	if(!SendMessage(s, result, hostname))
+		return false;
+
+	return true;
+}
+
+/**
+	@brief Processes a "splash list-configs" request
+ */
+bool OnConfigListRequest(Socket& s, string& hostname, clientID id)
+{
+	//No need to lock the node manager etc b/c once we connect the state is refcounted and can't be deletd
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	BuildGraph& graph = wc->GetGraph();
+	set<string> configs;
+	graph.GetConfigs(configs);
+
+	//Go send the list to the client
+	SplashMsg result;
+	auto resultm = result.mutable_configlist();
+	for(auto c : configs)
+		resultm->add_configs(c);
+	if(!SendMessage(s, result, hostname))
+		return false;
 
 	return true;
 }
@@ -132,24 +182,4 @@ bool OnTargetListRequest(Socket& s, string& hostname, clientID id)
 		return false;
 
 	return true;
-}
-
-/**
-	@brief Processes a "splash list-configs" request
- */
-bool OnConfigListRequest(Socket& s, string& hostname, clientID id)
-{
-	//No need to lock the node manager etc b/c once we connect the state is refcounted and can't be deletd
-	auto wc = g_nodeManager->GetWorkingCopy(id);
-	BuildGraph& graph = wc->GetGraph();
-	set<string> configs;
-	graph.GetConfigs(configs);
-
-	//Go send the list to the client
-	SplashMsg result;
-	auto resultm = result.mutable_configlist();
-	for(auto c : configs)
-		resultm->add_configs(c);
-	if(!SendMessage(s, result, hostname))
-		return false;
 }

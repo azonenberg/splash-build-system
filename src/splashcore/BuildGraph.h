@@ -85,6 +85,7 @@ public:
 	std::string GetTargetScript(std::string name);
 	std::string GetTargetToolchain(std::string name);
 
+	void GetArches(std::set<std::string>& arches);
 	void GetConfigs(std::set<std::string>& configs);
 
 protected:

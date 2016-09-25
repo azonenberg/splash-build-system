@@ -45,6 +45,7 @@ map<int, string> g_watchMap;
 int ProcessInitCommand(const vector<string>& args);
 int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
 int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
+int ProcessListArchesCommand(Socket& s, const vector<string>& args);
 
 /**
 	@brief Program entry point
@@ -119,7 +120,9 @@ int main(int argc, char* argv[])
 		return 1;
 
 	//Process other commands once the link is up and running
-	if(cmd == "list-configs")
+	if(cmd == "list-arches")
+		return ProcessListArchesCommand(sock, args);
+	else if(cmd == "list-configs")
 		return ProcessListConfigsCommand(sock, args);
 	else if(cmd == "list-targets")
 		return ProcessListTargetsCommand(sock, args, true);
@@ -267,6 +270,45 @@ int ProcessListConfigsCommand(Socket& s, const vector<string>& args)
 	return 0;
 }
 
+/**
+	@brief Handles "splash list-arches"
+ */
+int ProcessListArchesCommand(Socket& s, const vector<string>& args)
+{
+	//Sanity check
+	if(args.size() != 0)
+	{
+		LogError("Extra arguments. Usage:  \"splash list-configs\"\n");
+		return 1;
+	}
+
+	//TODO: do "list arches for target"
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_inforequest();
+	cmdm->set_type(InfoRequest::ARCH_LIST);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//Get the response back
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	if(msg.Payload_case() != SplashMsg::kArchList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+
+	auto lt = msg.archlist();
+	for(int i=0; i<lt.arches_size(); i++)
+		LogNotice("%s\n", lt.arches(i).c_str());
+
+	//all good
+	return 0;
+}
+
 void ShowVersion()
 {
 	printf(
@@ -293,6 +335,10 @@ void ShowUsage()
 		"\n"
 		"command may be one of the following:\n"
 		"    init                           Initialize a new working copy\n"
+		"    list-arches                    List all architectures we have at least\n"
+		"                                   one target for.\n"
+		"    list-configs                   List all configurations we have at least\n"
+		"                                   one target for.\n"
 		"    list-targets                   List all targets in the working copy,\n"
 		"                                   pretty printed with details\n"
 		"    list-targets-simple            List all targets in the working copy,\n"
