@@ -33,6 +33,7 @@ using namespace std;
 
 bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID id);
 bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
+bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
 
 /**
 	@brief Processes a "splash" connection
@@ -92,6 +93,10 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 		case InfoRequest::TARGET_LIST:
 			return OnTargetListRequest(s, hostname, id);
 
+		//config-list request
+		case InfoRequest::CONFIG_LIST:
+			return OnConfigListRequest(s, hostname, id);
+
 		//Something garbage
 		default:
 			LogWarning("Connection to %s [%s] dropped (bad InfoRequest type)\n",
@@ -127,4 +132,24 @@ bool OnTargetListRequest(Socket& s, string& hostname, clientID id)
 		return false;
 
 	return true;
+}
+
+/**
+	@brief Processes a "splash list-configs" request
+ */
+bool OnConfigListRequest(Socket& s, string& hostname, clientID id)
+{
+	//No need to lock the node manager etc b/c once we connect the state is refcounted and can't be deletd
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	BuildGraph& graph = wc->GetGraph();
+	set<string> configs;
+	graph.GetConfigs(configs);
+
+	//Go send the list to the client
+	SplashMsg result;
+	auto resultm = result.mutable_configlist();
+	for(auto c : configs)
+		resultm->add_configs(c);
+	if(!SendMessage(s, result, hostname))
+		return false;
 }

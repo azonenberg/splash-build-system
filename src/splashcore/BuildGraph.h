@@ -85,6 +85,8 @@ public:
 	std::string GetTargetScript(std::string name);
 	std::string GetTargetToolchain(std::string name);
 
+	void GetConfigs(std::set<std::string>& configs);
+
 protected:
 	void Rebuild();
 	void InternalRemove(std::string path);

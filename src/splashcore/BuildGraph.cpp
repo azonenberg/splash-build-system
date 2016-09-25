@@ -130,6 +130,17 @@ string BuildGraph::GetTargetToolchain(string name)
 	return "";
 }
 
+/**
+	@brief Get a set of all configs, by name, de-duplicated by arch.
+ */
+void BuildGraph::GetConfigs(set<string>& configs)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto it : m_targets)
+		configs.emplace(it.first.second);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Garbage collection and target helper stuff
 

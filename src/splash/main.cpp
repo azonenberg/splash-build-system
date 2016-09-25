@@ -44,6 +44,7 @@ map<int, string> g_watchMap;
 
 int ProcessInitCommand(const vector<string>& args);
 int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
+int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
 
 /**
 	@brief Program entry point
@@ -118,7 +119,9 @@ int main(int argc, char* argv[])
 		return 1;
 
 	//Process other commands once the link is up and running
-	if(cmd == "list-targets")
+	if(cmd == "list-configs")
+		return ProcessListConfigsCommand(sock, args);
+	else if(cmd == "list-targets")
 		return ProcessListTargetsCommand(sock, args, true);
 	else if(cmd == "list-targets-simple")
 		return ProcessListTargetsCommand(sock, args, false);
@@ -220,6 +223,45 @@ int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty
 		for(int i=0; i<lt.info_size(); i++)
 			LogNotice("%s\n", lt.info(i).name().c_str());
 	}
+
+	//all good
+	return 0;
+}
+
+/**
+	@brief Handles "splash list-configs"
+ */
+int ProcessListConfigsCommand(Socket& s, const vector<string>& args)
+{
+	//Sanity check
+	if(args.size() != 0)
+	{
+		LogError("Extra arguments. Usage:  \"splash list-configs\"\n");
+		return 1;
+	}
+
+	//TODO: do "list configs for target"
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_inforequest();
+	cmdm->set_type(InfoRequest::CONFIG_LIST);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//Get the response back
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	if(msg.Payload_case() != SplashMsg::kConfigList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+
+	auto lt = msg.configlist();
+	for(int i=0; i<lt.configs_size(); i++)
+		LogNotice("%s\n", lt.configs(i).c_str());
 
 	//all good
 	return 0;
