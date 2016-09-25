@@ -74,40 +74,66 @@ void NodeManager::unlock()
 /**
 	@brief Allocate a new client ID
  */
-void NodeManager::AllocateClient(string hostname, string uuid)
+void NodeManager::AllocateClient(string hostname, clientID id)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
-	m_workingCopies[uuid] = new WorkingCopy;
-	m_workingCopies[uuid]->SetInfo(hostname, uuid);
+
+	//See if we had one already
+	if(m_nodeRefcounts.find(id) != m_nodeRefcounts.end())
+		m_nodeRefcounts[id] ++;
+
+	//Nope, create a new one
+	else
+	{
+		m_nodeRefcounts[id] = 1;
+		m_workingCopies[id] = new WorkingCopy;
+		m_workingCopies[id]->SetInfo(hostname, id);
+	}
 }
 
 /**
-	@brief Delete any state registered to a node
+	@brief Delete any state registered to a node.
  */
 void NodeManager::RemoveClient(clientID id)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	//Cancel all pending jobs for that node
-	g_scheduler->RemoveNode(id);
+	//Drop the refcount
+	m_nodeRefcounts[id] --;
 
-	auto chains = m_toolchainsByNode[id];
-	for(auto x : chains)
-		delete x.second;
+	//If the last client is gone, wipe state
+	if(m_nodeRefcounts[id] == 0)
+	{
+		LogDebug("NodeManager: Removing state for node %s as last client has disconnected\n", id.c_str());
 
-	m_toolchainsByNode.erase(id);
+		m_nodeRefcounts.erase(id);
 
-	for(auto x : m_nodesByLanguage)
-		m_nodesByLanguage[x.first].erase(id);
+		//Cancel all pending jobs for that node
+		g_scheduler->RemoveNode(id);
 
-	for(auto x : m_nodesByCompiler)
-		m_nodesByCompiler[x.first].erase(id);
+		auto chains = m_toolchainsByNode[id];
+		for(auto x : chains)
+			delete x.second;
 
-	delete m_workingCopies[id];
-	m_workingCopies.erase(id);
+		m_toolchainsByNode.erase(id);
 
-	//Toolchains may have changed, recompute
-	RecomputeCompilerHashes();
+		for(auto x : m_nodesByLanguage)
+			m_nodesByLanguage[x.first].erase(id);
+
+		for(auto x : m_nodesByCompiler)
+			m_nodesByCompiler[x.first].erase(id);
+
+		delete m_workingCopies[id];
+		m_workingCopies.erase(id);
+
+		//Toolchains may have changed, recompute
+		RecomputeCompilerHashes();
+	}
+	else
+	{
+		LogDebug("NodeManager: Keeping state for node %s as %d clients are still active\n",
+			id.c_str(), m_nodeRefcounts[id]);
+	}
 }
 
 /**
