@@ -31,6 +31,12 @@
 
 using namespace std;
 
+bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID id);
+bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
+
+/**
+	@brief Processes a "splash" connection
+ */
 void UIClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer client %s (%s) connected\n", hostname.c_str(), id.c_str());
@@ -57,12 +63,11 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
 
 		switch(msg.Payload_case())
 		{
-			/*
-			case SplashMsg::kFileChanged:
-				if(!OnFileChanged(s, msg.filechanged(), hostname, id))
+			case SplashMsg::kInfoRequest:
+				if(!OnInfoRequest(s, msg.inforequest(), hostname, id))
 					return;
 				break;
-
+			/*
 			case SplashMsg::kFileRemoved:
 				if(!OnFileRemoved(msg.fileremoved(), hostname, id))
 					return;
@@ -74,4 +79,52 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
 				return;
 		}
 	}
+}
+
+/**
+	@brief Processes a message asking for basic info about the database
+ */
+bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID id)
+{
+	switch(msg.type())
+	{
+		//target-list request
+		case InfoRequest::TARGET_LIST:
+			return OnTargetListRequest(s, hostname, id);
+
+		//Something garbage
+		default:
+			LogWarning("Connection to %s [%s] dropped (bad InfoRequest type)\n",
+					hostname.c_str(), id.c_str());
+			return false;
+	}
+
+	return true;
+}
+
+/**
+	@brief Processes a "splash list-targets" request
+ */
+bool OnTargetListRequest(Socket& s, string& hostname, clientID id)
+{
+	//No need to lock the node manager etc b/c once we connect the state is refcounted and can't be deletd
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	BuildGraph& graph = wc->GetGraph();
+	set<string> targets;
+	graph.GetTargets(targets);
+
+	//Go send the list to the client
+	SplashMsg result;
+	auto resultm = result.mutable_targetlist();
+	for(auto t : targets)
+	{
+		auto info = resultm->add_info();
+		info->set_name(t);
+		info->set_script(graph.GetTargetScript(t));
+		info->set_toolchain(graph.GetTargetToolchain(t));
+	}
+	if(!SendMessage(s, result, hostname))
+		return false;
+
+	return true;
 }

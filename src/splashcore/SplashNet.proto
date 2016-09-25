@@ -153,11 +153,56 @@ message InfoRequest
 		ARCH_LIST		= 2;	//Get list of all architectures we have at least one target for
 		TARGET_ARCHES	= 3;	//Get list of architectures for a given target
 		TARGET_CONFIGS	= 4;	//Get list of configurations for a given target
+		CLIENT_LIST		= 5;	//Get list of all connected clients
+		TOOLCHAIN_LIST	= 6;	//Get list of all toolchains (and the resolved settings for them)
+		NODE_DEPS		= 7;	//Get the dependency list for a specific graph node (by relative path)
+
+		//TODO: stdout etc for a target's build
 	};
 
 				uint32		type	= 1;	//Type of query
 
 				uint32		query	= 2;	//The name of the object being queried, if applicable
+};
+
+//Info about a single target
+message TargetInfo
+{
+				string		name		= 1;	//name of the target
+				string		script		= 2;	//name of the script we were declared in
+				string		toolchain	= 3;	//name of the toolchain we use
+};
+
+//Info about many targets
+message TargetList
+{
+	repeated	TargetInfo	info	= 1;	//list of target structs
+};
+
+//A list of configurations (response to CONFIG_LIST or TARGET_CONFIGS)
+message ConfigList
+{
+	repeated	string		configs	= 1;	//List of config names
+};
+
+//A list of architectures (response to ARCH_LIST or TARGET_ARCHES)
+message ArchList
+{
+	repeated	string		arches	= 1;	//List of architectures
+};
+
+//Info about a single client
+message ClientInfo
+{
+	ClientHello.ClientType	type		= 1;	//Type of the client
+				string		hostname	= 2;	//Hostname of the client
+				string		uuid		= 3;	//UUID of the client
+};
+
+//A list of connected clients
+message ClientList
+{
+	repeated	ClientInfo	infos		= 1;	//List of clients we know about
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,5 +225,10 @@ message SplashMsg
 		ContentRequestByHash	contentRequestByHash	= 11;
 		ContentResponse			contentResponse			= 12;
 		DependencyResults		dependencyResults		= 13;
+		InfoRequest				infoRequest				= 14;
+		TargetList				targetList				= 15;
+		ConfigList				configList				= 16;
+		ArchList				archList				= 17;
+		ClientList				clientList				= 18;
 	}
 };

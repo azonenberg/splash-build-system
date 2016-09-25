@@ -43,6 +43,7 @@ string g_rootDir;
 map<int, string> g_watchMap;
 
 int ProcessInitCommand(const vector<string>& args);
+int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
 
 /**
 	@brief Program entry point
@@ -54,6 +55,7 @@ int main(int argc, char* argv[])
 	//Parse command-line arguments
 	string cmd = "";
 	vector<string> args;
+	bool nobanner = false;
 	for(int i=1; i<argc; i++)
 	{
 		string s(argv[i]);
@@ -74,6 +76,9 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
+		else if(s == "--nobanner")
+			nobanner = true;
+
 		//Whatever it is, it's a command (TODO handle args)
 		else if(cmd.empty())
 			cmd = s;
@@ -86,7 +91,7 @@ int main(int argc, char* argv[])
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
 	//Print header
-	if(console_verbosity >= Severity::NOTICE)
+	if( (console_verbosity >= Severity::NOTICE) && !nobanner )
 	{
 		ShowVersion();
 		printf("\n");
@@ -111,6 +116,12 @@ int main(int argc, char* argv[])
 	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
 	if(!SendMessage(sock, devi))
 		return 1;
+
+	//Process other commands once the link is up and running
+	if(cmd == "list-targets")
+		return ProcessListTargetsCommand(sock, args, true);
+	else if(cmd == "list-targets-simple")
+		return ProcessListTargetsCommand(sock, args, false);
 
 	//Clean up and finish
 	delete g_clientSettings;
@@ -157,6 +168,63 @@ int ProcessInitCommand(const vector<string>& args)
 	return 0;
 }
 
+/**
+	@brief Handles "splash list-targets"
+ */
+int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty)
+{
+	//Sanity check
+	if(args.size() != 0)
+	{
+		LogError("Extra arguments. Usage:  \"splash list-targets\"\n");
+		return 1;
+	}
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_inforequest();
+	cmdm->set_type(InfoRequest::TARGET_LIST);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//Get the response back
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	if(msg.Payload_case() != SplashMsg::kTargetList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+
+	//Pretty-print
+	if(pretty)
+	{
+		auto lt = msg.targetlist();
+		LogNotice("%-30s %-15s %-30s\n", "Target", "Toolchain", "Script");
+		for(int i=0; i<lt.info_size(); i++)
+		{
+			auto info = lt.info(i);
+			LogNotice(
+				"%-30s %-15s %-20s\n",
+				info.name().c_str(),
+				info.toolchain().c_str(),
+				info.script().c_str());
+		}
+	}
+
+	//Simple print
+	else
+	{
+		auto lt = msg.targetlist();
+		for(int i=0; i<lt.info_size(); i++)
+			LogNotice("%s\n", lt.info(i).name().c_str());
+	}
+
+	//all good
+	return 0;
+}
+
 void ShowVersion()
 {
 	printf(
@@ -169,6 +237,32 @@ void ShowVersion()
 
 void ShowUsage()
 {
-	printf("Usage: splash ARG_TODO\n");
+	printf(
+		"Usage: splash [options] <command> [args]\n"
+		"\n"
+		"options may be zero or more of the following:\n"
+		"    --debug                        Sets log level to debug\n"
+		"    -l, --logfile <fname>          Directs logging to the file <fname>\n"
+		"    -L, --logfile-lines <fname>    Directs logging to the file <fname> and\n"
+		"                                   turns on line buffering\n"
+		"    --nobanner                     Do not print header/license at startup\n"
+		"    -q, --quiet                    Decreases log verbosity by one step\n"
+		"    --verbose                      Sets log level to verbose\n"
+		"\n"
+		"command may be one of the following:\n"
+		"    init                           Initialize a new working copy\n"
+		"    list-targets                   List all targets in the working copy,\n"
+		"                                   pretty printed with details\n"
+		"    list-targets-simple            List all targets in the working copy,\n"
+		"                                   with one target name per line\n"
+		"\n"
+		"splash init <control server> [port]\n"
+		"    Initializes the .splash directory within this working copy to store\n"
+		"    client-side configuration. This must be the first Splash command\n"
+		"    executed in the working copy after cloning.\n"
+		"\n"
+		"    control server: Hostname of the splashctl server. Required.\n"
+		"    port: Port number of the splashctl server. Defaults to 49000.\n"
+	);
 	exit(0);
 }
