@@ -55,6 +55,9 @@ public:
 	std::string GetHostname()
 	{ return m_hostname; }
 
+	BuildGraph& GetGraph()
+	{ return m_graph; }
+
 protected:
 
 	//Our mutex (need to be able to lock when already locked)
