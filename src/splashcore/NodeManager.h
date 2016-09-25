@@ -54,7 +54,7 @@ public:
 	NodeManager();
 	virtual ~NodeManager();
 
-	void AllocateClient(std::string hostname, std::string uuid);
+	void AllocateClient(std::string hostname, clientID id);
 	void RemoveClient(clientID id);
 
 	void AddToolchain(clientID id, Toolchain* chain, bool moreComing);
@@ -75,6 +75,9 @@ public:
 protected:
 
 	void RecomputeCompilerHashes();
+
+	//Reference counts for each node
+	std::map<clientID, int> m_nodeRefcounts;
 
 	//Mutex to control access to all node lists
 	std::recursive_mutex m_mutex;
