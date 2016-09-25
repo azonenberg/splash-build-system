@@ -83,6 +83,14 @@ public:
 	std::string GetScript()
 	{ return m_script; }
 
+	/**
+		@brief Get the toolchain name of the node
+
+		No mutexing needed as this is static after object creation
+	 */
+	std::string GetToolchain()
+	{ return m_toolchain; }
+
 	void GetFlagsForUseAt(
 		BuildFlag::FlagUsage when,
 		std::set<BuildFlag>& flags);
