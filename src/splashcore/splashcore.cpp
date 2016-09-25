@@ -52,6 +52,11 @@ double GetTime()
  */
 bool SendMessage(Socket& s, const SplashMsg& msg)
 {
+	if(g_clientSettings == NULL)
+	{
+		LogError("SendMessage 2-arg form called server-side\n");
+		return false;
+	}
 	return SendMessage(s, msg, g_clientSettings->GetServerHostname());
 }
 
@@ -60,6 +65,11 @@ bool SendMessage(Socket& s, const SplashMsg& msg)
  */
 bool RecvMessage(Socket& s, SplashMsg& msg)
 {
+	if(g_clientSettings == NULL)
+	{
+		LogError("RecvMessage 2-arg form called server-side\n");
+		return false;
+	}
 	return RecvMessage(s, msg, g_clientSettings->GetServerHostname());
 }
 
