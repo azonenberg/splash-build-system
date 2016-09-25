@@ -81,6 +81,10 @@ public:
 		std::string type,
 		std::string srcpath);
 
+	void GetTargets(std::set<std::string>& targets);
+	std::string GetTargetScript(std::string name);
+	std::string GetTargetToolchain(std::string name);
+
 protected:
 	void Rebuild();
 	void InternalRemove(std::string path);

@@ -78,6 +78,58 @@ BuildGraphNode* BuildGraph::GetNodeWithHash(string hash)
 	return m_nodesByHash[hash];
 }
 
+/**
+	@brief Get a set of all targets, by name, de-duplicated by carch.
+ */
+void BuildGraph::GetTargets(set<string>& targets)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//We want a list of all targets that exist for any architecture etc, without duplicates
+	//Have to loop over all target nodes then deduplicate with the set.
+	for(auto tm : m_targets)
+	{
+		for(auto it : *tm.second)
+			targets.emplace(it.first);
+	}
+}
+
+/**
+	@brief Get the script that a given target was declared in
+ */
+string BuildGraph::GetTargetScript(string name)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto tm : m_targets)
+	{
+		auto m = *tm.second;
+		if(m.find(name) == m.end())
+			continue;
+		return m[name]->GetScript();
+	}
+
+	return "";
+}
+
+/**
+	@brief Get the toolchain that a given target uses
+ */
+string BuildGraph::GetTargetToolchain(string name)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto tm : m_targets)
+	{
+		auto m = *tm.second;
+		if(m.find(name) == m.end())
+			continue;
+		return m[name]->GetToolchain();
+	}
+
+	return "";
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Garbage collection and target helper stuff
 
