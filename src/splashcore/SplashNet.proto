@@ -162,7 +162,7 @@ message InfoRequest
 
 				uint32		type	= 1;	//Type of query
 
-				uint32		query	= 2;	//The name of the object being queried, if applicable
+				string		query	= 2;	//The name of the object being queried, if applicable
 };
 
 //Info about a single target

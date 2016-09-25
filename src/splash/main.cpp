@@ -276,18 +276,18 @@ int ProcessListConfigsCommand(Socket& s, const vector<string>& args)
 int ProcessListArchesCommand(Socket& s, const vector<string>& args)
 {
 	//Sanity check
-	if(args.size() != 0)
+	if(args.size() > 1)
 	{
-		LogError("Extra arguments. Usage:  \"splash list-configs\"\n");
+		LogError("Extra arguments. Usage:  \"splash list-arches [target]\"\n");
 		return 1;
 	}
-
-	//TODO: do "list arches for target"
 
 	//Format the command
 	SplashMsg cmd;
 	auto cmdm = cmd.mutable_inforequest();
 	cmdm->set_type(InfoRequest::ARCH_LIST);
+	if(args.size() == 1)
+		cmdm->set_query(args[0]);
 	if(!SendMessage(s, cmd))
 		return 1;
 

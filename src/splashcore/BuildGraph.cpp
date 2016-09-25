@@ -142,6 +142,23 @@ void BuildGraph::GetArches(set<string>& arches)
 }
 
 /**
+	@brief Get a set of all arches, by name, for a specific target
+ */
+void BuildGraph::GetArches(set<string>& arches, string target)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto it : m_targets)
+	{
+		auto m = *it.second;
+		if(m.find(target) == m.end())
+			continue;
+
+		arches.emplace(it.first.first);
+	}
+}
+
+/**
 	@brief Get a set of all configs, by name, de-duplicated by arch.
  */
 void BuildGraph::GetConfigs(set<string>& configs)

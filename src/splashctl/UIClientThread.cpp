@@ -33,7 +33,7 @@ using namespace std;
 
 bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID id);
 
-bool OnArchListRequest(Socket& s, string& hostname, clientID id);
+bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id);
 bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
 bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
 
@@ -93,7 +93,7 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 	{
 		//arch-list request
 		case InfoRequest::ARCH_LIST:
-			return OnArchListRequest(s, hostname, id);
+			return OnArchListRequest(s, msg.query(), hostname, id);
 
 		//config-list request
 		case InfoRequest::CONFIG_LIST:
@@ -116,13 +116,16 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 /**
 	@brief Processes a "splash list-arches" request
  */
-bool OnArchListRequest(Socket& s, string& hostname, clientID id)
+bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id)
 {
 	//No need to lock the node manager etc b/c once we connect the state is refcounted and can't be deletd
 	auto wc = g_nodeManager->GetWorkingCopy(id);
 	BuildGraph& graph = wc->GetGraph();
 	set<string> arches;
-	graph.GetArches(arches);
+	if(query != "")
+		graph.GetArches(arches, query);
+	else
+		graph.GetArches(arches);
 
 	//Go send the list to the client
 	SplashMsg result;
