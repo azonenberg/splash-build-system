@@ -57,14 +57,14 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	*/
 	
 	//Use the arch in the file name
-	m_triplets.push_back(triplet);
+	m_triplets.emplace(triplet);
 
 	//Add some extra triplets as needed
 	//TODO: can we auto-detect this without having to hard code mappings?
 	if(triplet == "x86_64-linux-gnu")
 	{
-		m_triplets.push_back(str_replace("x86_64", "i386", triplet));
-		m_triplets.push_back(str_replace("gnu", "gnux32", triplet));
+		m_triplets.emplace(str_replace("x86_64", "i386", triplet));
+		m_triplets.emplace(str_replace("gnu", "gnux32", triplet));
 	}
 	//TODO: mips/mipsel etc
 	

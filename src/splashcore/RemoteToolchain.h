@@ -53,7 +53,7 @@ public:
 	{ m_langs.push_back(l); }
 
 	void AddTriplet(std::string triplet)
-	{ m_triplets.push_back(triplet); }
+	{ m_triplets.emplace(triplet); }
 
 	virtual bool ScanDependencies(
 		std::string path,

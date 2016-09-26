@@ -52,33 +52,33 @@ XilinxISEToolchain::XilinxISEToolchain(string basepath, int major, int minor)
 	//TODO: determine if we have a full ISE license, add support for that
 	//TODO: add more ISE device families
 	
-	m_triplets.push_back("coolrunner2-xc2c32a");
-	m_triplets.push_back("coolrunner2-xc2c64a");
-	m_triplets.push_back("coolrunner2-xc2c128");
-	m_triplets.push_back("coolrunner2-xc2c256");
+	m_triplets.emplace("coolrunner2-xc2c32a");
+	m_triplets.emplace("coolrunner2-xc2c64a");
+	m_triplets.emplace("coolrunner2-xc2c128");
+	m_triplets.emplace("coolrunner2-xc2c256");
 	
-	m_triplets.push_back("spartan3a-xc3s50a");
-	m_triplets.push_back("spartan3a-xc3s200a");
+	m_triplets.emplace("spartan3a-xc3s50a");
+	m_triplets.emplace("spartan3a-xc3s200a");
 	
-	m_triplets.push_back("spartan6-xc6slx4");
-	m_triplets.push_back("spartan6-xc6slx9");
-	m_triplets.push_back("spartan6-xc6slx16");
-	m_triplets.push_back("spartan6-xc6slx25");
-	m_triplets.push_back("spartan6-xc6slx25t");
-	m_triplets.push_back("spartan6-xc6slx45");
-	m_triplets.push_back("spartan6-xc6slx45t");
-	m_triplets.push_back("spartan6-xc6slx75");
-	m_triplets.push_back("spartan6-xc6slx75t");
+	m_triplets.emplace("spartan6-xc6slx4");
+	m_triplets.emplace("spartan6-xc6slx9");
+	m_triplets.emplace("spartan6-xc6slx16");
+	m_triplets.emplace("spartan6-xc6slx25");
+	m_triplets.emplace("spartan6-xc6slx25t");
+	m_triplets.emplace("spartan6-xc6slx45");
+	m_triplets.emplace("spartan6-xc6slx45t");
+	m_triplets.emplace("spartan6-xc6slx75");
+	m_triplets.emplace("spartan6-xc6slx75t");
 	
-	m_triplets.push_back("artix7-xc7a100t");
-	m_triplets.push_back("artix7-xc7a200t");
+	m_triplets.emplace("artix7-xc7a100t");
+	m_triplets.emplace("artix7-xc7a200t");
 	
-	m_triplets.push_back("kintex7-xc7k70t");
-	m_triplets.push_back("kintex7-xc7k160t");
+	m_triplets.emplace("kintex7-xc7k70t");
+	m_triplets.emplace("kintex7-xc7k160t");
 	
-	m_triplets.push_back("zynq7-xc7z010");
-	m_triplets.push_back("zynq7-xc7z020");
-	m_triplets.push_back("zynq7-xc7z030");
+	m_triplets.emplace("zynq7-xc7z010");
+	m_triplets.emplace("zynq7-xc7z020");
+	m_triplets.emplace("zynq7-xc7z030");
 	
 	//Generate the hash
 	m_hash = sha256(string("Xilinx ISE ") + m_stringVersion);

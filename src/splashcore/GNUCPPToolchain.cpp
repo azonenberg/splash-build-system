@@ -56,11 +56,14 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		basepath + " \\$line -print-multiarch; done" +
 		string("\"");
 	string extra_arches = ShellCommand(cmd);
-	ParseLines(extra_arches, m_triplets);
+	vector<string> triplets;
+	ParseLines(extra_arches, triplets);
+	for(auto t : triplets)
+		m_triplets.emplace(t);
 
 	//If no arches found in the last step, fall back to the triplet in the file name
 	if(m_triplets.empty())
-		m_triplets.push_back(triplet);
+		m_triplets.emplace(triplet);
 
 	//TODO: figure out what flags we need to pass to target each one
 

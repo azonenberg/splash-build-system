@@ -49,7 +49,7 @@ Toolchain::~Toolchain()
 
 void Toolchain::DebugPrint()
 {
-	vector<string> langs;
+	set<string> langs;
 	GetSupportedLanguages(langs);
 
 	LogVerbose("Toolchain %s:\n", GetHash().c_str());
@@ -181,10 +181,10 @@ string Toolchain::LangToString(Language lang)
 	}
 }
 
-void Toolchain::GetSupportedLanguages(vector<string>& langs)
+void Toolchain::GetSupportedLanguages(set<string>& langs)
 {
 	for(auto x : m_langs)
-		langs.push_back(LangToString(x));
+		langs.emplace(LangToString(x));
 }
 
 /**

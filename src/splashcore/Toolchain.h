@@ -108,7 +108,7 @@ public:
 	/**
 		@brief Get the list of languages that we can compile, as strings (for debug)
 	 */
-	void GetSupportedLanguages(std::vector<std::string>& langs);
+	void GetSupportedLanguages(std::set<std::string>& langs);
 
 	/**
 		@brief Get the type of the toolchain as a string (one word)
@@ -121,7 +121,7 @@ public:
 	/**
 		@brief Get the list of architecture triplets that we can target.
 	 */
-	const std::vector<std::string>& GetTargetTriplets()
+	const std::set<std::string>& GetTargetTriplets()
 	{ return m_triplets; }
 
 	/**
@@ -220,7 +220,7 @@ protected:
 
 		Must be set in the constructor.
 	 */
-	std::vector<std::string> m_triplets;
+	std::set<std::string> m_triplets;
 
 	/**
 		@brief List of languages we support

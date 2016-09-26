@@ -51,15 +51,15 @@ XilinxVivadoToolchain::XilinxVivadoToolchain(string basepath, int major, int min
 	//TODO: Do this based on version number etc
 	//We know that basic 7 series are supported everywhere
 	
-	m_triplets.push_back("artix7-xc7a100t");
-	m_triplets.push_back("artix7-xc7a200t");
+	m_triplets.emplace("artix7-xc7a100t");
+	m_triplets.emplace("artix7-xc7a200t");
 	
-	m_triplets.push_back("kintex7-xc7k70t");
-	m_triplets.push_back("kintex7-xc7k160t");
+	m_triplets.emplace("kintex7-xc7k70t");
+	m_triplets.emplace("kintex7-xc7k160t");
 	
-	m_triplets.push_back("zynq7-xc7z010");
-	m_triplets.push_back("zynq7-xc7z020");
-	m_triplets.push_back("zynq7-xc7z030");
+	m_triplets.emplace("zynq7-xc7z010");
+	m_triplets.emplace("zynq7-xc7z020");
+	m_triplets.emplace("zynq7-xc7z030");
 	
 	//Generate the hash
 	m_hash = sha256(string("Xilinx Vivado ") + m_stringVersion);
