@@ -91,6 +91,22 @@ public:
 	std::string GetToolchain()
 	{ return m_toolchain; }
 
+	/**
+		@brief Get the architecture of the node
+
+		No mutexing needed as this is static after object creation
+	 */
+	std::string GetArch()
+	{ return m_arch; }
+
+	/**
+		@brief Get the configuration of the node
+
+		No mutexing needed as this is static after object creation
+	 */
+	std::string GetConfig()
+	{ return m_config; }
+
 	void GetFlagsForUseAt(
 		BuildFlag::FlagUsage when,
 		std::set<BuildFlag>& flags);
