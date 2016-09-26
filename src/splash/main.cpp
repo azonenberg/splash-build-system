@@ -49,6 +49,7 @@ int ProcessListClientsCommand(Socket& s, const vector<string>& args);
 int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
 int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
 int ProcessListToolchainsCommand(Socket& s, const vector<string>& args);
+int ProcessDumpGraphCommand(Socket& s, const vector<string>& args);
 
 /**
 	@brief Program entry point
@@ -123,7 +124,9 @@ int main(int argc, char* argv[])
 		return 1;
 
 	//Process other commands once the link is up and running
-	if(cmd == "list-arches")
+	if(cmd == "dump-graph")
+		return ProcessDumpGraphCommand(sock, args);
+	else if(cmd == "list-arches")
 		return ProcessListArchesCommand(sock, args);
 	else if(cmd == "list-clients")
 		return ProcessListClientsCommand(sock, args);
@@ -359,6 +362,7 @@ int ProcessListConfigsCommand(Socket& s, const vector<string>& args)
 		return 1;
 	}
 
+	//and process it
 	auto lt = msg.configlist();
 	for(int i=0; i<lt.configs_size(); i++)
 		LogNotice("%s\n", lt.configs(i).c_str());
@@ -465,9 +469,50 @@ int ProcessListArchesCommand(Socket& s, const vector<string>& args)
 		return 1;
 	}
 
+	//and process it
 	auto lt = msg.archlist();
 	for(int i=0; i<lt.arches_size(); i++)
 		LogNotice("%s\n", lt.arches(i).c_str());
+
+	//all good
+	return 0;
+}
+
+/**
+	@brief Handles "splash dump-graph"
+ */
+int ProcessDumpGraphCommand(Socket& s, const vector<string>& args)
+{
+	//Sanity check
+	if(args.size() != 0)
+	{
+		LogError("Extra arguments. Usage:  \"splash list-clients\"\n");
+		return 1;
+	}
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_inforequest();
+	cmdm->set_type(InfoRequest::NODE_LIST);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//Get the response back
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	if(msg.Payload_case() != SplashMsg::kNodeList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+
+	//and process it
+	auto lt = msg.nodelist();
+	/*
+	for(int i=0; i<lt.arches_size(); i++)
+		LogNotice("%s\n", lt.arches(i).c_str());
+	*/
 
 	//all good
 	return 0;
@@ -498,6 +543,8 @@ void ShowUsage()
 		"    --verbose                      Sets log level to verbose\n"
 		"\n"
 		"command may be one of the following:\n"
+		"    dump-graph                     Print the entire dependency graph to stdout\n"
+		"                                   in graphviz format.\n"
 		"    init                           Initialize a new working copy\n"
 		"    list-arches                    List all architectures we have at least\n"
 		"                                   one target for.\n"

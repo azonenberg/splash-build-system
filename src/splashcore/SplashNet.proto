@@ -155,7 +155,7 @@ message InfoRequest
 		ARCH_LIST		= 2;	//Get list of all architectures globally / per target
 		CLIENT_LIST		= 3;	//Get list of all connected clients
 		TOOLCHAIN_LIST	= 4;	//Get list of all toolchains (and the resolved settings for them)
-		NODE_DEPS		= 5;	//Get the dependency list for a specific graph node (by relative path)
+		NODE_LIST		= 5;	//Get list of all nodes in the graph
 
 		//TODO: stdout etc for a target's build
 	};
@@ -223,6 +223,24 @@ message ToolchainList
 	repeated	ToolchainInfo	infos	= 1;	//List of toolchains
 };
 
+//Info about a single node
+message NodeInfo
+{
+				string		hash		= 1;	//SHA-256 node hash
+				string		path		= 2;	//Relative path of node (vs project root)
+				string		toolchain	= 3;	//Toolchain we use
+				string		arch		= 4;	//Architecture we target
+				string		config		= 5;	//Configuration of this node
+				string		script		= 6;	//Build script this node was declared in
+	repeated	string		deps		= 7;	//List of nodes we depend on (hashes)
+};
+
+//A list of nodes in the graph
+message NodeList
+{
+	repeated	NodeInfo		infos	= 1;	//List of nodes
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -249,5 +267,6 @@ message SplashMsg
 		ArchList				archList				= 17;
 		ClientList				clientList				= 18;
 		ToolchainList			toolchainList			= 19;
+		NodeList				nodeList				= 20;
 	}
 };

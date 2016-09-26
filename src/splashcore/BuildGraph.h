@@ -88,6 +88,7 @@ public:
 	void GetArches(std::set<std::string>& arches);
 	void GetArches(std::set<std::string>& arches, std::string target);
 	void GetConfigs(std::set<std::string>& configs);
+	void GetNodes(std::set<std::string>& nodes);
 
 protected:
 	void Rebuild();

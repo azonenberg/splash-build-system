@@ -36,6 +36,7 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id);
 bool OnClientListRequest(Socket& s, string& hostname, clientID id);
 bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
+bool OnNodeListRequest(Socket& s, string& hostname, clientID id);
 bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
 bool OnToolchainListRequest(Socket& s, string& hostname, clientID id);
 
@@ -105,6 +106,10 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 		case InfoRequest::CONFIG_LIST:
 			return OnConfigListRequest(s, hostname, id);
 
+		//dump-graph request
+		case InfoRequest::NODE_LIST:
+			return OnNodeListRequest(s, hostname, id);
+
 		//list-target request
 		case InfoRequest::TARGET_LIST:
 			return OnTargetListRequest(s, hostname, id);
@@ -157,7 +162,7 @@ bool OnClientListRequest(Socket& s, string& hostname, clientID id)
 	SplashMsg result;
 	auto resultm = result.mutable_clientlist();
 
-	//Need to lock node manager during iteraction in case other stuff comes/goes
+	//Need to lock node manager during interaction in case other stuff comes/goes
 	g_nodeManager->lock();
 
 		set<clientID> clients;
@@ -226,6 +231,85 @@ bool OnConfigListRequest(Socket& s, string& hostname, clientID id)
 	auto resultm = result.mutable_configlist();
 	for(auto c : configs)
 		resultm->add_configs(c);
+	if(!SendMessage(s, result, hostname))
+		return false;
+
+	return true;
+}
+
+/**
+	@brief Processes a "splash dump-graph" request
+ */
+bool OnNodeListRequest(Socket& s, string& hostname, clientID id)
+{
+	//Prep the result
+	SplashMsg result;
+	auto resultm = result.mutable_nodelist();
+
+	//Need to lock node manager during interaction in case other stuff comes/goes
+	g_nodeManager->lock();
+
+		auto wc = g_nodeManager->GetWorkingCopy(id);
+		BuildGraph& graph = wc->GetGraph();
+
+		set<string> hashes;
+		graph.GetNodes(hashes);
+
+		//Get detailed info about each node
+		LogDebug("Node list\n");
+		for(auto h : hashes)
+		{
+			LogDebug("    %s\n", h.c_str());
+
+			auto node = graph.GetNodeWithHash(h);
+			LogDebug("        Path = %s\n", node->GetFilePath().c_str());
+
+			auto chain = node->GetToolchain();
+			auto script = node->GetScript();
+			auto arch = node->GetArch();
+			auto config = node->GetConfig();
+			LogDebug("        Toolchain = %s\n", chain.c_str());
+			LogDebug("        Script = %s\n", script.c_str());
+			LogDebug("        Arch = %s\n", arch.c_str());
+			LogDebug("        Config = %s\n", config.c_str());
+		}
+
+		/*
+		g_nodeManager->ListToolchains(hashes);
+
+		//Get extended data about each toolchain
+		for(auto hash : hashes)
+		{
+			auto info = resultm->add_infos();
+			info->set_hash(hash);
+
+			//Look up a toolchain instance so we can query it
+			auto chain = g_nodeManager->GetAnyToolchainForHash(hash);
+			info->set_version(chain->GetVersionString());
+
+			set<string> names;
+			g_nodeManager->ListNamesForToolchain(names, hash);
+			for(auto n : names)
+				info->add_names(n);
+
+			set<string> clients;
+			g_nodeManager->ListClientsForToolchain(clients, hash);
+			for(auto c : clients)
+				info->add_uuids(c);
+
+			set<string> langs;
+			chain->GetSupportedLanguages(langs);
+			for(auto l : langs)
+				info->add_langs(l);
+
+			auto triplets = chain->GetTargetTriplets();
+			for(auto t : triplets)
+				info->add_arches(t);
+		}*/
+
+	g_nodeManager->unlock();
+
+	//Go send the list to the client
 	if(!SendMessage(s, result, hostname))
 		return false;
 

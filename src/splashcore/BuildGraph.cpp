@@ -169,6 +169,17 @@ void BuildGraph::GetConfigs(set<string>& configs)
 		configs.emplace(it.first.second);
 }
 
+/**
+	@brief Get a set of all graph nodes
+ */
+void BuildGraph::GetNodes(set<string>& nodes)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto it : m_nodesByHash)
+		nodes.emplace(it.first);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Garbage collection and target helper stuff
 
@@ -203,7 +214,7 @@ void BuildGraph::CollectGarbage()
 	//LogDebug("Collecting garbage\n");
 
 	//First pass: Mark all nodes unreferenced
-	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodes.size());
+	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodesByHash.size());
 	for(auto it : m_nodesByHash)
 		it.second->SetUnref();
 
@@ -213,7 +224,8 @@ void BuildGraph::CollectGarbage()
 	//LogDebug("    Marking architectures for %zu targets as referenced\n", m_targets.size());
 	for(auto it : m_targets)
 	{
-		//LogDebug("        Marking %zu targets for architecture %s as referenced\n", it.second->size(), it.first.c_str());
+		//LogDebug("        Marking %zu targets for architecture %s as referenced\n",
+		//	it.second->size(), it.first.second.c_str());
 		for(auto jt : *it.second)
 		{
 			//LogDebug("            Marking nodes for target %s as referenced\n", jt.first.c_str());
@@ -428,6 +440,8 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
  */
 void BuildGraph::AddNode(BuildGraphNode* node)
 {
+	//LogDebug("    Adding node %s to %p (%d nodes so far)\n", node->GetHash().c_str(), this, m_nodesByHash.size());
+
 	//Add the node
 	m_nodesByHash[node->GetHash()] = node;
 
@@ -550,8 +564,8 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			AddNode(target);
 
 			//DEBUG: Dump it
-			LogDebug("    Target created, dumping dependency tree\n");
-			target->PrintInfo(1);
+			//LogDebug("    Target created, dumping dependency tree\n");
+			//target->PrintInfo(1);
 		}
 	}
 
