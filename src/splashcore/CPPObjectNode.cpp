@@ -40,9 +40,12 @@ CPPObjectNode::CPPObjectNode(
 	string fname,
 	string path,
 	string toolchain,
+	string script,
 	set<BuildFlag> flags)
 	: BuildGraphNode(graph, toolchain, arch, fname, path, flags)
 {
+	m_script = script;
+
 	LogDebug("        Creating CPPObjectNode %s (from source file %s) for arch %s, toolchain %s\n",
 		path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
 

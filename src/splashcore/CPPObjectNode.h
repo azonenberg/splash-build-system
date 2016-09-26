@@ -42,6 +42,7 @@ public:
 		std::string fname,
 		std::string path,
 		std::string toolchain,
+		std::string script,
 		std::set<BuildFlag> flags
 	);
 	virtual ~CPPObjectNode();

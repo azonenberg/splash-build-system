@@ -131,6 +131,7 @@ CPPExecutableNode::CPPExecutableNode(
 			src,
 			fname,
 			toolchain,
+			scriptpath,
 			compileFlags);
 
 		//If we have a node for this hash already, delete it and use the existing one
