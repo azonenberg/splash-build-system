@@ -42,12 +42,12 @@ WorkingCopy::WorkingCopy(string hostname, clientID id)
 	for(int i=0; i<ClientHello::CLIENT_COUNT; i++)
 		m_haveClients[i] = 0;
 
-	LogDebug("creating working copy %p for hostname %s, uuid %s\n", this, hostname.c_str(), id.c_str());
+	//LogDebug("creating working copy %p for hostname %s, uuid %s\n", this, hostname.c_str(), id.c_str());
 }
 
 WorkingCopy::~WorkingCopy()
 {
-	LogDebug("deleting working copy %p\n", this);
+	//LogDebug("deleting working copy %p\n", this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
