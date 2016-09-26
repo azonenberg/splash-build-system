@@ -140,23 +140,38 @@ BuildGraphNode::~BuildGraphNode()
 
 /**
 	@brief Mark the node as referenced
-
-	TODO: Mark our dependencies as referenced (if they're not already)
  */
 void BuildGraphNode::SetRef()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(m_ref)
+		return;
+
 	m_ref = true;
+
+	//Mark our dependencies as referenced (if they're not already)
+	//Sources are a subset of dependencies, no need to process that
+	auto wc = m_graph->GetWorkingCopy();
+	for(auto x : m_dependencies)
+	{
+		auto h = wc->GetFileHash(x);
+
+		if(m_graph->HasNodeWithHash(h))
+			m_graph->GetNodeWithHash(h)->SetRef();
+		else
+			LogError("Node with hash %s is a dependency of us, but not in graph\n", h.c_str());
+	}
 }
 
-/// @brief Mark the node as unreferenced
+/// @brief Mark the node as unreferenced (do not propagate)
 void BuildGraphNode::SetUnref()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 	m_ref = false;
 }
 
-/// @brief Checks if the node is referenced
+/// @brief Checks if the node is referenced (do not propagate)
 bool BuildGraphNode::IsReferenced()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
