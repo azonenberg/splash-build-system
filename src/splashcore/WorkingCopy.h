@@ -39,10 +39,8 @@ typedef std::string clientID;
 class WorkingCopy
 {
 public:
-	WorkingCopy(Cache* cache = NULL);
+	WorkingCopy(std::string hostname, clientID id);
 	virtual ~WorkingCopy();
-
-	void SetInfo(std::string hostname, clientID id);
 
 	void UpdateFile(std::string path, std::string hash, bool body, bool config);
 	void RemoveFile(std::string path);
@@ -58,7 +56,23 @@ public:
 	BuildGraph& GetGraph()
 	{ return m_graph; }
 
+	void AddClient(int type);
+	void RemoveClient(int type);
+
+	/**
+		@brief Get the number of clients we have of each type
+	 */
+	int GetClientCount(ClientHello::ClientType type)
+	{
+		if(type >= ClientHello::CLIENT_COUNT)
+			return 0;
+		return m_haveClients[type];
+	}
+
 protected:
+
+	//Type of clients we have connected
+	int m_haveClients[ClientHello::CLIENT_COUNT];
 
 	//Our mutex (need to be able to lock when already locked)
 	std::recursive_mutex m_mutex;
@@ -73,9 +87,6 @@ protected:
 	//Info about this working copy
 	std::string m_hostname;
 	clientID m_id;
-
-	//Pointer to our cache (so we can get to actual file contents)
-	Cache* m_cache;
 	
 	//The parsed build graph for this working copy
 	BuildGraph m_graph;

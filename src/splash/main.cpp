@@ -43,9 +43,11 @@ string g_rootDir;
 map<int, string> g_watchMap;
 
 int ProcessInitCommand(const vector<string>& args);
-int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
-int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
+
 int ProcessListArchesCommand(Socket& s, const vector<string>& args);
+int ProcessListClientsCommand(Socket& s, const vector<string>& args);
+int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
+int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
 
 /**
 	@brief Program entry point
@@ -122,6 +124,8 @@ int main(int argc, char* argv[])
 	//Process other commands once the link is up and running
 	if(cmd == "list-arches")
 		return ProcessListArchesCommand(sock, args);
+	else if(cmd == "list-clients")
+		return ProcessListClientsCommand(sock, args);
 	else if(cmd == "list-configs")
 		return ProcessListConfigsCommand(sock, args);
 	else if(cmd == "list-targets")
@@ -270,6 +274,73 @@ int ProcessListConfigsCommand(Socket& s, const vector<string>& args)
 	return 0;
 }
 
+
+/**
+	@brief Handles "splash list-configs"
+ */
+int ProcessListClientsCommand(Socket& s, const vector<string>& args)
+{
+	//Sanity check
+	if(args.size() != 0)
+	{
+		LogError("Extra arguments. Usage:  \"splash list-clients\"\n");
+		return 1;
+	}
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_inforequest();
+	cmdm->set_type(InfoRequest::CLIENT_LIST);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//Get the response back
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	if(msg.Payload_case() != SplashMsg::kClientList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+
+	auto lt = msg.clientlist();
+	LogNotice("%-15s %-20s %-30s\n", "Type", "Hostname", "UUID");
+	for(int i=0; i<lt.infos_size(); i++)
+	{
+		auto info = lt.infos(i);
+
+		string stype;
+		switch(info.type())
+		{
+			case ClientHello::CLIENT_DEVELOPER:
+				stype = "splashdev";
+				break;
+
+			case ClientHello::CLIENT_BUILD:
+				stype = "splashbuild";
+				break;
+
+			case ClientHello::CLIENT_UI:
+				stype = "splash";
+				break;
+
+			default:
+				stype = "<error>";
+				break;
+		}
+
+		LogNotice(
+			"%-15s %-20s %-30s\n",
+			stype.c_str(),
+			info.hostname().c_str(),
+			info.uuid().c_str());
+	}
+
+	//all good
+	return 0;
+}
+
 /**
 	@brief Handles "splash list-arches"
  */
@@ -337,6 +408,7 @@ void ShowUsage()
 		"    init                           Initialize a new working copy\n"
 		"    list-arches                    List all architectures we have at least\n"
 		"                                   one target for.\n"
+		"    list-clients                   List all clients connected to the server.\n"
 		"    list-configs                   List all configurations we have at least\n"
 		"                                   one target for.\n"
 		"    list-targets                   List all targets in the working copy,\n"

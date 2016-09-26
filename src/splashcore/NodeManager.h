@@ -54,8 +54,8 @@ public:
 	NodeManager();
 	virtual ~NodeManager();
 
-	void AllocateClient(std::string hostname, clientID id);
-	void RemoveClient(clientID id);
+	void AllocateClient(std::string hostname, clientID id, int type);
+	void RemoveClient(clientID id, int type);
 
 	void AddToolchain(clientID id, Toolchain* chain, bool moreComing);
 
@@ -71,6 +71,8 @@ public:
 	std::string GetToolchainHash(std::string arch, std::string name);
 
 	clientID GetGoldenNodeForToolchain(std::string hash);
+
+	void ListClients(std::set<clientID>& clients);
 
 protected:
 

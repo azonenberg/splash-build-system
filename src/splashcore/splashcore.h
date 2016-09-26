@@ -66,10 +66,27 @@
 #include <yaml-cpp/yaml.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Project includes
+// External library includes
 
 #include "../log/log.h"
 #include "../xptools/Socket.h"
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Protocol stuff
+
+#define SPLASH_PROTO_MAGIC		0x444c4942
+#define SPLASH_PROTO_VERSION	1
+
+#include <splashcore/SplashNet.pb.h>
+
+bool SendMessage(Socket& s, const SplashMsg& msg);
+bool RecvMessage(Socket& s, SplashMsg& msg);
+
+bool SendMessage(Socket& s, const SplashMsg& msg, std::string hostname);
+bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Project includes
 
 #include "Cache.h"
 
@@ -111,20 +128,6 @@
 #include "Scheduler.h"
 
 #include "ClientSettings.h"
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Protocol stuff
-
-#define SPLASH_PROTO_MAGIC		0x444c4942
-#define SPLASH_PROTO_VERSION	1
-
-#include <splashcore/SplashNet.pb.h>
-
-bool SendMessage(Socket& s, const SplashMsg& msg);
-bool RecvMessage(Socket& s, SplashMsg& msg);
-
-bool SendMessage(Socket& s, const SplashMsg& msg, std::string hostname);
-bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global functions

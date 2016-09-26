@@ -34,26 +34,47 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-WorkingCopy::WorkingCopy(Cache* cache)
-	: m_cache(cache)
+WorkingCopy::WorkingCopy(string hostname, clientID id)
+	: m_hostname(hostname)
+	, m_id(id)
 	, m_graph(this)
 {
+	for(int i=0; i<ClientHello::CLIENT_COUNT; i++)
+		m_haveClients[i] = 0;
+
+	LogDebug("creating working copy %p for hostname %s, uuid %s\n", this, hostname.c_str(), id.c_str());
 }
 
 WorkingCopy::~WorkingCopy()
 {
+	LogDebug("deleting working copy %p\n", this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 
 /**
-	@brief Save info about the working copy, mostly for debug logging
+	@brief Add a client from this working copy
  */
-void WorkingCopy::SetInfo(string hostname, clientID id)
+void WorkingCopy::AddClient(int type)
 {
-	m_hostname = hostname;
-	m_id = id;
+	if( (type >= ClientHello::CLIENT_COUNT) || (type < 0) )
+		return;
+
+	lock_guard<recursive_mutex> lock(m_mutex);
+	m_haveClients[type] ++;
+}
+
+/**
+	@brief Remove a client from this working copy
+ */
+void WorkingCopy::RemoveClient(int type)
+{
+	if( (type >= ClientHello::CLIENT_COUNT) || (type < 0) )
+		return;
+
+	lock_guard<recursive_mutex> lock(m_mutex);
+	m_haveClients[type] --;
 }
 
 /**
@@ -123,7 +144,7 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 void WorkingCopy::RemoveFile(string path)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
-		
+
 	//If the file is a build.yml, process it
 	if(GetBasenameOfFile(path) == "build.yml")
 		m_graph.RemoveScript(path);

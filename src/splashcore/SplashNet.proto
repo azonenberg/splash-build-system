@@ -18,9 +18,11 @@ message ClientHello
 
 	enum ClientType
 	{
-		CLIENT_DEVELOPER = 0;	//splashdev
-		CLIENT_BUILD = 1;		//splashbuild
-		CLIENT_UI = 2;			//splash
+		CLIENT_DEVELOPER	= 0;	//splashdev
+		CLIENT_BUILD		= 1;	//splashbuild
+		CLIENT_UI 			= 2;	//splash
+
+		CLIENT_COUNT	 	= 3;	//max of all types
 	};
 	uint32	type		= 3;	//type of client
 
@@ -148,14 +150,12 @@ message InfoRequest
 {
 	enum RequestType
 	{
-		TARGET_LIST		= 0;	//Get list of all targets (not split by arch/config)
-		CONFIG_LIST		= 1;	//Get list of all configurations we have at least one target for
-		ARCH_LIST		= 2;	//Get list of all architectures we have at least one target for
-		TARGET_ARCHES	= 3;	//Get list of architectures for a given target
-		TARGET_CONFIGS	= 4;	//Get list of configurations for a given target
-		CLIENT_LIST		= 5;	//Get list of all connected clients
-		TOOLCHAIN_LIST	= 6;	//Get list of all toolchains (and the resolved settings for them)
-		NODE_DEPS		= 7;	//Get the dependency list for a specific graph node (by relative path)
+		TARGET_LIST		= 0;	//Get list of all targets
+		CONFIG_LIST		= 1;	//Get list of all configurations globally / per target
+		ARCH_LIST		= 2;	//Get list of all architectures globally / per target
+		CLIENT_LIST		= 3;	//Get list of all connected clients
+		TOOLCHAIN_LIST	= 4;	//Get list of all toolchains (and the resolved settings for them)
+		NODE_DEPS		= 5;	//Get the dependency list for a specific graph node (by relative path)
 
 		//TODO: stdout etc for a target's build
 	};

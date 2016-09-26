@@ -83,38 +83,23 @@ void ClientThread(ZSOCKET sock)
 
 	//Get the client-assigned UUID, if any
 	string uuid = chim.uuid();
-	g_nodeManager->AllocateClient(client_hostname, uuid);
+	g_nodeManager->AllocateClient(client_hostname, uuid, chim.type());
 
 	//Protocol-specific processing
 	switch(chim.type())
 	{
 		case ClientHello::CLIENT_DEVELOPER:
-
-			//Process client traffic
 			DevClientThread(s, client_hostname, uuid);
-
-			//Clean up
-			g_nodeManager->RemoveClient(uuid);
 			LogVerbose("Developer workstation %s disconnected\n", client_hostname.c_str());
 			break;
 
 		case ClientHello::CLIENT_BUILD:
-
-			//Process client traffic
 			BuildClientThread(s, client_hostname, uuid);
-
-			//Clean up
-			g_nodeManager->RemoveClient(uuid);
 			LogVerbose("Build server %s disconnected\n", client_hostname.c_str());
 			break;
 
 		case ClientHello::CLIENT_UI:
-
-			//Process client traffic
 			UIClientThread(s, client_hostname, uuid);
-
-			//Clean up
-			g_nodeManager->RemoveClient(uuid);
 			LogVerbose("Developer client %s disconnected\n", client_hostname.c_str());
 			break;
 
@@ -122,4 +107,7 @@ void ClientThread(ZSOCKET sock)
 			LogWarning("Connection from %s dropped (bad client type)\n", client_hostname.c_str());
 			break;
 	}
+
+	//Clean up once we're done, for better or for worse
+	g_nodeManager->RemoveClient(uuid, chim.type());
 }

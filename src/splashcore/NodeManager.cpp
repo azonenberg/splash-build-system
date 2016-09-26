@@ -74,7 +74,7 @@ void NodeManager::unlock()
 /**
 	@brief Allocate a new client ID
  */
-void NodeManager::AllocateClient(string hostname, clientID id)
+void NodeManager::AllocateClient(string hostname, clientID id, int type)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -86,17 +86,22 @@ void NodeManager::AllocateClient(string hostname, clientID id)
 	else
 	{
 		m_nodeRefcounts[id] = 1;
-		m_workingCopies[id] = new WorkingCopy;
-		m_workingCopies[id]->SetInfo(hostname, id);
+		m_workingCopies[id] = new WorkingCopy(hostname, id);
 	}
+
+	//Add to the working copy
+	m_workingCopies[id]->AddClient(type);
 }
 
 /**
 	@brief Delete any state registered to a node.
  */
-void NodeManager::RemoveClient(clientID id)
+void NodeManager::RemoveClient(clientID id, int type)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//Remove from the working copy
+	m_workingCopies[id]->RemoveClient(type);
 
 	//Drop the refcount
 	m_nodeRefcounts[id] --;
@@ -354,4 +359,15 @@ clientID NodeManager::GetGoldenNodeForToolchain(string hash)
 		LogWarning("NodeManager::GetGoldenNodeForToolchain() does not have golden config yet\n");
 		return *nodes.begin();
 	}
+}
+
+/**
+	@brief Get a list of all of our client IDs
+ */
+void NodeManager::ListClients(set<clientID>& clients)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto x : m_workingCopies)
+		clients.emplace(x.first);
 }

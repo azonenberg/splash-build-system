@@ -34,6 +34,7 @@ using namespace std;
 bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID id);
 
 bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id);
+bool OnClientListRequest(Socket& s, string& hostname, clientID id);
 bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
 bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
 
@@ -95,6 +96,10 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 		case InfoRequest::ARCH_LIST:
 			return OnArchListRequest(s, msg.query(), hostname, id);
 
+		//client-list request
+		case InfoRequest::CLIENT_LIST:
+			return OnClientListRequest(s, hostname, id);
+
 		//config-list request
 		case InfoRequest::CONFIG_LIST:
 			return OnConfigListRequest(s, hostname, id);
@@ -132,6 +137,71 @@ bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id)
 	auto resultm = result.mutable_archlist();
 	for(auto a : arches)
 		resultm->add_arches(a);
+	if(!SendMessage(s, result, hostname))
+		return false;
+
+	return true;
+}
+
+/**
+	@brief Processes a "splash list-clients" request
+ */
+bool OnClientListRequest(Socket& s, string& hostname, clientID id)
+{
+	//Prep the result
+	SplashMsg result;
+	auto resultm = result.mutable_clientlist();
+
+	//Need to lock node manager during iteraction in case other stuff comes/goes
+	g_nodeManager->lock();
+
+		set<clientID> clients;
+		g_nodeManager->ListClients(clients);
+
+		//Get extended data about each clientID
+		LogDebug("got client list request\n");
+		for(auto uuid : clients)
+		{
+			//Look up info about the working copy
+			auto wc = g_nodeManager->GetWorkingCopy(uuid);
+			string hostname = wc->GetHostname();
+
+			//TODO: can we have >1 of a given type of client?
+			int ndev = wc->GetClientCount(ClientHello::CLIENT_DEVELOPER);
+			int nbuild = wc->GetClientCount(ClientHello::CLIENT_BUILD);
+			int nui = wc->GetClientCount(ClientHello::CLIENT_UI);
+
+			for(int i=0; i<ndev; i++)
+			{
+				auto c = resultm->add_infos();
+				c->set_type(ClientHello::CLIENT_DEVELOPER);
+				c->set_hostname(hostname);
+				c->set_uuid(uuid);
+			}
+
+			for(int i=0; i<nbuild; i++)
+			{
+				auto c = resultm->add_infos();
+				c->set_type(ClientHello::CLIENT_BUILD);
+				c->set_hostname(hostname);
+				c->set_uuid(uuid);
+			}
+
+			for(int i=0; i<nui; i++)
+			{
+				auto c = resultm->add_infos();
+				c->set_type(ClientHello::CLIENT_UI);
+				c->set_hostname(hostname);
+				c->set_uuid(uuid);
+			}
+
+		}
+
+	g_nodeManager->unlock();
+
+	//Go send the list to the client
+	//for(auto c : configs)
+	//	resultm->add_configs(c);
 	if(!SendMessage(s, result, hostname))
 		return false;
 
