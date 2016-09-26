@@ -371,3 +371,41 @@ void NodeManager::ListClients(set<clientID>& clients)
 	for(auto x : m_workingCopies)
 		clients.emplace(x.first);
 }
+
+/**
+	@brief List all toolchains, by hash, we currently know about
+ */
+void NodeManager::ListToolchains(set<string>& hashes)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto it : m_toolchainsByName)
+		hashes.emplace(it.second);
+}
+
+/**
+	@brief Get all names for a given toolchain
+
+	TODO: if this is called frequently, make it more efficient
+ */
+void NodeManager::ListNamesForToolchain(set<string>& names, string hash)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto it : m_toolchainsByName)
+	{
+		if(it.second == hash)
+			names.emplace(it.first.first);
+	}
+}
+
+/**
+	@brief List all clients with a speicfic toolchain installed
+ */
+void NodeManager::ListClientsForToolchain(set<clientID>& nodes, string hash)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	for(auto x : m_nodesByCompiler[hash])
+		nodes.emplace(x);
+}

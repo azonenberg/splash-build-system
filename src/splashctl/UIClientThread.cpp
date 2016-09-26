@@ -37,6 +37,7 @@ bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id);
 bool OnClientListRequest(Socket& s, string& hostname, clientID id);
 bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
 bool OnTargetListRequest(Socket& s, string& hostname, clientID id);
+bool OnToolchainListRequest(Socket& s, string& hostname, clientID id);
 
 /**
 	@brief Processes a "splash" connection
@@ -92,21 +93,25 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 {
 	switch(msg.type())
 	{
-		//arch-list request
+		//list-arch request
 		case InfoRequest::ARCH_LIST:
 			return OnArchListRequest(s, msg.query(), hostname, id);
 
-		//client-list request
+		//list-client request
 		case InfoRequest::CLIENT_LIST:
 			return OnClientListRequest(s, hostname, id);
 
-		//config-list request
+		//list-config request
 		case InfoRequest::CONFIG_LIST:
 			return OnConfigListRequest(s, hostname, id);
 
-		//target-list request
+		//list-target request
 		case InfoRequest::TARGET_LIST:
 			return OnTargetListRequest(s, hostname, id);
+
+		//list-toolchains request
+		case InfoRequest::TOOLCHAIN_LIST:
+			return OnToolchainListRequest(s, hostname, id);
 
 		//Something garbage
 		default:
@@ -159,7 +164,6 @@ bool OnClientListRequest(Socket& s, string& hostname, clientID id)
 		g_nodeManager->ListClients(clients);
 
 		//Get extended data about each clientID
-		LogDebug("got client list request\n");
 		for(auto uuid : clients)
 		{
 			//Look up info about the working copy
@@ -200,8 +204,6 @@ bool OnClientListRequest(Socket& s, string& hostname, clientID id)
 	g_nodeManager->unlock();
 
 	//Go send the list to the client
-	//for(auto c : configs)
-	//	resultm->add_configs(c);
 	if(!SendMessage(s, result, hostname))
 		return false;
 
@@ -251,6 +253,62 @@ bool OnTargetListRequest(Socket& s, string& hostname, clientID id)
 		info->set_script(graph.GetTargetScript(t));
 		info->set_toolchain(graph.GetTargetToolchain(t));
 	}
+	if(!SendMessage(s, result, hostname))
+		return false;
+
+	return true;
+}
+
+/**
+	@brief Processes a "splash list-toolchains" request
+ */
+bool OnToolchainListRequest(Socket& s, string& hostname, clientID /*id*/)
+{
+	//Prep the result
+	SplashMsg result;
+	auto resultm = result.mutable_toolchainlist();
+
+	//Need to lock node manager during iteraction in case other stuff comes/goes
+	g_nodeManager->lock();
+
+		set<clientID> hashes;
+		g_nodeManager->ListToolchains(hashes);
+
+		LogDebug("list toolchains\n");
+
+		//Get extended data about each toolchain
+		for(auto hash : hashes)
+		{
+			auto info = resultm->add_infos();
+			info->set_hash(hash);
+
+			//Look up a toolchain instance so we can query it
+			auto chain = g_nodeManager->GetAnyToolchainForHash(hash);
+			info->set_version(chain->GetVersionString());
+
+			set<string> names;
+			g_nodeManager->ListNamesForToolchain(names, hash);
+			for(auto n : names)
+				info->add_names(n);
+
+			set<string> clients;
+			g_nodeManager->ListClientsForToolchain(clients, hash);
+			for(auto c : clients)
+				info->add_uuids(c);
+
+			set<string> langs;
+			chain->GetSupportedLanguages(langs);
+			for(auto l : langs)
+				info->add_langs(l);
+
+			auto triplets = chain->GetTargetTriplets();
+			for(auto t : triplets)
+				info->add_arches(t);
+		}
+
+	g_nodeManager->unlock();
+
+	//Go send the list to the client
 	if(!SendMessage(s, result, hostname))
 		return false;
 

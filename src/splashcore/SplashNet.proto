@@ -205,6 +205,24 @@ message ClientList
 	repeated	ClientInfo	infos		= 1;	//List of clients we know about
 };
 
+//Info about a single toolchain
+message ToolchainInfo
+{
+				string		hash		= 1;	//SHA-256 toolchain ID
+				string		version		= 2;	//Human-readable version
+	repeated	string		names		= 3;	//List of names for this toolchain
+	repeated	string		uuids		= 4;	//List of client UUIDs for build servers
+	repeated	string		arches		= 5;	//List of architecture triplets we can target
+	repeated	string		langs		= 6;	//List of languages we can compile, as strings
+												//TODO: make this a protobuf enum instead?
+};
+
+//A list of toolchains we have
+message ToolchainList
+{
+	repeated	ToolchainInfo	infos	= 1;	//List of toolchains
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -230,5 +248,6 @@ message SplashMsg
 		ConfigList				configList				= 16;
 		ArchList				archList				= 17;
 		ClientList				clientList				= 18;
+		ToolchainList			toolchainList			= 19;
 	}
 };

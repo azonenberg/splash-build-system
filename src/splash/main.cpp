@@ -48,6 +48,7 @@ int ProcessListArchesCommand(Socket& s, const vector<string>& args);
 int ProcessListClientsCommand(Socket& s, const vector<string>& args);
 int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
 int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
+int ProcessListToolchainsCommand(Socket& s, const vector<string>& args);
 
 /**
 	@brief Program entry point
@@ -132,6 +133,8 @@ int main(int argc, char* argv[])
 		return ProcessListTargetsCommand(sock, args, true);
 	else if(cmd == "list-targets-simple")
 		return ProcessListTargetsCommand(sock, args, false);
+	else if(cmd == "list-toolchains")
+		return ProcessListToolchainsCommand(sock, args);
 
 	//Clean up and finish
 	delete g_clientSettings;
@@ -175,6 +178,91 @@ int ProcessInitCommand(const vector<string>& args)
 	PutFileContents(cfgpath, config);
 
 	//We're good
+	return 0;
+}
+
+/**
+	@brief Handles "splash list-toolchains"
+ */
+int ProcessListToolchainsCommand(Socket& s, const vector<string>& args)
+{
+	//Sanity check
+	if(args.size() != 0)
+	{
+		LogError("Extra arguments. Usage:  \"splash list-toolchains\"\n");
+		return 1;
+	}
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_inforequest();
+	cmdm->set_type(InfoRequest::TOOLCHAIN_LIST);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//Get the response back
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	if(msg.Payload_case() != SplashMsg::kToolchainList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+
+	auto lt = msg.toolchainlist();
+	LogNotice("%-15s %-15s %-25s %-25s %-30s\n", "Hash", "Languages", "Name", "Architectures", "Nodes");
+	for(int i=0; i<lt.infos_size(); i++)
+	{
+		auto info = lt.infos(i);
+
+		//Figure out how many rows we need
+		int nnames = info.names_size();
+		int nclients = info.uuids_size();
+		int nlangs = info.langs_size();
+		int narches = info.arches_size();
+		int nmax = max(nnames, nclients);
+		nmax = max(nmax, nlangs);
+		nmax = max(nmax, narches);
+
+		//Print each row
+		LogNotice(
+			"---------------------------------------------------------------------"
+			"---------------------------------------------------\n");
+		for(int j=0; j<nmax; j++)
+		{
+			//Truncate hash for display
+			string hash;
+			if(j == 0)
+				hash = string("...") + info.hash().substr(55);
+
+			string name;
+			if(j < nnames)
+				name = info.names(j);
+
+			string lang;
+			if(j < nlangs)
+				lang = info.langs(j);
+
+			string arch;
+			if(j < narches)
+				arch = info.arches(j);
+
+			string uuid;
+			if(j < nclients)
+				uuid = info.uuids(j);
+
+			LogNotice(
+				"%-15s %-15s %-25s %-25s %-30s\n",
+				hash.c_str(),
+				lang.c_str(),
+				name.c_str(),
+				arch.c_str(),
+				uuid.c_str());
+		}
+	}
+
+	//all good
 	return 0;
 }
 
@@ -415,6 +503,7 @@ void ShowUsage()
 		"                                   pretty printed with details\n"
 		"    list-targets-simple            List all targets in the working copy,\n"
 		"                                   with one target name per line\n"
+		"    list-toolchains                List all toolchains the server knows about.\n"
 		"\n"
 		"splash init <control server> [port]\n"
 		"    Initializes the .splash directory within this working copy to store\n"
