@@ -211,7 +211,7 @@ int ProcessListToolchainsCommand(Socket& s, const vector<string>& args)
 	}
 
 	auto lt = msg.toolchainlist();
-	LogNotice("%-15s %-15s %-25s %-25s %-30s\n", "Hash", "Languages", "Name", "Architectures", "Nodes");
+	LogNotice("%-20s %-15s %-15s %-25s %-25s %-30s\n", "Version", "Hash", "Languages", "Name", "Architectures", "Nodes");
 	for(int i=0; i<lt.infos_size(); i++)
 	{
 		auto info = lt.infos(i);
@@ -236,6 +236,10 @@ int ProcessListToolchainsCommand(Socket& s, const vector<string>& args)
 			if(j == 0)
 				hash = string("...") + info.hash().substr(55);
 
+			string version;
+			if(j == 0)
+				version = info.version();
+
 			string name;
 			if(j < nnames)
 				name = info.names(j);
@@ -253,7 +257,8 @@ int ProcessListToolchainsCommand(Socket& s, const vector<string>& args)
 				uuid = info.uuids(j);
 
 			LogNotice(
-				"%-15s %-15s %-25s %-25s %-30s\n",
+				"%-20s %-15s %-15s %-25s %-25s %-30s\n",
+				version.c_str(),
 				hash.c_str(),
 				lang.c_str(),
 				name.c_str(),

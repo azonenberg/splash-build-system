@@ -274,8 +274,6 @@ bool OnToolchainListRequest(Socket& s, string& hostname, clientID /*id*/)
 		set<clientID> hashes;
 		g_nodeManager->ListToolchains(hashes);
 
-		LogDebug("list toolchains\n");
-
 		//Get extended data about each toolchain
 		for(auto hash : hashes)
 		{
