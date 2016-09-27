@@ -521,10 +521,30 @@ int ProcessDumpGraphCommand(Socket& s, const vector<string>& args)
 		auto path = node.path();
 		auto hash = GetShortHash(node.hash());
 
+		string state = "invalid";
+		switch(node.state())
+		{
+			case NodeInfo::READY:
+				state = "ready";
+				break;
+
+			case NodeInfo::BUILDING:
+				state = "building";
+				break;
+
+			case NodeInfo::MISSING:
+				state = "missing";
+				break;
+
+			default:
+				break;
+		}
+
 		//Dump the node name info
 		string label = "<table cellspacing=\"0\">";
 		label += string("<tr><td><b>Path</b></td><td>") + path + "</td></tr>";
 		label += string("<tr><td><b>Hash</b></td><td>") + node.hash() + "</td></tr>";
+		label += string("<tr><td><b>State</b></td><td>") + state + "</td></tr>";
 		label += string("<tr><td><b>Arch</b></td><td>") + node.arch() + "</td></tr>";
 		if(node.script() != "")
 			label += string("<tr><td><b>Script</b></td><td>") + node.script() + "</td></tr>";

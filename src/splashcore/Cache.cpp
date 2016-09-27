@@ -98,6 +98,19 @@ Cache::~Cache()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Status queries
 
+NodeInfo::NodeState Cache::GetState(string id)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(IsCached(id))
+		return NodeInfo::READY;
+
+	//TODO: check if it's building
+
+	else
+		return NodeInfo::MISSING;
+}
+
 /**
 	@brief Determine if a particular object is in the cache.
 
@@ -105,7 +118,7 @@ Cache::~Cache()
  */
 bool Cache::IsCached(string id)
 {
-	lock_guard<mutex> lock(m_mutex);
+	lock_guard<recursive_mutex> lock(m_mutex);
 
 	if(m_cacheIndex.find(id) != m_cacheIndex.end())
 		return true;
@@ -120,7 +133,7 @@ bool Cache::IsCached(string id)
  */
 bool Cache::ValidateCacheEntry(string id)
 {
-	lock_guard<mutex> lock(m_mutex);
+	lock_guard<recursive_mutex> lock(m_mutex);
 
 	//If the directory doesn't exist, obviously we have nothing useful there
 	string dir = GetStoragePath(id);
@@ -164,7 +177,7 @@ string Cache::GetStoragePath(string id)
  */
 string Cache::ReadCachedFile(string id)
 {
-	lock_guard<mutex> lock(m_mutex);
+	lock_guard<recursive_mutex> lock(m_mutex);
 
 	//Sanity check
 	if(m_cacheIndex.find(id) == m_cacheIndex.end())
@@ -190,7 +203,7 @@ string Cache::ReadCachedFile(string id)
  */
 void Cache::AddFile(string /*basename*/, string id, string hash, const char* data, uint64_t len)
 {
-	lock_guard<mutex> lock(m_mutex);
+	lock_guard<recursive_mutex> lock(m_mutex);
 
 	//Create the directory. If it already exists, delete whatever junk was in there
 	string dirname = GetStoragePath(id);
@@ -221,7 +234,7 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const char* dat
 	//Write the hash
 	if(!PutFileContents(dirname + "/hash", hash))
 		return;
-	
+
 	//TODO: write the atime file?
 
 	//Remember that we have this file cached

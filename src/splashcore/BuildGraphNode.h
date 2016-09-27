@@ -120,16 +120,6 @@ public:
 		std::set<BuildFlag>& flags);
 
 	/**
-		@brief Status of a single node
-	 */
-	enum NodeStatus
-	{
-		STATUS_READY,		//The node's output is available for use
-		STATUS_BUILDING,	//A build job to generate this node's output is currently in progress
-		STATUS_DIRTY		//This node's output is unavailable, and no job has been submitted
-	};
-
-	/**
 		@brief Gets the path of our node (relative to the working copy)
 
 		No mutexing needed as this is static after object creation

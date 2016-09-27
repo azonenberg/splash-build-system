@@ -223,9 +223,16 @@ message ToolchainList
 	repeated	ToolchainInfo	infos	= 1;	//List of toolchains
 };
 
-//Info about a single node
+//Info about a single node in the build graph
 message NodeInfo
 {
+	enum NodeState
+	{
+		READY = 0;			//ready to go
+		BUILDING = 1;		//build in progress
+		MISSING = 2;		//nothing yet
+	};
+
 				string		hash		= 1;	//SHA-256 node hash
 				string		path		= 2;	//Relative path of node (vs project root)
 				string		toolchain	= 3;	//Toolchain we use
@@ -233,6 +240,7 @@ message NodeInfo
 				string		config		= 5;	//Configuration of this node
 				string		script		= 6;	//Build script this node was declared in
 	repeated	string		deps		= 7;	//List of nodes we depend on (relative paths)
+				NodeState	state		= 8;	//Current status of the node
 };
 
 //A list of nodes in the graph

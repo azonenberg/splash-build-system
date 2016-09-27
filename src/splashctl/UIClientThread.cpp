@@ -267,6 +267,7 @@ bool OnNodeListRequest(Socket& s, string& hostname, clientID id)
 			info->set_arch(node->GetArch());
 			info->set_config(node->GetConfig());
 			info->set_script(node->GetScript());
+			info->set_state(g_cache->GetState(h));
 
 			//Get the dependency list
 			auto deps = node->GetDependencies();

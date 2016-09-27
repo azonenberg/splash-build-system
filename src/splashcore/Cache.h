@@ -58,18 +58,7 @@ public:
 	Cache(std::string cachename);
 	virtual ~Cache();
 
-	enum ObjectStates
-	{
-		//Object is not in cache at all
-		STATE_MISSING,
-
-		//Object is in cache and usable
-		STATE_READY,
-
-		//Object was registered with the cache but hasn't been created yet
-		//(probably a compile in progress)
-		STATE_BUILDING
-	};
+	NodeInfo::NodeState GetState(std::string id);
 
 	bool IsCached(std::string id);
 	bool ValidateCacheEntry(std::string id);
@@ -83,7 +72,7 @@ protected:
 	std::string GetStoragePath(std::string id);
 
 	//Mutex to control access to all global cache state
-	std::mutex m_mutex;
+	std::recursive_mutex m_mutex;
 
 	//Set of hashes we have in the cache
 	std::unordered_set<std::string> m_cacheIndex;
