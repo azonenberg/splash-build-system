@@ -65,8 +65,6 @@ GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 	if(m_triplets.empty())
 		m_triplets.emplace(triplet);
 
-	//TODO: figure out what flags we need to pass to target each one
-
 	//Look up where this toolchain gets its include files from
 	FindDefaultIncludePaths(m_defaultIncludePaths, basepath, false);
 
@@ -106,11 +104,12 @@ GNUCToolchain::~GNUCToolchain()
 // Actual operations
 
 bool GNUCToolchain::ScanDependencies(
+	string arch,
 	string path,
 	string root,
 	set<BuildFlag> flags,
 	set<string>& deps,
 	map<string, string>& dephashes)
 {
-	return GNUToolchain::ScanDependencies(m_basepath, path, root, flags, m_defaultIncludePaths, deps, dephashes);
+	return GNUToolchain::ScanDependencies(m_basepath, arch, path, root, flags, m_defaultIncludePaths, deps, dephashes);
 }

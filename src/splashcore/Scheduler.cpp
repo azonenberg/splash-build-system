@@ -123,7 +123,7 @@ bool Scheduler::ScanDependencies(
 	LogDebug("            Golden node for this toolchain is %s (%s)\n", id.c_str(), hostname.c_str());
 
 	//Create the scan job and submit it
-	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, flags);
+	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, arch, flags);
 	SubmitScanJob(id, job);
 
 	//Block until the job is done

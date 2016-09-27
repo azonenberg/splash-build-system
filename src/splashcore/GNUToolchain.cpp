@@ -116,6 +116,7 @@ string GNUToolchain::FlagToString(BuildFlag flag)
  */
 bool GNUToolchain::ScanDependencies(
 	string exe,
+	string triplet,
 	string path,
 	string root,
 	set<BuildFlag> flags,
@@ -128,7 +129,9 @@ bool GNUToolchain::ScanDependencies(
 	for(auto f : flags)
 		cmdline += FlagToString(f) + " ";
 	cmdline += path;
-	//LogDebug("Command line: %s\n", cmdline.c_str());
+	LogDebug("Command line: %s\n", cmdline.c_str());
+
+	LogDebug("Dependency scan for arch %s\n", triplet.c_str());
 
 	//Run it
 	string makerule = ShellCommand(cmdline);

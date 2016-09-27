@@ -109,6 +109,9 @@ message DependencyScan
 				string	hash		= 3;	//Hash of the file being scanned
 	repeated	string	flags		= 4;	//Array of compiler flags which may be important for dependency resolution
 											//(include directories, #define's, etc)
+				string	arch		= 5;	//The architecture to scan for.
+											//This is important as the same compiler may have multiple arches
+											//each with their own headers
 };
 
 //Request content of multiple source files by hash

@@ -276,7 +276,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	//Run the scanner proper
 	set<string> deps;
 	map<string, string> hashes;
-	if(!chain->ScanDependencies(aname, g_builddir, flags, deps, hashes))
+	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes))
 	{
 		LogDebug("    Scan failed\n");
 		replym->set_result(false);

@@ -40,6 +40,7 @@ public:
 	virtual ~FPGAToolchain();
 
 	bool ScanDependencies(
+		std::string triplet,
 		std::string path,
 		std::string root,
 		std::set<BuildFlag> flags,

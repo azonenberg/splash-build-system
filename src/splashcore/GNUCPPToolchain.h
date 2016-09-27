@@ -42,6 +42,7 @@ public:
 	virtual ~GNUCPPToolchain();
 
 	virtual bool ScanDependencies(
+		std::string arch,
 		std::string path,
 		std::string root,
 		std::set<BuildFlag> flags,

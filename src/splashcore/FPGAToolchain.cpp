@@ -49,6 +49,7 @@ FPGAToolchain::~FPGAToolchain()
 // Actual operations
 
 bool FPGAToolchain::ScanDependencies(
+	string /*triplet*/,
 	string /*path*/,
 	string /*root*/,
 	set<BuildFlag> /*flags*/,

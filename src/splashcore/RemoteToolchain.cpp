@@ -66,6 +66,7 @@ RemoteToolchain::~RemoteToolchain()
 // Placeholders
 
 bool RemoteToolchain::ScanDependencies(
+	string /*arch*/,
 	string /*path*/,
 	string /*root*/,
 	set<BuildFlag> /*flags*/,

@@ -147,6 +147,7 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 	reqm->set_toolchain(chain);
 	reqm->set_fname(path);
 	reqm->set_hash(hash);
+	reqm->set_arch(job->GetArch());
 	for(auto f : flags)
 		reqm->add_flags(f);
 	if(!SendMessage(s, req, hostname))

@@ -40,6 +40,7 @@ public:
 
 	bool ScanDependencies(
 		std::string exe,
+		std::string triplet,
 		std::string path,
 		std::string root,
 		std::set<BuildFlag> flags,

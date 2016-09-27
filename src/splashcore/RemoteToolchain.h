@@ -56,6 +56,7 @@ public:
 	{ m_triplets.emplace(triplet); }
 
 	virtual bool ScanDependencies(
+		std::string arch,
 		std::string path,
 		std::string root,
 		std::set<BuildFlag> flags,

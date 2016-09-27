@@ -84,6 +84,7 @@ GNULinkerToolchain::~GNULinkerToolchain()
 // Actual operations
 
 bool GNULinkerToolchain::ScanDependencies(
+	string /*triplet*/,
 	string /*path*/,
 	string /*root*/,
 	set<BuildFlag> /*flags*/,

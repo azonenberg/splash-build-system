@@ -41,6 +41,7 @@ public:
 		std::string path,
 		WorkingCopy* wc,
 		std::string toolchainHash,
+		std::string arch,
 		std::set<BuildFlag> flags);
 	virtual ~DependencyScanJob();
 
@@ -55,6 +56,9 @@ public:
 
 	const std::set<BuildFlag>& GetFlags()
 	{ return m_flags; }
+
+	std::string GetArch()
+	{ return m_arch; }
 
 	void AddDependency(std::string fname, std::string hash)
 	{ m_output[fname] = hash; }
@@ -80,6 +84,9 @@ protected:
 
 	/// @brief Flags this build requires
 	std::set<BuildFlag> m_flags;
+
+	/// @brief Architecture we're scanning for
+	std::string m_arch;
 
 	/**
 		@brief OUTPUT of the scan

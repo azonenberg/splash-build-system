@@ -187,6 +187,7 @@ public:
 	{ return m_objSuffix; }
 
 	virtual bool ScanDependencies(
+		std::string triplet,
 		std::string path,
 		std::string root,
 		std::set<BuildFlag> flags,
