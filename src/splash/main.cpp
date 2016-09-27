@@ -51,6 +51,8 @@ int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty
 int ProcessListToolchainsCommand(Socket& s, const vector<string>& args);
 int ProcessDumpGraphCommand(Socket& s, const vector<string>& args);
 
+string GetShortHash(string hash);
+
 /**
 	@brief Program entry point
  */
@@ -237,7 +239,7 @@ int ProcessListToolchainsCommand(Socket& s, const vector<string>& args)
 			//Truncate hash for display
 			string hash;
 			if(j == 0)
-				hash = string("...") + info.hash().substr(55);
+				hash = GetShortHash(info.hash());
 
 			string version;
 			if(j == 0)
@@ -507,12 +509,37 @@ int ProcessDumpGraphCommand(Socket& s, const vector<string>& args)
 		return 1;
 	}
 
+	LogNotice("digraph build\n{\n");
+	LogNotice("rankdir = LR;\n");
+	LogNotice("dpi = 200;\n");
+
 	//and process it
 	auto lt = msg.nodelist();
-	/*
-	for(int i=0; i<lt.arches_size(); i++)
-		LogNotice("%s\n", lt.arches(i).c_str());
-	*/
+	for(int i=0; i<lt.infos_size(); i++)
+	{
+		auto node = lt.infos(i);
+		auto path = node.path();
+		auto hash = GetShortHash(node.hash());
+
+		//Dump the node name info
+		string label = "<table cellspacing=\"0\">";
+		label += string("<tr><td><b>Path</b></td><td>") + path + "</td></tr>";
+		label += string("<tr><td><b>Hash</b></td><td>") + node.hash() + "</td></tr>";
+		label += string("<tr><td><b>Arch</b></td><td>") + node.arch() + "</td></tr>";
+		if(node.script() != "")
+			label += string("<tr><td><b>Script</b></td><td>") + node.script() + "</td></tr>";
+		if(node.toolchain() != "")
+			label += string("<tr><td><b>Toolchain</b></td><td>") + node.toolchain() + "</td></tr>";
+		label += string("<tr><td><b>Config</b></td><td>") + node.config() + "</td></tr>";
+		label += "</table>";
+		LogNotice("\"%s\" [shape=none, margin=0, label=<%s>];\n", hash.c_str(), label.c_str());
+
+		//Dump our edges
+		for(int j=0; j<node.deps_size(); j++)
+			LogNotice("\"%s\" -> \"%s\";\n", hash.c_str(), GetShortHash(node.deps(j)).c_str());
+	}
+
+	LogNotice("}\n");
 
 	//all good
 	return 0;
@@ -566,4 +593,9 @@ void ShowUsage()
 		"    port: Port number of the splashctl server. Defaults to 49000.\n"
 	);
 	exit(0);
+}
+
+string GetShortHash(string hash)
+{
+	return string("...") + hash.substr(55);
 }

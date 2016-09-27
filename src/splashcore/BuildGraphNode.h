@@ -100,6 +100,14 @@ public:
 	{ return m_arch; }
 
 	/**
+		@brief Get the dependencies of the node
+
+		No mutexing needed as this is static after object creation
+	 */
+	std::set<std::string>& GetDependencies()
+	{ return m_dependencies; }
+
+	/**
 		@brief Get the configuration of the node
 
 		No mutexing needed as this is static after object creation

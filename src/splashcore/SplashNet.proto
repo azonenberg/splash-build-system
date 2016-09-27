@@ -232,7 +232,7 @@ message NodeInfo
 				string		arch		= 4;	//Architecture we target
 				string		config		= 5;	//Configuration of this node
 				string		script		= 6;	//Build script this node was declared in
-	repeated	string		deps		= 7;	//List of nodes we depend on (hashes)
+	repeated	string		deps		= 7;	//List of nodes we depend on (relative paths)
 };
 
 //A list of nodes in the graph

@@ -256,56 +256,23 @@ bool OnNodeListRequest(Socket& s, string& hostname, clientID id)
 		graph.GetNodes(hashes);
 
 		//Get detailed info about each node
-		LogDebug("Node list\n");
 		for(auto h : hashes)
 		{
-			LogDebug("    %s\n", h.c_str());
-
 			auto node = graph.GetNodeWithHash(h);
-			LogDebug("        Path = %s\n", node->GetFilePath().c_str());
 
-			auto chain = node->GetToolchain();
-			auto script = node->GetScript();
-			auto arch = node->GetArch();
-			auto config = node->GetConfig();
-			LogDebug("        Toolchain = %s\n", chain.c_str());
-			LogDebug("        Script = %s\n", script.c_str());
-			LogDebug("        Arch = %s\n", arch.c_str());
-			LogDebug("        Config = %s\n", config.c_str());
-		}
-
-		/*
-		g_nodeManager->ListToolchains(hashes);
-
-		//Get extended data about each toolchain
-		for(auto hash : hashes)
-		{
 			auto info = resultm->add_infos();
-			info->set_hash(hash);
+			info->set_hash(h);
+			info->set_path(node->GetFilePath());
+			info->set_toolchain(node->GetToolchain());
+			info->set_arch(node->GetArch());
+			info->set_config(node->GetConfig());
+			info->set_script(node->GetScript());
 
-			//Look up a toolchain instance so we can query it
-			auto chain = g_nodeManager->GetAnyToolchainForHash(hash);
-			info->set_version(chain->GetVersionString());
-
-			set<string> names;
-			g_nodeManager->ListNamesForToolchain(names, hash);
-			for(auto n : names)
-				info->add_names(n);
-
-			set<string> clients;
-			g_nodeManager->ListClientsForToolchain(clients, hash);
-			for(auto c : clients)
-				info->add_uuids(c);
-
-			set<string> langs;
-			chain->GetSupportedLanguages(langs);
-			for(auto l : langs)
-				info->add_langs(l);
-
-			auto triplets = chain->GetTargetTriplets();
-			for(auto t : triplets)
-				info->add_arches(t);
-		}*/
+			//Get the dependency list
+			auto deps = node->GetDependencies();
+			for(auto d : deps)
+				info->add_deps(wc->GetFileHash(d));
+		}
 
 	g_nodeManager->unlock();
 
