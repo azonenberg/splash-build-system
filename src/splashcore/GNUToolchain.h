@@ -36,7 +36,9 @@
 class GNUToolchain
 {
 public:
-	void FindDefaultIncludePaths(std::vector<std::string>& paths, std::string exe, bool cpp);
+	GNUToolchain(std::string arch);
+
+	void FindDefaultIncludePaths(std::vector<std::string>& paths, std::string exe, bool cpp, std::string arch);
 
 	bool ScanDependencies(
 		std::string exe,
@@ -56,7 +58,12 @@ protected:
 
 		We use this instead of an absolute path because it's portable across systems.
 	 */
-	std::string m_virtualSystemIncludePath;
+	std::map<std::string, std::string> m_virtualSystemIncludePath;
+
+	/**
+		@brief Flags we use to target each of our supported architectures
+	 */
+	std::map<std::string, std::string> m_archflags;
 };
 
 #endif

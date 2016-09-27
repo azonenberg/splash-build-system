@@ -34,13 +34,64 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bool cpp)
+/**
+	@brief Figure out what flags we have to pass to the compiler in order to build for a specific architecture.
+
+	An empty string indicates this is the default.
+
+	ALL supported triplets must be listed here; the absence of an entry is an error.
+ */
+GNUToolchain::GNUToolchain(string arch)
+{
+	if(arch == "x86_64-linux-gnu")
+	{
+		m_archflags["x86_64-linux-gnu"] 	= "-m64";
+		m_archflags["x86_64-linux-gnux32"]	= "-mx32";
+		m_archflags["i386-linux-gnu"]		= "-m32";
+	}
+
+	else if(arch == "x86_64-w64-mingw32")
+	{
+		m_archflags[arch] = "";
+	}
+
+	else if(arch == "i386-linux-gnu")
+	{
+		m_archflags[arch] = "";
+	}
+
+	else if(arch == "mips-elf")
+	{
+		m_archflags["mips-elf"] 	= "-EB";
+		m_archflags["mipsel-elf"] 	= "-EL";
+	}
+
+	else if(arch == "arm-linux-gnueabihf")
+	{
+		m_archflags[arch] = "";
+	}
+
+	else
+	{
+		LogWarning("Don't know what flags to use for target %s\n", arch.c_str());
+	}
+}
+
+void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bool cpp, string arch)
 {
 	//LogDebug("    Finding default include paths\n");
 
+	//We must have valid flags for this arch
+	if(m_archflags.find(arch) == m_archflags.end())
+	{
+		LogError("Don't know how to target %s\n", arch.c_str());
+		return;
+	}
+	string aflags = m_archflags[arch];
+
 	//Ask the compiler what the paths are
 	vector<string> lines;
-	string cmd = exe + " -E -Wp,-v ";
+	string cmd = exe + " " + aflags + " -E -Wp,-v ";
 	if(cpp)
 		cmd += "-x c++ ";
 	cmd += "- < /dev/null 2>&1";
@@ -111,8 +162,6 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 
 /**
 	@brief Scans a source file for dependencies (include files, etc)
-
-
  */
 bool GNUToolchain::ScanDependencies(
 	string exe,
@@ -124,8 +173,19 @@ bool GNUToolchain::ScanDependencies(
 	set<string>& deps,
 	map<string, string>& dephashes)
 {
+	//We must have valid flags for this arch
+	if(m_archflags.find(triplet) == m_archflags.end())
+	{
+		LogError("Don't know how to target %s\n", triplet.c_str());
+		return false;
+	}
+
+	//Look up some arch-specific stuff
+	string aflags = m_archflags[triplet];
+	auto apath = m_virtualSystemIncludePath[triplet];
+
 	//Make the full scan command line
-	string cmdline = exe + " -M -MG ";
+	string cmdline = exe + " " + aflags + " -M -MG ";
 	for(auto f : flags)
 		cmdline += FlagToString(f) + " ";
 	cmdline += path;
@@ -207,14 +267,14 @@ bool GNUToolchain::ScanDependencies(
 					f.c_str());
 				return false;
 			}
-			
+
 			//Trim off the prefix and go
 			//LogDebug("        system dir %s\n", longest_prefix.c_str());
-			f = m_virtualSystemIncludePath + "/" + f.substr(longest_prefix.length() + 1);
+			f = apath + "/" + f.substr(longest_prefix.length() + 1);
 		}
 
 		//TODO: Don't even read the file if we already have it in the cache?
-		
+
 		//Add file to cache
 		string data = GetFileContents(files[i]);
 		string hash = sha256(data);

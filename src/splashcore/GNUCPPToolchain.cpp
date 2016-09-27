@@ -36,6 +36,7 @@ using namespace std;
 
 GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 	: CPPToolchain(basepath, TOOLCHAIN_GNU)
+	, GNUToolchain(triplet)
 {
 	//Get the full compiler version
 	m_stringVersion = string("GNU C++") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
@@ -66,7 +67,14 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 		m_triplets.emplace(triplet);
 
 	//Look up where this toolchain gets its include files from
-	FindDefaultIncludePaths(m_defaultIncludePaths, basepath, true);
+	for(auto t : m_triplets)
+	{
+		vector<string> paths;
+		FindDefaultIncludePaths(paths, basepath, false, t);
+		m_defaultIncludePaths[t] = paths;
+		m_virtualSystemIncludePath[t] =
+			"__sysinclude__/" + str_replace(" ", "_", m_stringVersion) + "_" + t;
+	}
 
 	//Set suffixes for WINDOWS
 	if(triplet.find("mingw") != string::npos)
@@ -89,8 +97,6 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 	//Generate the hash
 	//TODO: Anything else to add here?
 	m_hash = sha256(m_stringVersion + triplet);
-
-	m_virtualSystemIncludePath = "__sysinclude__/" + str_replace(" ", "_", m_stringVersion) + "_" + triplet;
 }
 
 GNUCPPToolchain::~GNUCPPToolchain()
@@ -111,5 +117,6 @@ bool GNUCPPToolchain::ScanDependencies(
 	set<string>& deps,
 	map<string, string>& dephashes)
 {
-	return GNUToolchain::ScanDependencies(m_basepath, arch, path, root, flags, m_defaultIncludePaths, deps, dephashes);
+	return GNUToolchain::ScanDependencies(
+		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes);
 }

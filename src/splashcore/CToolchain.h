@@ -41,12 +41,16 @@ public:
 
 protected:
 
+	typedef std::vector<std::string> svec;
+
 	/**
 		@brief List of directories that we search for system headers
 		
 		Only used for dependency scanning to turn system paths into logical paths
+
+		Map from arch to list of paths
 	 */
-	std::vector<std::string> m_defaultIncludePaths;
+	std::map<std::string, svec> m_defaultIncludePaths;
 };
 
 #endif
