@@ -44,6 +44,8 @@ map<int, string> g_watchMap;
 
 int ProcessInitCommand(const vector<string>& args);
 
+int ProcessBuildCommand(Socket& s, const vector<string>& args);
+
 int ProcessListArchesCommand(Socket& s, const vector<string>& args);
 int ProcessListClientsCommand(Socket& s, const vector<string>& args);
 int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
@@ -126,7 +128,9 @@ int main(int argc, char* argv[])
 		return 1;
 
 	//Process other commands once the link is up and running
-	if(cmd == "dump-graph")
+	if(cmd == "build")
+		return ProcessBuildCommand(sock, args);
+	else if(cmd == "dump-graph")
 		return ProcessDumpGraphCommand(sock, args);
 	else if(cmd == "list-arches")
 		return ProcessListArchesCommand(sock, args);
@@ -143,6 +147,49 @@ int main(int argc, char* argv[])
 
 	//Clean up and finish
 	delete g_clientSettings;
+	return 0;
+}
+
+/**
+	@brief Handles "splash build"
+ */
+int ProcessBuildCommand(Socket& s, const vector<string>& args)
+{
+	//Parse arguments
+	string target;
+	string config;
+	string arch;
+
+	for(size_t i=0; i<args.size(); i++)
+	{
+		if( (args[i] == "--config") && (i+1 < args.size()) )
+			config = args[++i];
+
+		else if( (args[i] == "--arch") && (i+1 < args.size()) )
+			arch = args[++i];
+
+		else if(target.empty())
+			target = args[i];
+
+		else
+		{
+			LogError("Invalid argument\n");
+		}
+	}
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_buildrequest();
+	cmdm->set_target(target);
+	cmdm->set_arch(arch);
+	cmdm->set_config(config);
+	cmdm->set_rebuild(false);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//TODO: Get a response
+
+	//We're good
 	return 0;
 }
 
@@ -590,11 +637,13 @@ void ShowUsage()
 		"    --verbose                      Sets log level to verbose\n"
 		"\n"
 		"command may be one of the following:\n"
+		"    build                          Builds one or more targets\n"
 		"    dump-graph                     Print the entire dependency graph to stdout\n"
 		"                                   in graphviz format.\n"
 		"    init                           Initialize a new working copy\n"
-		"    list-arches                    List all architectures we have at least\n"
-		"                                   one target for.\n"
+		"    list-arches [target]           List all architectures the specified target is\n"
+		"                                   to be compiled for. With no argument, list all\n"
+		"                                   architectures that we have any target for.\n"
 		"    list-clients                   List all clients connected to the server.\n"
 		"    list-configs                   List all configurations we have at least\n"
 		"                                   one target for.\n"
@@ -603,6 +652,9 @@ void ShowUsage()
 		"    list-targets-simple            List all targets in the working copy,\n"
 		"                                   with one target name per line\n"
 		"    list-toolchains                List all toolchains the server knows about.\n"
+		"\n"
+		"splash build \n"
+		"    Builds one or more targets (docs TODO)\n"
 		"\n"
 		"splash init <control server> [port]\n"
 		"    Initializes the .splash directory within this working copy to store\n"

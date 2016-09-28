@@ -252,6 +252,16 @@ message NodeList
 	repeated	NodeInfo		infos	= 1;	//List of nodes
 };
 
+//Request to build a target (or targets)
+message BuildRequest
+{
+				string		target		= 1;	//The target to build (empty for all)
+				string		arch		= 2;	//The architecture to build (empty for all)
+				string		config		= 3;	//The configuration to build (empty for all)
+				bool		rebuild		= 4;	//If true, discard the existing cache output
+												//of the last stage (if any) and re-run it
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -279,5 +289,6 @@ message SplashMsg
 		ClientList				clientList				= 18;
 		ToolchainList			toolchainList			= 19;
 		NodeList				nodeList				= 20;
+		BuildRequest			buildRequest			= 21;
 	}
 };

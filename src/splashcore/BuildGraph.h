@@ -90,6 +90,11 @@ public:
 	void GetConfigs(std::set<std::string>& configs);
 	void GetNodes(std::set<std::string>& nodes);
 
+	std::recursive_mutex& GetMutex()
+	{ return m_mutex; }
+
+	void GetTargets(std::set<BuildGraphNode*>& nodes, std::string target, std::string arch, std::string config);
+
 protected:
 	void Rebuild();
 	void InternalRemove(std::string path);

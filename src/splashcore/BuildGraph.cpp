@@ -180,6 +180,33 @@ void BuildGraph::GetNodes(set<string>& nodes)
 		nodes.emplace(it.first);
 }
 
+/**
+	@brief Get all targets matching the requested filter
+ */
+void BuildGraph::GetTargets(set<BuildGraphNode*>& nodes, string target, string arch, string config)
+{
+	for(auto it : m_targets)
+	{
+		//Skip if we don't have a match
+		//(note that empty filter = match everything
+		auto ca = it.first;
+		if( (ca.second != config) && !config.empty() )
+			continue;
+		if( (ca.first != arch) && !arch.empty() )
+			continue;
+
+		//Check our targets
+		TargetMap& cm = *it.second;
+		for(auto jt : cm)
+		{
+			if( (jt.first != target) && !target.empty() )
+				continue;
+
+			nodes.emplace(jt.second);
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Garbage collection and target helper stuff
 

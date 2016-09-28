@@ -33,6 +33,8 @@ using namespace std;
 
 bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID id);
 
+bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, clientID id);
+
 bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id);
 bool OnClientListRequest(Socket& s, string& hostname, clientID id);
 bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
@@ -69,22 +71,44 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
 
 		switch(msg.Payload_case())
 		{
+			case SplashMsg::kBuildRequest:
+				if(!OnBuildRequest(s, msg.buildrequest(), hostname, id))
+					return;
+				break;
+
 			case SplashMsg::kInfoRequest:
 				if(!OnInfoRequest(s, msg.inforequest(), hostname, id))
 					return;
 				break;
-			/*
-			case SplashMsg::kFileRemoved:
-				if(!OnFileRemoved(msg.fileremoved(), hostname, id))
-					return;
-				break;
-			*/
+
 			default:
 				LogWarning("Connection to %s [%s] dropped (bad message type in event header)\n",
 					hostname.c_str(), id.c_str());
 				return;
 		}
 	}
+}
+
+/**
+	@brief Processes a message asking to compile something
+ */
+bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, clientID id)
+{
+	bool rebuild = msg.rebuild();
+
+	//Look up our graph
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	BuildGraph& graph = wc->GetGraph();
+	lock_guard<recursive_mutex> lock(graph.GetMutex());
+
+	//Find the targets for the requested build options
+	set<BuildGraphNode*> nodes;
+	graph.GetTargets(nodes, msg.target(), msg.arch(), msg.config());
+	LogDebug("Found targets\n");
+	for(auto node : nodes)
+		LogDebug("    %s\n", node->GetFilePath().c_str());
+
+	return true;
 }
 
 /**
