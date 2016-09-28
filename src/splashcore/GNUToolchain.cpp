@@ -43,6 +43,9 @@ using namespace std;
  */
 GNUToolchain::GNUToolchain(string arch)
 {
+	/////////////////////////////////////////////////////////////////////////////
+	// X86
+	
 	if(arch == "x86_64-linux-gnu")
 	{
 		m_archflags["x86_64-linux-gnu"] 	= "-m64";
@@ -59,17 +62,36 @@ GNUToolchain::GNUToolchain(string arch)
 	{
 		m_archflags[arch] = "";
 	}
+	
+	/////////////////////////////////////////////////////////////////////////////
+	// MIPS
 
 	else if(arch == "mips-elf")
 	{
 		m_archflags["mips-elf"] 	= "-EB";
 		m_archflags["mipsel-elf"] 	= "-EL";
 	}
+	
+	/////////////////////////////////////////////////////////////////////////////
+	// ARM
 
 	else if(arch == "arm-linux-gnueabihf")
 	{
 		m_archflags[arch] = "";
 	}
+	
+	else if(arch == "arm-linux-gnueabi")
+	{
+		m_archflags[arch] = "";
+	}
+	
+	else if(arch == "arm-none-eabi")
+	{
+		m_archflags[arch] = "";
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////
+	// INVALID
 
 	else
 	{
