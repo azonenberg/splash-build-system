@@ -62,6 +62,8 @@ protected:
 	/// @brief Job status
 	Status m_status;
 
+	//Jobs we depend on
+
 };
 
 #endif

@@ -96,17 +96,49 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 {
 	bool rebuild = msg.rebuild();
 
-	//Look up our graph
-	auto wc = g_nodeManager->GetWorkingCopy(id);
-	BuildGraph& graph = wc->GetGraph();
-	lock_guard<recursive_mutex> lock(graph.GetMutex());
-
-	//Find the targets for the requested build options
 	set<BuildGraphNode*> nodes;
-	graph.GetTargets(nodes, msg.target(), msg.arch(), msg.config());
-	LogDebug("Found targets\n");
-	for(auto node : nodes)
-		LogDebug("    %s\n", node->GetFilePath().c_str());
+
+	//Dispatch the build
+	{
+		//Look up our graph
+		auto wc = g_nodeManager->GetWorkingCopy(id);
+		BuildGraph& graph = wc->GetGraph();
+		lock_guard<recursive_mutex> lock(graph.GetMutex());
+
+		//Find the targets for the requested build options
+		graph.GetTargets(nodes, msg.target(), msg.arch(), msg.config());
+
+		//See which ones are out of date
+		set<BuildGraphNode*> missingtargets;
+		for(auto node : nodes)
+		{
+			auto state = node->GetOutputState();
+
+			//Done? No action required
+			if(state == NodeInfo::STATE_READY)
+				continue;
+
+			//Currently building? No action required
+			else if(state == NodeInfo::STATE_BUILDING)
+				continue;
+
+			//Nope, it's missing
+			//Need to build it
+			missingtargets.emplace(node);
+		}
+
+		//Now we have the list of targets that need building
+		//Make them build themselves
+		for(auto node : missingtargets)
+		{
+			//TODO: Do something with the job object
+			node->Build();
+		}
+	}
+
+	//TODO: wait for build to complete
+
+	//TODO: Report build status to client
 
 	return true;
 }

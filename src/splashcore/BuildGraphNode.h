@@ -127,6 +127,19 @@ public:
 	std::string GetFilePath()
 	{ return m_path; }
 
+	/**
+		@brief Gets our cache state
+
+		No mutexing needed as cache handles this for us
+	 */
+	NodeInfo::NodeState GetOutputState()
+	{ return g_cache->GetState(m_hash); }
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Actual building
+
+	Job* Build();
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Debug helpers
 
@@ -197,6 +210,9 @@ protected:
 		This is used for things like "missing input files" etc.
 	 */
 	bool m_invalidInput;
+
+	/// @brief The job we currently have pending to build us
+	Job* m_job;
 };
 
 #endif

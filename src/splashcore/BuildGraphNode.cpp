@@ -42,6 +42,7 @@ using namespace std;
 BuildGraphNode::BuildGraphNode()
 {
 	m_ref = false;
+	m_job = NULL;
 }
 
 /**
@@ -84,6 +85,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_path(path)
 	, m_flags(flags)
 	, m_invalidInput(false)
+	, m_job(NULL)
 {
 
 }
@@ -108,6 +110,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_name(name)
 	, m_script(scriptpath)
 	, m_path(path)
+	, m_job(NULL)
 {
 	//Ignore the toolchain and arches sections, they're already taken care of
 
@@ -212,4 +215,20 @@ void BuildGraphNode::GetFlagsForUseAt(
 		if(f.IsUsedAt(when))
 			flags.emplace(f);
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Building
+/**
+	@brief Actually start building this node
+ */
+Job* BuildGraphNode::Build()
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//If we're already building, return the existing job
+	if(m_job != NULL)
+		return m_job;
+
+	//TODO
 }
