@@ -57,10 +57,15 @@ void Job::Ref()
 
 void Job::Unref()
 {
-	lock_guard<mutex> lock(m_mutex);
-	m_refcount --;
+	bool last_round = false;
 
-	if(m_refcount == 0)
+	{
+		lock_guard<mutex> lock(m_mutex);
+		m_refcount --;
+		last_round = (m_refcount == 0);
+	}
+
+	if(last_round)
 		delete this;
 }
 
