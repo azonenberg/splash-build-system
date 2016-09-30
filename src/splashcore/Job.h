@@ -36,10 +36,13 @@
 class Job
 {
 public:
-
 	Job();
+
+protected:
+	//must delete via refcounter
 	virtual ~Job();
 
+public:
 	enum Status
 	{
 		STATUS_PENDING,		//The job is in line waiting to run.
@@ -54,6 +57,10 @@ public:
 	void SetCanceled();
 	void SetRunning();
 
+	//Reference counting for job status etc
+	void Ref();
+	void Unref();
+
 protected:
 
 	/// @brief The mutex used to synchronize updates
@@ -61,6 +68,9 @@ protected:
 
 	/// @brief Job status
 	Status m_status;
+
+	/// @brief Reference count
+	int m_refcount;
 
 	//Jobs we depend on
 

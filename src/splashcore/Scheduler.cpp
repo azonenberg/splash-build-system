@@ -46,7 +46,7 @@ Scheduler::~Scheduler()
 	for(auto it : m_pendingScanJobs)
 	{
 		for(auto job : it.second)
-			delete job;
+			job->Unref();
 		it.second.clear();
 	}
 }
@@ -136,7 +136,7 @@ bool Scheduler::ScanDependencies(
 		if(status == Job::STATUS_CANCELED)
 		{
 			LogWarning("Job canceled\n");
-			delete job;
+			job->Unref();
 			return false;
 		}
 
@@ -155,7 +155,7 @@ bool Scheduler::ScanDependencies(
 		deps.emplace(it.first);
 
 	//Clean up so we don't leak memory
-	delete job;
+	job->Unref();
 
 	//Done
 	return true;

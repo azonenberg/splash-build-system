@@ -112,6 +112,8 @@ bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 #include "XilinxISEToolchain.h"
 #include "XilinxVivadoToolchain.h"
 
+#include "Job.h"
+
 #include "BuildGraph.h"
 #include "BuildGraphNode.h"
 #include "CPPSourceNode.h"
@@ -122,7 +124,6 @@ bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 
 #include "NodeManager.h"
 
-#include "Job.h"
 #include "BuildJob.h"
 #include "DependencyScanJob.h"
 #include "Scheduler.h"

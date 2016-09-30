@@ -43,7 +43,12 @@ public:
 		std::string toolchainHash,
 		std::string arch,
 		std::set<BuildFlag> flags);
+
+protected:
+	//must delete via refcounter
 	virtual ~DependencyScanJob();
+
+public:
 
 	std::string GetPath()
 	{ return m_sourcePath; }

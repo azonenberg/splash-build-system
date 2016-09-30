@@ -115,11 +115,11 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			auto state = node->GetOutputState();
 
 			//Done? No action required
-			if(state == NodeInfo::STATE_READY)
+			if(state == NodeInfo::READY)
 				continue;
 
 			//Currently building? No action required
-			else if(state == NodeInfo::STATE_BUILDING)
+			else if(state == NodeInfo::BUILDING)
 				continue;
 
 			//Nope, it's missing

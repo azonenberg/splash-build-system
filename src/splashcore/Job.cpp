@@ -36,12 +36,32 @@ using namespace std;
 
 Job::Job()
 	: m_status(STATUS_PENDING)
+	, m_refcount(1)				//one ref, to our creator
 {
 }
 
+//dtor can only be called by Unref()
 Job::~Job()
 {
 
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Reference counting
+
+void Job::Ref()
+{
+	lock_guard<mutex> lock(m_mutex);
+	m_refcount ++;
+}
+
+void Job::Unref()
+{
+	lock_guard<mutex> lock(m_mutex);
+	m_refcount --;
+
+	if(m_refcount == 0)
+		delete this;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

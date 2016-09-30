@@ -55,6 +55,9 @@ public:
 	};
 
 	BuildJob(/*Priority prio*/);
+
+protected:
+	//must delete via refcounter
 	virtual ~BuildJob();
 
 protected:
