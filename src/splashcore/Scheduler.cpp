@@ -78,6 +78,8 @@ DependencyScanJob* Scheduler::PopScanJob(clientID id)
 
 	auto ret = *m_pendingScanJobs[id].begin();
 	m_pendingScanJobs[id].pop_front();
+
+	ret->Ref();
 	return ret;
 }
 
@@ -88,7 +90,7 @@ DependencyScanJob* Scheduler::PopScanJob(clientID id)
 	@brief Immediately schedules a dependency-scan job and blocks until it completes.
 
 	@return		True on a successful scan
-				False if the scan could not complete (parse error, 
+				False if the scan could not complete (parse error,
  */
 bool Scheduler::ScanDependencies(
 	string fname,
@@ -125,6 +127,7 @@ bool Scheduler::ScanDependencies(
 	//Create the scan job and submit it
 	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, arch, flags);
 	SubmitScanJob(id, job);
+	LogDebug("job %p\n", job);
 
 	//Block until the job is done
 	//TODO: make this more efficient
@@ -155,6 +158,7 @@ bool Scheduler::ScanDependencies(
 		deps.emplace(it.first);
 
 	//Clean up so we don't leak memory
+	LogDebug("cleanup job %p\n", job);
 	job->Unref();
 
 	//Done

@@ -36,7 +36,7 @@
 class Job
 {
 public:
-	Job();
+	Job(bool blocked);
 
 protected:
 	//must delete via refcounter
@@ -45,6 +45,7 @@ protected:
 public:
 	enum Status
 	{
+		STATUS_BLOCKING,	//The job is blocking because some of its dependencies have not yet been met
 		STATUS_PENDING,		//The job is in line waiting to run.
 		STATUS_RUNNING,		//The job is currently running.
 		STATUS_DONE,		//The job completed running (may or may not have been successful)
@@ -53,6 +54,7 @@ public:
 
 	Status GetStatus();
 
+	void SetPending();
 	void SetDone();
 	void SetCanceled();
 	void SetRunning();

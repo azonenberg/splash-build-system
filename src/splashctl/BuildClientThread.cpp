@@ -115,11 +115,13 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			if(ProcessScanJob(s, hostname, djob))
 			{
 				djob->SetDone();
+				djob->Unref();
 				continue;
 			}
 
 			//Job FAILED to run (client disconnected?) - update status
 			djob->SetCanceled();
+			djob->Unref();
 		}
 
 		//TODO: Look for actual compile jobs

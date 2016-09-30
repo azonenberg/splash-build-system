@@ -230,5 +230,9 @@ Job* BuildGraphNode::Build()
 	if(m_job != NULL)
 		return m_job;
 
+	LogDebug("Building node %s\n", m_path.c_str());
+
 	//TODO
+
+	return NULL;
 }

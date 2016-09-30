@@ -34,8 +34,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-Job::Job()
-	: m_status(STATUS_PENDING)
+Job::Job(bool blocked)
+	: m_status(blocked ? STATUS_BLOCKING : STATUS_PENDING)
 	, m_refcount(1)				//one ref, to our creator
 {
 }
@@ -43,7 +43,7 @@ Job::Job()
 //dtor can only be called by Unref()
 Job::~Job()
 {
-
+	LogDebug("dtor %p\n", this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +71,12 @@ Job::Status Job::GetStatus()
 {
 	lock_guard<mutex> lock(m_mutex);
 	return m_status;
+}
+
+void Job::SetPending()
+{
+	lock_guard<mutex> lock(m_mutex);
+	m_status = STATUS_PENDING;
 }
 
 void Job::SetDone()
