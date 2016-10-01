@@ -127,7 +127,6 @@ bool Scheduler::ScanDependencies(
 	//Create the scan job and submit it
 	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, arch, flags);
 	SubmitScanJob(id, job);
-	LogDebug("job %p\n", job);
 
 	//Block until the job is done
 	//TODO: make this more efficient
@@ -158,7 +157,6 @@ bool Scheduler::ScanDependencies(
 		deps.emplace(it.first);
 
 	//Clean up so we don't leak memory
-	LogDebug("cleanup job %p\n", job);
 	job->Unref();
 
 	//Done
