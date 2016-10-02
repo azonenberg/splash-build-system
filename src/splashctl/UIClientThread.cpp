@@ -97,6 +97,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	bool rebuild = msg.rebuild();
 
 	set<BuildGraphNode*> nodes;
+	set<Job*> jobs;
 
 	//Dispatch the build
 	{
@@ -130,13 +131,37 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		//Now we have the list of targets that need building
 		//Make them build themselves
 		for(auto node : missingtargets)
-		{
-			//TODO: Do something with the job object
-			node->Build();
-		}
+			jobs.emplace(node->Build());
 	}
 
-	//TODO: wait for build to complete
+	//Wait for build to complete
+	LogDebug("Waiting for build jobs to complete\n");
+	bool failed = false;
+	while(true)
+	{
+		//See what's finished this pass
+		set<Job*> done;
+		for(auto j : jobs)
+		{
+			auto status = j->GetStatus();
+			if(status == BuildJob::STATUS_CANCELED)
+				failed = true;
+			else if(status == BuildJob::STATUS_DONE)
+				done.emplace(j);
+		}
+
+		//Clean up finished jobs as they complete
+		for(auto j : done)
+		{
+			jobs.erase(j);
+			j->Unref();
+		}
+
+		//Wait a little while (TODO: wait until one of the jobs has finished)
+		usleep(1000);
+	}
+
+	LogDebug("Jobs completed\n");
 
 	//TODO: Report build status to client
 

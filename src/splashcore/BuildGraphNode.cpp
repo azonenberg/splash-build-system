@@ -224,10 +224,11 @@ void BuildGraphNode::GetFlagsForUseAt(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Building
+
 /**
 	@brief Actually start building this node
  */
-Job* BuildGraphNode::Build()
+Job* BuildGraphNode::Build(Job::Priority prio)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -235,11 +236,9 @@ Job* BuildGraphNode::Build()
 	if(m_job != NULL)
 		return m_job;
 
-	//Create a new job
-
-	LogDebug("Building node %s\n", m_path.c_str());
-
-	//TODO
-
-	return NULL;
+	//Create a new job for us
+	//Ref it again (implicit creation ref for us, second ref for the caller)
+	m_job = new BuildJob(prio, this, m_toolchain);
+	m_job->Ref();
+	return m_job;
 }

@@ -37,23 +37,6 @@ class BuildJob : public Job
 {
 public:
 
-	/**
-		@brief Priorities for build jobs
-	 */
-	enum Priority
-	{
-		PRIO_IMMEDIATE,		//This job must run ASAP
-							//Only use for very short jobs; cuts ahead of absolutely everything
-
-		PRIO_INTERACTIVE,	//Interactive debug job. Run as soon as we have an available node.
-
-		PRIO_NORMAL,		//Normal priority - for most builds
-
-		PRIO_DELAYED,		//Not very important - nightly background jobs or something
-
-		PRIO_COUNT			//Total number of priorities, used for queue management etc
-	};
-
 	BuildJob(Priority prio, BuildGraphNode* output, std::string toolchain);
 
 protected:
