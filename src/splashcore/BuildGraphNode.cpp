@@ -135,7 +135,12 @@ BuildGraphNode::BuildGraphNode(
 
 BuildGraphNode::~BuildGraphNode()
 {
-
+	//If we have a job, we no longer need if
+	if(m_job != NULL)
+	{
+		m_job->Unref();
+		m_job = NULL;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -229,6 +234,8 @@ Job* BuildGraphNode::Build()
 	//If we're already building, return the existing job
 	if(m_job != NULL)
 		return m_job;
+
+	//Create a new job
 
 	LogDebug("Building node %s\n", m_path.c_str());
 
