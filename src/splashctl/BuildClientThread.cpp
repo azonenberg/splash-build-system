@@ -252,6 +252,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
  */
 bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 {
+	//Make sure it's a build job (if not, it was somehow put in the wrong queue)
 	BuildJob* bjob = dynamic_cast<BuildJob*>(job);
 	if(!bjob)
 	{
@@ -259,6 +260,16 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 		return false;
 	}
 
-	LogDebug("TODO: Run build job %p\n", job);
+	//TODO: Push it to the client
+
+	//TODO: Get results
+
+	//TODO: Update server-side cache
+
+	//TODO: Unblock any jobs that are pending
+
+	auto node = bjob->GetOutputNode();
+	auto path = node->GetFilePath();
+	LogDebug("TODO: Run build job %p (for %s)\n", job, path.c_str());
 	return true;
 }

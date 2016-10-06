@@ -39,6 +39,10 @@ public:
 
 	BuildJob(Priority prio, BuildGraphNode* output, std::string toolchain);
 
+	/// @brief Get the node we build
+	BuildGraphNode* GetOutputNode()
+	{ return m_output; }
+
 protected:
 	//must delete via refcounter
 	virtual ~BuildJob();

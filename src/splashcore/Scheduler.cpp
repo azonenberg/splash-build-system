@@ -243,7 +243,7 @@ void Scheduler::SubmitJob(Job* job)
 	lock_guard<recursive_mutex> lock(m_mutex);
 	job->Ref();
 
-	//TODO: Don't submit jobs if they're not yet runnable
+	//TODO: if not yet runnable, move it to a different queue
 
 	m_runnableJobs[job->GetPriority()].push_back(job);
 }

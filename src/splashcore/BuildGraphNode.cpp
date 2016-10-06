@@ -242,6 +242,9 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 	if(m_job != NULL)
 		return m_job;
 
+	//TODO: Go over each of our dependencies.
+	//If they're not yet built, schedule jobs for them.
+
 	//Create a new job for us
 	//Ref it again (implicit creation ref for us, second ref for the caller)
 	m_job = new BuildJob(prio, this, m_toolchainHash);
