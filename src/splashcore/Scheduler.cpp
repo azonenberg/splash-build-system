@@ -125,7 +125,7 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 	g_nodeManager->ListToolchainsForClient(toolchains, id);
 
 	//Go over the list from oldest to newest
-	auto jobs = m_runnableJobs[prio];
+	jobqueue& jobs = m_runnableJobs[prio];
 	for(auto it = jobs.begin(); it != jobs.end(); it++)
 	{
 		auto job = *it;
@@ -241,7 +241,7 @@ void Scheduler::SubmitScanJob(clientID id, DependencyScanJob* job)
 void Scheduler::SubmitJob(Job* job)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
-	LogDebug("SubmitJob prio %d\n", job->GetPriority());
+	job->Ref();
 
 	//TODO: Don't submit jobs if they're not yet runnable
 

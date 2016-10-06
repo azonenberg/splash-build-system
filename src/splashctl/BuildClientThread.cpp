@@ -130,7 +130,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		Job* bjob = g_scheduler->PopJob(id);
 		if(bjob != NULL)
 		{
-			LogDebug("Got a job\n");
+			LogDebug("Got a job (%p)\n", bjob);
 
 			//We've kicked off the job, let others know
 			bjob->SetRunning();

@@ -40,6 +40,7 @@ Job::Job(Job::Priority prio, string toolchain, bool blocked)
 	, m_status(blocked ? STATUS_BLOCKING : STATUS_PENDING)
 	, m_refcount(1)				//one ref, to our creator
 {
+
 }
 
 //dtor can only be called by Unref()
