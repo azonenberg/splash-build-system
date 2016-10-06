@@ -32,6 +32,7 @@
 using namespace std;
 
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
+bool ProcessBuildJob(Socket& s, string& hostname, Job* job);
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
@@ -122,9 +123,31 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			//Job FAILED to run (client disconnected?) - update status
 			djob->SetCanceled();
 			djob->Unref();
+			continue;
 		}
 
-		//TODO: Look for actual compile jobs
+		//Look for actual compile jobs
+		Job* bjob = g_scheduler->PopJob(id);
+		if(bjob != NULL)
+		{
+			LogDebug("Got a job\n");
+
+			//We've kicked off the job, let others know
+			bjob->SetRunning();
+
+			//Push the job out to the client and run it
+			if(ProcessBuildJob(s, hostname, bjob))
+			{
+				bjob->SetDone();
+				bjob->Unref();
+			}
+
+			//Job FAILED to run (client disconnected?) - update status
+			//TODO: Put it back in the queue or something fault tolerant?
+			bjob->SetCanceled();
+			bjob->Unref();
+			continue;
+		}
 
 		//Wait a while for more work
 		usleep(100);
@@ -221,5 +244,21 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 	}
 
 	//all good
+	return true;
+}
+
+/**
+	@brief Runs a build job
+ */
+bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
+{
+	BuildJob* bjob = dynamic_cast<BuildJob*>(job);
+	if(!bjob)
+	{
+		LogError("ProcessBuildJob called with a non-build job\n");
+		return false;
+	}
+
+	LogDebug("TODO: Run build job %p\n", job);
 	return true;
 }

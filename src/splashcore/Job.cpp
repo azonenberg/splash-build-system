@@ -34,8 +34,10 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-Job::Job(bool blocked)
-	: m_status(blocked ? STATUS_BLOCKING : STATUS_PENDING)
+Job::Job(Job::Priority prio, string toolchain, bool blocked)
+	: m_priority(prio)
+	, m_toolchainHash(toolchain)
+	, m_status(blocked ? STATUS_BLOCKING : STATUS_PENDING)
 	, m_refcount(1)				//one ref, to our creator
 {
 }

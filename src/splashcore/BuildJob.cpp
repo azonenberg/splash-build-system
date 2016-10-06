@@ -35,10 +35,8 @@ using namespace std;
 // Construction / destruction
 
 BuildJob::BuildJob(Priority prio, BuildGraphNode* output, string toolchain)
-	: Job(true)
-	, m_priority(prio)
+	: Job(prio, toolchain, true)
 	, m_output(output)
-	, m_toolchainHash(toolchain)
 {
 	//TODO: set blocking etc
 }

@@ -400,7 +400,7 @@ void NodeManager::ListNamesForToolchain(set<string>& names, string hash)
 }
 
 /**
-	@brief List all clients with a speicfic toolchain installed
+	@brief List all clients with a specific toolchain installed
  */
 void NodeManager::ListClientsForToolchain(set<clientID>& nodes, string hash)
 {
@@ -408,4 +408,14 @@ void NodeManager::ListClientsForToolchain(set<clientID>& nodes, string hash)
 
 	for(auto x : m_nodesByCompiler[hash])
 		nodes.emplace(x);
+}
+
+/**
+	@brief List all toolchains that a given client has installed
+ */
+void NodeManager::ListToolchainsForClient(set<string>& toolchains, clientID id)
+{
+	auto tools = m_toolchainsByNode[id];
+	for(auto it : tools)
+		toolchains.emplace(it.first);
 }

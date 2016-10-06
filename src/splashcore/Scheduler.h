@@ -60,9 +60,12 @@ public:
 
 	//Internal helpers
 	void SubmitScanJob(clientID id, DependencyScanJob* job);
+	void SubmitJob(Job* job);
 
 	//Node interface
 	DependencyScanJob* PopScanJob(clientID id);
+	Job* PopJob(clientID id);
+	Job* PopJob(clientID id, Job::Priority prio);
 
 protected:
 
@@ -73,6 +76,9 @@ protected:
 
 	//A FIFO of scan jobs waiting to run
 	typedef std::list<DependencyScanJob*> scanqueue;
+
+	//A FIFO of jobs waiting to run
+	typedef std::list<Job*> jobqueue;
 
 	/**
 		@brief Dependency scan jobs waiting to run
@@ -88,8 +94,12 @@ protected:
 	 */
 
 	/**
-		@brief Jobs which are currently eligible to run, sorted by priority
+		@brief Jobs which are currently eligible to run, grouped by priority.
+
+		Within each queue jobs are sorted in FIFO order. Note that jobs may run out-of-order because
+		not all jobs can run on any given node.
 	 */
+	std::map<Job::Priority, jobqueue> m_runnableJobs;
 };
 
 extern Scheduler* g_scheduler;

@@ -42,8 +42,16 @@ Scheduler::Scheduler()
 
 Scheduler::~Scheduler()
 {
-	LogDebug("destroying scheduler\n");
+	//LogDebug("destroying scheduler\n");
+
 	for(auto it : m_pendingScanJobs)
+	{
+		for(auto job : it.second)
+			job->Unref();
+		it.second.clear();
+	}
+
+	for(auto it : m_runnableJobs)
 	{
 		for(auto job : it.second)
 			job->Unref();
@@ -81,6 +89,61 @@ DependencyScanJob* Scheduler::PopScanJob(clientID id)
 
 	ret->Ref();
 	return ret;
+}
+
+/**
+	@brief Get the next available job for a given node, if there is one available.
+
+	@return A job, or NULL if none are available.
+ */
+Job* Scheduler::PopJob(clientID id)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//Attempt to pop the job queue from each priority, from max to min priority
+	for(int i=0; i<Job::PRIO_COUNT; i++)
+	{
+		Job* job = PopJob(id, static_cast<Job::Priority>(i));
+		if(job)
+			return job;
+	}
+
+	return NULL;
+}
+
+/**
+	@brief Get the next available job for a given node and priority, if there is one available.
+
+	@return A job, or NULL if none are available.
+ */
+Job* Scheduler::PopJob(clientID id, Job::Priority prio)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//Look up the toolchains for this node
+	set<string> toolchains;
+	g_nodeManager->ListToolchainsForClient(toolchains, id);
+
+	//Go over the list from oldest to newest
+	auto jobs = m_runnableJobs[prio];
+	for(auto it = jobs.begin(); it != jobs.end(); it++)
+	{
+		auto job = *it;
+
+		//See if we have the toolchain this job needs
+		if(toolchains.find(job->GetToolchain()) == toolchains.end())
+		{
+			//LogDebug("PopJob rejecting job %p b/c toolchain %s not offered by client %s\n",
+			//	job, job->GetToolchain().c_str(), id.c_str());
+			continue;
+		}
+
+		//We're good, use this job
+		jobs.erase(it);
+		return job;
+	}
+
+	return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -170,4 +233,17 @@ void Scheduler::SubmitScanJob(clientID id, DependencyScanJob* job)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 	m_pendingScanJobs[id].push_back(job);
+}
+
+/**
+	@brief Submit a job for a general build step
+ */
+void Scheduler::SubmitJob(Job* job)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	LogDebug("SubmitJob prio %d\n", job->GetPriority());
+
+	//TODO: Don't submit jobs if they're not yet runnable
+
+	m_runnableJobs[job->GetPriority()].push_back(job);
 }

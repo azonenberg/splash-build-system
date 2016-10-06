@@ -77,6 +77,7 @@ public:
 	void ListToolchains(std::set<std::string>& hashes);
 	void ListNamesForToolchain(std::set<std::string>& names, std::string hash);
 	void ListClientsForToolchain(std::set<clientID>& nodes, std::string hash);
+	void ListToolchainsForClient(std::set<std::string>& toolchains, clientID id);
 
 protected:
 

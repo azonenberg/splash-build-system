@@ -63,6 +63,8 @@ BuildGraphNode::BuildGraphNode(
 	, m_path(path)
 	, m_invalidInput(false)
 {
+	//No toolchain
+	m_toolchainHash = "";
 }
 
 /**
@@ -87,7 +89,8 @@ BuildGraphNode::BuildGraphNode(
 	, m_invalidInput(false)
 	, m_job(NULL)
 {
-
+	//Look up the hash of our toolchain
+	m_toolchainHash = g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
 }
 
 /**
@@ -131,6 +134,9 @@ BuildGraphNode::BuildGraphNode(
 	}
 
 	//anything else is handled in base class (source files etc)
+
+	//Look up the hash of our toolchain
+	m_toolchainHash = g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
 }
 
 BuildGraphNode::~BuildGraphNode()
@@ -238,7 +244,12 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 
 	//Create a new job for us
 	//Ref it again (implicit creation ref for us, second ref for the caller)
-	m_job = new BuildJob(prio, this, m_toolchain);
+	m_job = new BuildJob(prio, this, m_toolchainHash);
 	m_job->Ref();
+
+	//Submit the job to the scheduler
+	g_scheduler->SubmitJob(m_job);
+
+	//and done
 	return m_job;
 }

@@ -53,9 +53,6 @@ public:
 	std::string GetPath()
 	{ return m_sourcePath; }
 
-	std::string GetToolchain()
-	{ return m_toolchainHash; }
-
 	WorkingCopy* GetWorkingCopy()
 	{ return m_workingCopy; }
 
@@ -83,9 +80,6 @@ protected:
 
 	/// @brief The working copy we're attached to
 	WorkingCopy* m_workingCopy;
-
-	/// @brief Toolchain hash we asked for
-	std::string m_toolchainHash;
 
 	/// @brief Flags this build requires
 	std::set<BuildFlag> m_flags;

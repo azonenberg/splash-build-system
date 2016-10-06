@@ -36,14 +36,6 @@
 class Job
 {
 public:
-	Job(bool blocked);
-
-protected:
-	//must delete via refcounter
-	virtual ~Job();
-
-public:
-
 	/**
 		@brief Priorities for build jobs
 	 */
@@ -60,6 +52,22 @@ public:
 
 		PRIO_COUNT			//Total number of priorities, used for queue management etc
 	};
+
+	Job(Priority prio, std::string toolchain, bool blocked);
+
+protected:
+	//must delete via refcounter
+	virtual ~Job();
+
+public:
+
+	/**
+		@brief Gets the priority of this job.
+
+		No mutexing needed as this is static after object creation.
+	 */
+	Priority GetPriority()
+	{ return m_priority; }
 
 	enum Status
 	{
@@ -81,10 +89,21 @@ public:
 	void Ref();
 	void Unref();
 
+	std::string GetToolchain()
+	{ return m_toolchainHash; }
+
 protected:
 
 	/// @brief The mutex used to synchronize updates
 	std::mutex m_mutex;
+
+	/**
+		@brief Priority of this build job
+	 */
+	Priority m_priority;
+
+	/// @brief Toolchain hash we asked for
+	std::string m_toolchainHash;
 
 	/// @brief Job status
 	Status m_status;

@@ -92,6 +92,14 @@ public:
 	{ return m_toolchain; }
 
 	/**
+		@brief Get the toolchain hash of the node
+
+		No mutexing needed as this is static after object creation
+	 */
+	std::string GetToolchainHash()
+	{ return m_toolchainHash; }
+
+	/**
 		@brief Get the architecture of the node
 
 		No mutexing needed as this is static after object creation
@@ -166,6 +174,9 @@ protected:
 
 	/// @brief The toolchain this node is built with (may be empty string if a source file, etc)
 	std::string m_toolchain;
+
+	/// @brief The hash of the toolchain we're using (must be set in constructor; immutable)
+	std::string m_toolchainHash;
 
 	/// @brief The hash of this node (must be set in constructor; immutable)
 	std::string m_hash;
