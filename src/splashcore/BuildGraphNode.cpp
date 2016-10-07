@@ -238,17 +238,39 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	//If we're already building, return the existing job
+	//If we're already building, return a new reference to the existing job
 	if(m_job != NULL)
+	{
+		m_job->Ref();
 		return m_job;
-
-	//TODO: Go over each of our dependencies.
-	//If they're not yet built, schedule jobs for them.
+	}
 
 	//Create a new job for us
 	//Ref it again (implicit creation ref for us, second ref for the caller)
 	m_job = new BuildJob(prio, this, m_toolchainHash);
 	m_job->Ref();
+
+	//Build each of our dependencies, if needed
+	set<Job*> deps;
+	auto wc = m_graph->GetWorkingCopy();
+	for(auto d : m_dependencies)
+	{
+		//Look up the graph node
+		auto h = wc->GetFileHash(d);
+		auto n = m_graph->GetNodeWithHash(h);
+
+		//If the node has already been built, no action required
+		auto state = n->GetOutputState();
+		if(state == NodeInfo::READY)
+			continue;
+
+		//If not, build it
+		deps.emplace(n->Build());
+	}
+
+	//Add dependencies to our job
+	for(auto j : deps)
+		m_job->AddDependency(j);
 
 	//Submit the job to the scheduler
 	g_scheduler->SubmitJob(m_job);

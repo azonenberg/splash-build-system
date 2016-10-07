@@ -92,6 +92,8 @@ public:
 	std::string GetToolchain()
 	{ return m_toolchainHash; }
 
+	void AddDependency(Job* job);
+
 protected:
 
 	/// @brief The mutex used to synchronize updates
@@ -111,8 +113,8 @@ protected:
 	/// @brief Reference count
 	int m_refcount;
 
-	//Jobs we depend on
-
+	/// @brief Jobs we depend on
+	std::set<Job*> m_dependencies;
 };
 
 #endif

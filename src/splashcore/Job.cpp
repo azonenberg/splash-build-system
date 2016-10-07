@@ -46,7 +46,8 @@ Job::Job(Job::Priority prio, string toolchain, bool blocked)
 //dtor can only be called by Unref()
 Job::~Job()
 {
-
+	for(auto d : m_dependencies)
+		d->Unref();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,6 +75,14 @@ void Job::Unref()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
+
+void Job::AddDependency(Job* job)
+{
+	lock_guard<mutex> lock(m_mutex);
+
+	job->Ref();
+	m_dependencies.emplace(job);
+}
 
 Job::Status Job::GetStatus()
 {

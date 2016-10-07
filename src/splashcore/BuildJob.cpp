@@ -38,11 +38,14 @@ BuildJob::BuildJob(Priority prio, BuildGraphNode* output, string toolchain)
 	: Job(prio, toolchain, true)
 	, m_output(output)
 {
+	//Mark the job as pending in the cache
+
+
 	//TODO: set blocking etc
 }
 
 BuildJob::~BuildJob()
 {
-	
+
 }
 

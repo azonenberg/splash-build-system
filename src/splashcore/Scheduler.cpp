@@ -244,6 +244,7 @@ void Scheduler::SubmitJob(Job* job)
 	job->Ref();
 
 	//TODO: if not yet runnable, move it to a different queue
+	LogDebug("Submit job %p (%s)\n", job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
 
 	m_runnableJobs[job->GetPriority()].push_back(job);
 }
