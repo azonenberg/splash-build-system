@@ -39,6 +39,9 @@ map<string, Toolchain*> g_toolchains;
 
 void CleanBuildDir();
 void ProcessDependencyScan(Socket& sock, DependencyScan rxm);
+void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm);
+Toolchain* PrepBuild(string toolhash);
+bool RefreshCachedFile(Socket& sock, string hash, string fname);
 
 //Temporary directory we work in
 string g_tmpdir;
@@ -52,34 +55,34 @@ string g_builddir;
 int main(int argc, char* argv[])
 {
 	Severity console_verbosity = Severity::NOTICE;
-	
+
 	//TODO: argument for this?
 	string ctl_server;
 	int port = 49000;
-	
+
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
 	{
 		string s(argv[i]);
-		
+
 		//Let the logger eat its args first
 		if(ParseLoggerArguments(i, argc, argv, console_verbosity))
 			continue;
-		
+
 		else if(s == "--help")
 		{
 			ShowUsage();
 			return 0;
 		}
-		
+
 		else if(s == "--version")
 		{
 			ShowVersion();
 			return 0;
 		}
-		
+
 		//Last arg without switch is control server.
-		//TODO: mandatory arguments to introduce these?		
+		//TODO: mandatory arguments to introduce these?
 		else
 			ctl_server = argv[i];
 
@@ -90,7 +93,7 @@ int main(int argc, char* argv[])
 	MakeDirectoryRecursive(g_tmpdir, 0700);
 	g_builddir = g_tmpdir + "/build";
 	MakeDirectoryRecursive(g_builddir, 0700);
-	
+
 	//Set up logging
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
@@ -108,13 +111,13 @@ int main(int argc, char* argv[])
 	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if(!ConnectToServer(sock, ClientHello::CLIENT_BUILD))
 		return 1;
-	
+
 	//Look for compilers
 	LogVerbose("Enumerating compilers...\n");
 	FindLinkers();
 	FindCPPCompilers();
 	FindFPGACompilers();
-	
+
 	//Get some basic metadata about our hardware and tell the server
 	SplashMsg binfo;
 	auto binfom = binfo.mutable_buildinfo();
@@ -124,7 +127,7 @@ int main(int argc, char* argv[])
 	binfom->set_numchains(g_toolchains.size());
 	if(!SendMessage(sock, binfo, ctl_server))
 		return 1;
-	
+
 	//Report the toolchains we found to the server
 	for(auto it : g_toolchains)
 	{
@@ -160,7 +163,7 @@ int main(int argc, char* argv[])
 	//Initialize the cache
 	//TODO: Separate caches for each instance if we multithread? Or one + sharing?
 	g_cache = new Cache("splashbuild");
-	
+
 	//Sit around and wait for stuff to come in
 	LogVerbose("\nReady\n\n");
 	while(true)
@@ -178,6 +181,11 @@ int main(int argc, char* argv[])
 				ProcessDependencyScan(sock, rxm.dependencyscan());
 				break;
 
+			//Requesting a compile operation
+			case SplashMsg::kNodeBuildRequest:
+				ProcessBuildRequest(sock, rxm.nodebuildrequest());
+				break;
+
 			//Asking for more data
 			case SplashMsg::kContentRequestByHash:
 				if(!ProcessContentRequest(sock, g_clientSettings->GetServerHostname(), rxm))
@@ -189,14 +197,14 @@ int main(int argc, char* argv[])
 				break;
 		}
 	}
-	
+
 	//clean up
 	delete g_cache;
 	for(auto x : g_toolchains)
 		delete x.second;
 	g_toolchains.clear();
 	delete g_clientSettings;
-	
+
 	return 0;
 }
 
@@ -210,21 +218,18 @@ void CleanBuildDir()
 }
 
 /**
-	@brief Process a "dependency scan" message from a client
+	@brief Prepare for a build
  */
-void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
+Toolchain* PrepBuild(string toolhash)
 {
-	LogDebug("Got a dependency scan request\n");
-
 	//Look up the toolchain we need
-	string toolhash = rxm.toolchain();
 	if(g_toolchains.find(toolhash) == g_toolchains.end())
 	{
 		LogError(
 			"Server requested a toolchain that we do not have installed (hash %s)\n"
 			"This should never happen.\n",
 			toolhash.c_str());
-		return;
+		return NULL;
 	}
 	Toolchain* chain = g_toolchains[toolhash];
 	LogDebug("    Toolchain: %s\n", chain->GetVersionString().c_str());
@@ -232,6 +237,39 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	//Make sure we have a clean slate to build in
 	//LogDebug("    Cleaning temp directory\n");
 	CleanBuildDir();
+
+	return chain;
+}
+
+/**
+	@brief Make sure a particular file is in our cache
+ */
+bool RefreshCachedFile(Socket& sock, string hash, string fname)
+{
+	if(!g_cache->IsCached(hash))
+	{
+		//Ask for the file
+		LogDebug("        Source file %s (%s) is not in cache, requesting it from server\n", fname.c_str(), hash.c_str());
+		string edat;
+		if(!GetRemoteFileByHash(sock, g_clientSettings->GetServerHostname(), hash, edat))
+			return false;
+		g_cache->AddFile(fname, hash, sha256(edat), edat.c_str(), edat.size());
+	}
+
+	return true;
+}
+
+/**
+	@brief Process a "dependency scan" message from a client
+ */
+void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
+{
+	LogDebug("Got a dependency scan request\n");
+
+	//Do setup stuff
+	Toolchain* chain = PrepBuild(rxm.toolchain());
+	if(!chain)
+		return;
 
 	//Get the relative path of the source file
 	string fname = rxm.fname();
@@ -246,15 +284,8 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 
 	//See if we have the file in our local cache
 	string hash = rxm.hash();
-	if(!g_cache->IsCached(hash))
-	{
-		//Ask for the file
-		LogDebug("        Source file %s is not in cache, requesting it from server\n", hash.c_str());
-		string edat;
-		if(!GetRemoteFileByHash(sock, g_clientSettings->GetServerHostname(), hash, edat))
-			return;
-		g_cache->AddFile(fname, hash, sha256(edat), edat.c_str(), edat.size());
-	}
+	if(!RefreshCachedFile(sock, hash, fname))
+		return;
 
 	//It's in cache now, read it
 	string data = g_cache->ReadCachedFile(hash);
@@ -296,6 +327,84 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 		rd->set_hash(hashes[d]);
 	}
 	SendMessage(sock, reply);
+}
+
+/**
+	@brief Process a "build request" message from a client
+ */
+void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
+{
+	LogDebug("\n\nBuild request\n");
+
+	//Do setup stuff
+	Toolchain* chain = PrepBuild(rxm.toolchain());
+	if(!chain)
+		return;
+
+	//Look up the list of sources
+	map<string, string> sources;				//Map of fname to hash
+	for(int i=0; i<rxm.sources_size(); i++)
+	{
+		auto src = rxm.sources(i);
+		sources[src.fname()] = src.hash();
+	}
+
+	//Get each source file
+	for(auto it : sources)
+	{
+		string fname = it.first;
+		string hash = it.second;
+
+		//See if we have the file in our local cache
+		if(!RefreshCachedFile(sock, hash, fname))
+			return;
+
+		//Write it
+		string path = g_builddir + "/" + GetDirOfFile(fname);
+		MakeDirectoryRecursive(path, 0700);
+		string data = g_cache->ReadCachedFile(hash);
+		string fpath = g_builddir + "/" + fname;
+		LogDebug("    Writing input file %s\n", fpath.c_str());
+		if(!PutFileContents(fpath, data))
+			return;
+	}
+
+	//Look up the list of flags
+	set<BuildFlag> flags;
+	for(int i=0; i<rxm.flags_size(); i++)
+		flags.emplace(BuildFlag(rxm.flags(i)));
+
+	//Format the return message
+	SplashMsg reply;
+	//auto replym = reply.mutable_dependencyresults();
+
+	/*
+	//Run the scanner proper
+	set<string> deps;
+	map<string, string> hashes;
+	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes))
+	{
+		LogDebug("    Scan failed\n");
+		replym->set_result(false);
+		SendMessage(sock, reply);
+		return;
+	}
+
+	//TODO: If the scan found files we're missing, ask for them!
+
+	//Successful completion of the scan, crunch the results
+	LogDebug("    Scan completed\n");
+	replym->set_result(true);
+	for(auto d : deps)
+	{
+		auto rd = replym->add_deps();
+		rd->set_fname(d);
+		rd->set_hash(hashes[d]);
+	}
+	SendMessage(sock, reply);
+	*/
+
+	//exit(-1);
 }
 
 void ShowVersion()

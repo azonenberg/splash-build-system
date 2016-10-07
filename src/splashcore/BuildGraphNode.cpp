@@ -37,7 +37,7 @@ using namespace std;
 /**
 	@brief Default constructor (for non-targets)
 
-	TODO: how do we use this?
+	TODO: how do we use this? Disallow?
  */
 BuildGraphNode::BuildGraphNode()
 {
@@ -50,6 +50,7 @@ BuildGraphNode::BuildGraphNode()
  */
 BuildGraphNode::BuildGraphNode(
 	BuildGraph* graph,
+	BuildFlag::FlagUsage usage,
 	string path,
 	string hash)
 	: m_ref(false)
@@ -62,6 +63,8 @@ BuildGraphNode::BuildGraphNode(
 	, m_script("")
 	, m_path(path)
 	, m_invalidInput(false)
+	, m_usage(usage)
+	, m_job(NULL)
 {
 	//No toolchain
 	m_toolchainHash = "";
@@ -72,6 +75,7 @@ BuildGraphNode::BuildGraphNode(
  */
 BuildGraphNode::BuildGraphNode(
 	BuildGraph* graph,
+	BuildFlag::FlagUsage usage,
 	string toolchain,
 	string arch,
 	string name,
@@ -87,6 +91,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_path(path)
 	, m_flags(flags)
 	, m_invalidInput(false)
+	, m_usage(usage)
 	, m_job(NULL)
 {
 	//Look up the hash of our toolchain
@@ -98,6 +103,7 @@ BuildGraphNode::BuildGraphNode(
  */
 BuildGraphNode::BuildGraphNode(
 	BuildGraph* graph,
+	BuildFlag::FlagUsage usage,
 	string toolchain,
 	string arch,
 	string config,
@@ -113,6 +119,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_name(name)
 	, m_script(scriptpath)
 	, m_path(path)
+	, m_usage(usage)
 	, m_job(NULL)
 {
 	//Ignore the toolchain and arches sections, they're already taken care of
@@ -247,7 +254,7 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 
 	//Create a new job for us
 	//Ref it again (implicit creation ref for us, second ref for the caller)
-	m_job = new BuildJob(prio, this, m_toolchainHash);
+	m_job = new BuildJob(prio, m_usage, this, m_toolchainHash);
 	m_job->Ref();
 
 	//Build each of our dependencies, if needed

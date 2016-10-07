@@ -43,7 +43,7 @@ CPPExecutableNode::CPPExecutableNode(
 	string path,
 	string toolchain,
 	YAML::Node& node)
-	: BuildGraphNode(graph, toolchain, arch, config, name, scriptpath, path, node)
+	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
 {
 	LogDebug("    Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
 		toolchain.c_str(), path.c_str());

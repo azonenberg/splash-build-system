@@ -252,7 +252,7 @@ message NodeList
 	repeated	NodeInfo		infos	= 1;	//List of nodes
 };
 
-//Request to build a target (or targets)
+//Request from a client to build a target (or targets)
 message BuildRequest
 {
 				string		target		= 1;	//The target to build (empty for all)
@@ -261,6 +261,16 @@ message BuildRequest
 				bool		rebuild		= 4;	//If true, discard the existing cache output
 												//of the last stage (if any) and re-run it
 };
+
+//Request from the server to build a single node
+message NodeBuildRequest
+{
+				string		arch		= 1;	//The architecture to build for
+				string		toolchain	= 2;	//The compiler we're using
+	repeated	Dependency	sources		= 3;	//List of source files we're using
+	repeated	string		flags		= 4;	//List of meta-flags for the compile
+				string		fname		= 5;	//File name of the output
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
@@ -290,5 +300,6 @@ message SplashMsg
 		ToolchainList			toolchainList			= 19;
 		NodeList				nodeList				= 20;
 		BuildRequest			buildRequest			= 21;
+		NodeBuildRequest		nodeBuildRequest		= 22;
 	}
 };

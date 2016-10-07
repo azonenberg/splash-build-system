@@ -32,8 +32,6 @@
 
 /**
 	@brief A single node in the build graph
-
-	TODO: make thread safe
  */
 class BuildGraphNode
 {
@@ -42,12 +40,14 @@ public:
 
 	BuildGraphNode(
 		BuildGraph* graph,
+		BuildFlag::FlagUsage usage,
 		std::string path,
 		std::string hash
 		);
 
 	BuildGraphNode(
 		BuildGraph* graph,
+		BuildFlag::FlagUsage usage,
 		std::string toolchain,
 		std::string arch,
 		std::string name,
@@ -57,6 +57,7 @@ public:
 
 	BuildGraphNode(
 		BuildGraph* graph,
+		BuildFlag::FlagUsage usage,
 		std::string toolchain,
 		std::string arch,
 		std::string config,
@@ -66,6 +67,15 @@ public:
 		YAML::Node& node);
 
 	virtual ~BuildGraphNode();
+
+	/**
+		@brief Get the graph that the node is attached to
+
+		No mutexing needed as this is static after object creation
+	 */
+	BuildGraph* GetGraph()
+	{ return m_graph; }
+
 
 	/**
 		@brief Get the hash of the node
@@ -134,6 +144,14 @@ public:
 	 */
 	std::string GetFilePath()
 	{ return m_path; }
+
+	/**
+		@brief Gets the path of our node (relative to the working copy)
+
+		No mutexing needed as this is static after object creation
+	 */
+	const std::set<std::string>& GetSources()
+	{ return m_sources; }
 
 	/**
 		@brief Gets our cache state
@@ -221,6 +239,11 @@ protected:
 		This is used for things like "missing input files" etc.
 	 */
 	bool m_invalidInput;
+
+	/**
+		@brief The type of build operation we're doing (important for us to use the correct flags)
+	 */
+	BuildFlag::FlagUsage m_usage;
 
 	/// @brief The job we currently have pending to build us
 	Job* m_job;

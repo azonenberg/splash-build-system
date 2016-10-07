@@ -127,24 +127,24 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		}
 
 		//Look for actual compile jobs
-		Job* bjob = g_scheduler->PopJob(id);
-		if(bjob != NULL)
+		Job* bj = g_scheduler->PopJob(id);
+		if(bj != NULL)
 		{
 			//We've kicked off the job, let others know
-			bjob->SetRunning();
+			bj->SetRunning();
 
 			//Push the job out to the client and run it
-			if(ProcessBuildJob(s, hostname, bjob))
+			if(ProcessBuildJob(s, hostname, bj))
 			{
-				bjob->SetDone();
-				bjob->Unref();
+				bj->SetDone();
+				bj->Unref();
 				continue;
 			}
 
 			//Job FAILED to run (client disconnected?) - update status
 			//TODO: Put it back in the queue or something fault tolerant?
-			bjob->SetCanceled();
-			bjob->Unref();
+			bj->SetCanceled();
+			bj->Unref();
 			continue;
 		}
 
@@ -252,23 +252,76 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 {
 	//Make sure it's a build job (if not, it was somehow put in the wrong queue)
-	BuildJob* bjob = dynamic_cast<BuildJob*>(job);
-	if(!bjob)
+	BuildJob* bj = dynamic_cast<BuildJob*>(job);
+	if(!bj)
 	{
 		LogError("ProcessBuildJob called with a non-build job\n");
 		return false;
 	}
 
-	//TODO: Push it to the client
+	BuildGraphNode* node = bj->GetOutputNode();
+	auto wc = node->GetGraph()->GetWorkingCopy();
+	auto path = node->GetFilePath();
+	LogDebug("Run build job %s\n", path.c_str());
 
-	//TODO: Get results
+	//Look up the flags
+	set<BuildFlag> flags;
+	node->GetFlagsForUseAt(bj->GetFlagUsage(), flags);
+
+	//Build the scan request
+	SplashMsg req;
+	auto reqm = req.mutable_nodebuildrequest();
+	reqm->set_arch(node->GetArch());
+	reqm->set_toolchain(node->GetToolchainHash());
+	for(auto src : node->GetSources())
+	{
+		string hash = wc->GetFileHash(src);
+		auto dep = reqm->add_sources();
+		dep->set_fname(src);
+		dep->set_hash(hash);
+	}
+	for(auto f : flags)
+		reqm->add_flags(f);
+	reqm->set_fname(path);
+
+	//Send the initial scan request to the client
+	if(!SendMessage(s, req, hostname))
+		return false;
+
+	//Let the client do its thing
+	while(true)
+	{
+		//Get a response. It's either "done" or "get more files"
+		SplashMsg rxm;
+		if(!RecvMessage(s, rxm, hostname))
+			return false;
+
+		auto type = rxm.Payload_case();
+
+		switch(type)
+		{
+			//Asking for more data
+			case SplashMsg::kContentRequestByHash:
+				if(!ProcessContentRequest(s, hostname, rxm))
+					return false;
+				break;
+
+			//Done, we have the dependencies
+			//case SplashMsg::kDependencyResults:
+			//	if(!ProcessDependencyResults(s, hostname, rxm, job))
+			//		return false;
+			//	return true;
+
+			//Whatever it is, it makes no sense
+			default:
+				LogError("Unknown / garbage message type\n");
+				return false;
+		}
+	}
 
 	//TODO: Update server-side cache
 
 	//TODO: Unblock any jobs that are pending
 
-	auto node = bjob->GetOutputNode();
-	auto path = node->GetFilePath();
-	LogDebug("TODO: Run build job %p (for %s)\n", job, path.c_str());
 	return true;
 }

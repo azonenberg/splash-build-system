@@ -34,13 +34,12 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-BuildJob::BuildJob(Priority prio, BuildGraphNode* output, string toolchain)
+BuildJob::BuildJob(Priority prio, BuildFlag::FlagUsage usage, BuildGraphNode* output, string toolchain)
 	: Job(prio, toolchain)
+	, m_usage(usage)
 	, m_output(output)
 {
 	//TODO: Mark the job as pending in the cache so we can share build status between multiple concurrent builds
-
-	//TODO: set blocking etc
 }
 
 BuildJob::~BuildJob()
