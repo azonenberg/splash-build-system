@@ -253,6 +253,5 @@ void Scheduler::SubmitJob(Job* job)
 
 	LogDebug("Submit job %p (%s)\n", job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
 
-	//TODO: push_back (use reverse order for now to test job scheduling etc
-	m_runnableJobs[job->GetPriority()].push_front(job);
+	m_runnableJobs[job->GetPriority()].push_back(job);
 }
