@@ -138,6 +138,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			{
 				bjob->SetDone();
 				bjob->Unref();
+				continue;
 			}
 
 			//Job FAILED to run (client disconnected?) - update status
