@@ -34,10 +34,10 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-Job::Job(Job::Priority prio, string toolchain, bool blocked)
+Job::Job(Job::Priority prio, string toolchain)
 	: m_priority(prio)
 	, m_toolchainHash(toolchain)
-	, m_status(blocked ? STATUS_BLOCKING : STATUS_PENDING)
+	, m_status(STATUS_PENDING)
 	, m_refcount(1)				//one ref, to our creator
 {
 
@@ -76,14 +76,6 @@ void Job::Unref()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 
-void Job::AddDependency(Job* job)
-{
-	lock_guard<mutex> lock(m_mutex);
-
-	job->Ref();
-	m_dependencies.emplace(job);
-}
-
 Job::Status Job::GetStatus()
 {
 	lock_guard<mutex> lock(m_mutex);
@@ -112,4 +104,59 @@ void Job::SetRunning()
 {
 	lock_guard<mutex> lock(m_mutex);
 	m_status = STATUS_RUNNING;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Scheduling
+
+void Job::AddDependency(Job* job)
+{
+	lock_guard<mutex> lock(m_mutex);
+
+	job->Ref();
+	m_dependencies.emplace(job);
+}
+
+/**
+	@brief Checks if this job is runnable (all dependency jobs are complete)
+ */
+bool Job::IsRunnable()
+{
+	lock_guard<mutex> lock(m_mutex);
+
+	//Check each of our dependencies
+	for(auto d : m_dependencies)
+	{
+		auto status = d->GetStatus();
+
+		//If the dependency was canceled we will never be runnable
+		if(status == STATUS_CANCELED)
+			return false;
+
+		//If the dependency isn't done, no go
+		if(status != STATUS_DONE)
+			return false;
+	}
+
+	return true;
+}
+
+/**
+	@brief Checks if this job is failed (at least one dependency job was canceled)
+ */
+bool Job::IsFailed()
+{
+	lock_guard<mutex> lock(m_mutex);
+
+	//Check each of our dependencies
+	for(auto d : m_dependencies)
+	{
+		auto status = d->GetStatus();
+
+		//If the dependency was canceled we will never be runnable
+		if(status == STATUS_CANCELED)
+			return true;
+	}
+
+	return false;
 }

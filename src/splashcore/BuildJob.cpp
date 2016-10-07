@@ -35,11 +35,10 @@ using namespace std;
 // Construction / destruction
 
 BuildJob::BuildJob(Priority prio, BuildGraphNode* output, string toolchain)
-	: Job(prio, toolchain, true)
+	: Job(prio, toolchain)
 	, m_output(output)
 {
-	//Mark the job as pending in the cache
-
+	//TODO: Mark the job as pending in the cache so we can share build status between multiple concurrent builds
 
 	//TODO: set blocking etc
 }

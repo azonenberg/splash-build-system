@@ -86,18 +86,14 @@ protected:
 	std::map<clientID, scanqueue> m_pendingScanJobs;
 
 	/**
-		@brief Waiting list (jobs we cannot yet run b/c some prereqs are not met)
+		@brief TODO: Jobs currently executing on each node (need to push back to main run queue if the node disconnects)
 	 */
 
 	/**
-		@brief Jobs currently executing on each node (need to push back to main run queue if the node disconnects)
-	 */
-
-	/**
-		@brief Jobs which are currently eligible to run, grouped by priority.
+		@brief Jobs which are currently waiting to run, grouped by priority.
 
 		Within each queue jobs are sorted in FIFO order. Note that jobs may run out-of-order because
-		not all jobs can run on any given node.
+		not all jobs can run on any given node and some may be blocking on dependencies
 	 */
 	std::map<Job::Priority, jobqueue> m_runnableJobs;
 };

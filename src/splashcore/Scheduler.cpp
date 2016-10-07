@@ -84,6 +84,8 @@ DependencyScanJob* Scheduler::PopScanJob(clientID id)
 	if(m_pendingScanJobs[id].empty())
 		return NULL;
 
+	//TODO: Check if the job is runnable and wait if it's not
+
 	auto ret = *m_pendingScanJobs[id].begin();
 	m_pendingScanJobs[id].pop_front();
 
@@ -137,6 +139,12 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 			//	job, job->GetToolchain().c_str(), id.c_str());
 			continue;
 		}
+
+		//If we can't run the job b/c of dependencies, keep looking
+		if(!job->IsRunnable())
+			continue;
+
+		//TODO: If the job was canceled, delete it from the queue and cancel everything
 
 		//We're good, use this job
 		jobs.erase(it);
@@ -243,8 +251,8 @@ void Scheduler::SubmitJob(Job* job)
 	lock_guard<recursive_mutex> lock(m_mutex);
 	job->Ref();
 
-	//TODO: if not yet runnable, move it to a different queue
 	LogDebug("Submit job %p (%s)\n", job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
 
-	m_runnableJobs[job->GetPriority()].push_back(job);
+	//TODO: push_back (use reverse order for now to test job scheduling etc
+	m_runnableJobs[job->GetPriority()].push_front(job);
 }

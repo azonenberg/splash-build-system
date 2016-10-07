@@ -40,7 +40,7 @@ DependencyScanJob::DependencyScanJob(
 	string toolchainHash,
 	string arch,
 	set<BuildFlag> flags )
-	: Job(Job::PRIO_NORMAL, toolchainHash, false)						//TODO: generate input etc if needed
+	: Job(Job::PRIO_NORMAL, toolchainHash)						//TODO: generate input etc if needed
 	, m_sourcePath(path)
 	, m_workingCopy(wc)
 	, m_flags(flags)

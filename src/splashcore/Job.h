@@ -53,7 +53,7 @@ public:
 		PRIO_COUNT			//Total number of priorities, used for queue management etc
 	};
 
-	Job(Priority prio, std::string toolchain, bool blocked);
+	Job(Priority prio, std::string toolchain);
 
 protected:
 	//must delete via refcounter
@@ -71,7 +71,6 @@ public:
 
 	enum Status
 	{
-		STATUS_BLOCKING,	//The job is blocking because some of its dependencies have not yet been met
 		STATUS_PENDING,		//The job is in line waiting to run.
 		STATUS_RUNNING,		//The job is currently running.
 		STATUS_DONE,		//The job completed running (may or may not have been successful)
@@ -93,6 +92,9 @@ public:
 	{ return m_toolchainHash; }
 
 	void AddDependency(Job* job);
+
+	bool IsRunnable();
+	bool IsFailed();
 
 protected:
 
