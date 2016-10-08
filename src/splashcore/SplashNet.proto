@@ -270,7 +270,24 @@ message NodeBuildRequest
 	repeated	Dependency	sources		= 3;	//List of source files we're using
 	repeated	string		flags		= 4;	//List of meta-flags for the compile
 				string		fname		= 5;	//File name of the output
-}
+};
+
+//A single file built by a compile
+message BuiltFile
+{
+				string		fname		= 1;	//Name of the output file
+				string		hash		= 2;	//Hash of the file (not the node)
+				bytes		data		= 3;	//Contents of the file
+};
+
+//Response to a build request
+message NodeBuildResults
+{
+				bool		success		= 1;	//true if successful build, false if failed
+				string		stdout		= 2;	//command output
+				string		fname		= 3;	//primary output file name
+	repeated	BuiltFile	outputs		= 4;	//The output files
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
@@ -301,5 +318,6 @@ message SplashMsg
 		NodeList				nodeList				= 20;
 		BuildRequest			buildRequest			= 21;
 		NodeBuildRequest		nodeBuildRequest		= 22;
+		NodeBuildResults		nodeBuildResults		= 23;
 	}
 };
