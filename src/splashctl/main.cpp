@@ -31,6 +31,8 @@
 
 using namespace std;
 
+void sig_handler(int sig);
+
 void ShowUsage();
 void ShowVersion();
 
@@ -45,28 +47,28 @@ int main(int argc, char* argv[])
 	int port = 49000;
 
 	Severity console_verbosity = Severity::NOTICE;
-	
+
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
 	{
 		string s(argv[i]);
-		
+
 		//Let the logger eat its args first
 		if(ParseLoggerArguments(i, argc, argv, console_verbosity))
 			continue;
-		
+
 		else if(s == "--help")
 		{
 			ShowUsage();
 			return 0;
 		}
-		
+
 		else if(s == "--version")
 		{
 			ShowVersion();
 			return 0;
 		}
-		
+
 		//Last arg without a switch is the port number
 		//TODO: mandatory arguments to introduce this?
 		else
@@ -87,7 +89,7 @@ int main(int argc, char* argv[])
 		}
 
 	}
-	
+
 	//Set up logging
 	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
 
@@ -97,7 +99,11 @@ int main(int argc, char* argv[])
 		ShowVersion();
 		printf("\n");
 	}
-	
+
+	//Install signal handler
+	signal(SIGINT, sig_handler);
+	signal(SIGPIPE, sig_handler);
+
 	//Initialize global data structures
 	g_cache = new Cache("splashctl");
 	g_nodeManager = new NodeManager;
@@ -116,7 +122,7 @@ int main(int argc, char* argv[])
 		thread t(ClientThread, server.Accept().Detach());
 		t.detach();
 	}
-	
+
 	//Cleanup
 	delete g_nodeManager;
 	delete g_scheduler;
@@ -138,4 +144,20 @@ void ShowUsage()
 {
 	printf("Usage: splashctl [control_port]\n");
 	exit(0);
+}
+
+void sig_handler(int sig)
+{
+	switch(sig)
+	{
+		case SIGINT:
+			//TODO: quit gracefully
+			printf("Quitting...\n");
+			exit(0);
+			break;
+
+		case SIGPIPE:
+			//ignore
+			break;
+	}
 }
