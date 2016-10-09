@@ -39,6 +39,7 @@ Cache* g_cache = NULL;
 Cache::Cache(string cachename)
 {
 	LogVerbose("Initializing cache subsystem...\n");
+	LogIndenter li;
 
 	//TODO: get cache path from command line arg or something?
 	//Hard-coding the path prevents more than one splashctl instance from running on a given server.
@@ -87,7 +88,7 @@ Cache::Cache(string cachename)
 			}
 		}
 
-		LogVerbose("    %d cache entries loaded\n", (int)m_cacheIndex.size());
+		LogVerbose("%d cache entries loaded\n", (int)m_cacheIndex.size());
 	}
 }
 

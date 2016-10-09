@@ -340,7 +340,8 @@ bool GNUToolchain::Compile(
 	set<BuildFlag> flags,
 	map<string, string>& outputs)
 {
-	LogDebug("        Compile for arch %s\n", triplet.c_str());
+	LogDebug("Compile for arch %s\n", triplet.c_str());
+	LogIndenter li;
 
 	if(!VerifyFlags(triplet))
 		return false;
@@ -356,9 +357,9 @@ bool GNUToolchain::Compile(
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";
-	LogDebug("        Command line: %s\n", cmdline.c_str());
+	LogDebug("Command line: %s\n", cmdline.c_str());
 
-	LogDebug("        GNUToolchain::Compile() not implemented\n");
+	LogDebug("GNUToolchain::Compile() not implemented\n");
 	return false;
 }
 
