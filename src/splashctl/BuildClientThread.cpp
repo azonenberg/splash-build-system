@@ -145,7 +145,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			//TODO: Put it back in the queue or something fault tolerant?
 			bj->SetCanceled();
 			bj->Unref();
-			continue;
+			break;
 		}
 
 		//Wait a while for more work
