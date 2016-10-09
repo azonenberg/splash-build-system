@@ -234,11 +234,12 @@ Toolchain* PrepBuild(string toolhash)
 			toolhash.c_str());
 		return NULL;
 	}
+
 	Toolchain* chain = g_toolchains[toolhash];
-	LogDebug("    Toolchain: %s\n", chain->GetVersionString().c_str());
+	LogDebug("Toolchain: %s\n", chain->GetVersionString().c_str());
 
 	//Make sure we have a clean slate to build in
-	//LogDebug("    Cleaning temp directory\n");
+	//LogDebug("Cleaning temp directory\n");
 	CleanBuildDir();
 
 	return chain;
@@ -249,10 +250,12 @@ Toolchain* PrepBuild(string toolhash)
  */
 bool RefreshCachedFile(Socket& sock, string hash, string fname)
 {
+	LogIndenter li;
+
 	if(!g_cache->IsCached(hash))
 	{
 		//Ask for the file
-		LogDebug("        Source file %s (%s) is not in cache, requesting it from server\n", fname.c_str(), hash.c_str());
+		LogDebug("Source file %s (%s) is not in cache, requesting it from server\n", fname.c_str(), hash.c_str());
 		string edat;
 		if(!GetRemoteFileByHash(sock, g_clientSettings->GetServerHostname(), hash, edat))
 			return false;
@@ -404,7 +407,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	map<string, string> hashes;
 	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes))
 	{
-		LogDebug("    Scan failed\n");
+		LogDebug("Scan failed\n");
 		replym->set_result(false);
 		SendMessage(sock, reply);
 		return;
@@ -415,7 +418,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	//TODO: If the scan found files we're missing, ask for them!
 
 	//Successful completion of the scan, crunch the results
-	LogDebug("    Scan completed\n");
+	LogDebug("Scan completed\n");
 	replym->set_result(true);
 	for(auto d : deps)
 	{
