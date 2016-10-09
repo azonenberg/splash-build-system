@@ -139,6 +139,7 @@ void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVect
 std::string MakeStringLowercase(std::string str);
 
 std::string ShellCommand(std::string cmd, bool trimNewline = true);
+int ShellCommand(std::string cmd, std::string& stdout);
 
 std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
 

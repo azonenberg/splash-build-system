@@ -30,6 +30,8 @@
 #include "splashcore.h"
 #include "../log/log.h"
 
+#include <sys/wait.h>
+
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,10 +132,79 @@ string ShellCommand(string cmd, bool trimNewline)
 	while(NULL != fgets(line, sizeof(line), fp))
 		retval += line;
 	pclose(fp);
-	
+
 	if(trimNewline)
 		retval.erase(retval.find_last_not_of(" \n\r\t")+1);
 	return retval;
+}
+
+/**
+	@brief Runs a shell command and returns the exit code, putting stdout/stderr (merged) in an argument
+ */
+int ShellCommand(string cmd, string& stdout)
+{
+	int code = 42;
+
+	//Make the pipes for stdout/err
+	int stdout_pipes[2];
+	if(0 != pipe(stdout_pipes))
+		return -1;
+	int write_end = stdout_pipes[1];
+	int read_end = stdout_pipes[0];
+
+	//Fork off the background process
+	pid_t pid = fork();
+	if(pid < 0)
+		LogFatal("Fork failed\n");
+
+	//We're the child process? Set up the pipes then exec the commands
+	if(pid == 0)
+	{
+		//We're not using stdin, so close it
+		close(STDIN_FILENO);
+
+		//Close the read end of the pipe at our end
+		close(read_end);
+
+		//Copy stuff to stdout/stderr
+		if(dup2(write_end, STDOUT_FILENO) < 0)
+			LogFatal("dup2 #1 failed\n");
+		if(dup2(write_end, STDERR_FILENO) < 0)
+			LogFatal("dup2 #2 failed\n");
+
+		//Run the process (in sh for now)
+		//cmd += "; exit";
+		execl("/bin/sh", "/bin/sh", "-c", cmd.c_str(), NULL);
+
+		//If we get here, it failed
+		LogError("fork failed\n");
+		exit(69);
+	}
+
+	//Parent process, crunch it
+	else
+	{
+		//Close the write end of the pipe at our end
+		close(write_end);
+
+		//Read stuff into the stdout buffer
+		char tmp[1024] = {0};
+		while(true)
+		{
+			int len = read(read_end, tmp, 1023);
+			if(len <= 0)
+				break;
+
+			stdout += string(tmp, len);
+		}
+
+		//Process has terminated, clean up
+		if(waitpid(pid, &code, 0) <= 0)
+			LogFatal("waitpid failed\n");
+	}
+
+	//Get the exit code
+	return code >> 8;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +225,7 @@ void ParseLines(string str, vector<string>& lines, bool clearVector)
 {
 	if(clearVector)
 		lines.clear();
-		
+
 	string s;
 	size_t len = str.length();
 	for(size_t i=0; i<len; i++)
@@ -180,7 +251,7 @@ string str_replace(const string& search, const string& replace, string subject)
 		subject.replace(pos, search.length(), replace);
 		pos += replace.length();
 	}
-	
+
 	return subject;
 }
 
@@ -247,7 +318,7 @@ bool DoesDirectoryExist(string fname)
 	@brief Attempts to open a file and returns a boolean value indicating whether it exists and is readable
  */
 bool DoesFileExist(string fname)
-{		
+{
 	int hfile = open(fname.c_str(), O_RDONLY);
 	if(hfile < 0)
 		return false;
@@ -291,7 +362,7 @@ void FindFiles(string dir, vector<string>& files)
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
 		LogFatal("Directory %s could not be opened\n", dir.c_str());
-	
+
 	dirent ent;
 	dirent* pent;
 	while(0 == readdir_r(hdir, &ent, &pent))
@@ -300,23 +371,23 @@ void FindFiles(string dir, vector<string>& files)
 			break;
 		if(ent.d_name[0] == '.')
 			continue;
-		
+
 		string fname = dir + "/" + ent.d_name;
 		if(DoesDirectoryExist(fname))
 			continue;
-			
+
 		files.push_back(fname);
 	}
-	
+
 	//Sort the list of files to ensure determinism
 	sort(files.begin(), files.end());
-	
+
 	closedir(hdir);
 }
 
 /**
 	@brief Find all files with the specified extension in a given directory.
-	
+
 	The supplied extension must include the leading dot.
  */
 void FindFilesByExtension(string dir, string ext, vector<string>& files)
@@ -324,7 +395,7 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
 		LogFatal("Directory %s could not be opened\n", dir.c_str());
-	
+
 	dirent ent;
 	dirent* pent;
 	while(0 == readdir_r(hdir, &ent, &pent))
@@ -333,16 +404,16 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 			break;
 		if(ent.d_name[0] == '.')
 			continue;
-			
+
 		//Extension match
 		string fname = dir + "/" + ent.d_name;
 		if(fname.find(ext) == (fname.length() - ext.length()) )
 			files.push_back(fname);
 	}
-	
+
 	//Sort the list of files to ensure determinism
 	sort(files.begin(), files.end());
-	
+
 	closedir(hdir);
 }
 
@@ -354,7 +425,7 @@ void FindFilesBySubstring(string dir, string sub, vector<string>& files)
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
 		LogFatal("Directory %s could not be opened\n", dir.c_str());
-	
+
 	dirent ent;
 	dirent* pent;
 	while(0 == readdir_r(hdir, &ent, &pent))
@@ -363,22 +434,22 @@ void FindFilesBySubstring(string dir, string sub, vector<string>& files)
 			break;
 		if(ent.d_name[0] == '.')
 			continue;
-		
+
 		//Extension match
 		string fname = dir + "/" + ent.d_name;
 		if(fname.find(sub) != string::npos )
 			files.push_back(fname);
 	}
-	
+
 	//Sort the list of files to ensure determinism
 	sort(files.begin(), files.end());
-	
+
 	closedir(hdir);
 }
 
 /**
 	@brief Find all subdirectories in a given directory.
-	
+
 	@param dir			Directory to look in
 	@param subdirs		Array of absolute paths to located subdirectories
  */
@@ -387,7 +458,7 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
 		LogFatal("Directory %s could not be opened\n", dir.c_str());
-	
+
 	dirent ent;
 	dirent* pent;
 	while(0 == readdir_r(hdir, &ent, &pent))
@@ -396,17 +467,17 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 			break;
 		if(ent.d_name[0] == '.')	//don't find hidden dirs
 			continue;
-		
+
 		string fname = dir + "/" + ent.d_name;
 		if(!DoesDirectoryExist(fname))
 			continue;
 
 		subdirs.push_back(fname);
 	}
-	
+
 	//Sort the list of directories to ensure determinism
 	sort(subdirs.begin(), subdirs.end());
-	
+
 	closedir(hdir);
 }
 
@@ -439,7 +510,7 @@ void MakeDirectoryRecursive(string path, int mode)
 		}
 		if(!DoesDirectoryExist(parent))
 			MakeDirectoryRecursive(parent, mode);
-		
+
 		//Make the directory
 		if(0 != mkdir(path.c_str(), 0755))
 		{
