@@ -39,7 +39,7 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 {
 	//Get the full toolchain version
 	m_stringVersion = string("GNU Linker") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
-	
+
 	//Parse it
 	if(2 != sscanf(m_stringVersion.c_str(), "GNU Linker %4d.%4d",
 		&m_majorVersion, &m_minorVersion))
@@ -55,7 +55,7 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	vector<string> lines;
 	ParseLines(lines, archlist);
 	*/
-	
+
 	//Use the arch in the file name
 	m_triplets.emplace(triplet);
 
@@ -67,7 +67,7 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 		m_triplets.emplace(str_replace("gnu", "gnux32", triplet));
 	}
 	//TODO: mips/mipsel etc
-	
+
 	//Generate the hash
 	//TODO: Anything else to add here?
 	m_hash = sha256(m_stringVersion + triplet);
@@ -92,5 +92,16 @@ bool GNULinkerToolchain::ScanDependencies(
 	map<string, string>& /*dephashes*/)
 {
 	LogError("GNULinkerToolchain::ScanDependencies() is meaningless for now\n");
+	return false;
+}
+
+bool GNULinkerToolchain::Build(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs)
+{
+	LogDebug("GNULinkerToolchain::Build() not implemented\n");
 	return false;
 }

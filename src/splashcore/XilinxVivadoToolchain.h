@@ -39,6 +39,13 @@ public:
 	XilinxVivadoToolchain(std::string basepath, int major, int minor);
 	virtual ~XilinxVivadoToolchain();
 
+	virtual bool Build(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs);
+
 protected:
 };
 

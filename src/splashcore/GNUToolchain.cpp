@@ -45,7 +45,7 @@ GNUToolchain::GNUToolchain(string arch)
 {
 	/////////////////////////////////////////////////////////////////////////////
 	// X86
-	
+
 	if(arch == "x86_64-linux-gnu")
 	{
 		m_archflags["x86_64-linux-gnu"] 	= "-m64";
@@ -62,7 +62,7 @@ GNUToolchain::GNUToolchain(string arch)
 	{
 		m_archflags[arch] = "";
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////
 	// MIPS
 
@@ -71,7 +71,7 @@ GNUToolchain::GNUToolchain(string arch)
 		m_archflags["mips-elf"] 	= "-EB";
 		m_archflags["mipsel-elf"] 	= "-EL";
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////
 	// ARM
 
@@ -79,17 +79,17 @@ GNUToolchain::GNUToolchain(string arch)
 	{
 		m_archflags[arch] = "";
 	}
-	
+
 	else if(arch == "arm-linux-gnueabi")
 	{
 		m_archflags[arch] = "";
 	}
-	
+
 	else if(arch == "arm-none-eabi")
 	{
 		m_archflags[arch] = "";
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////
 	// INVALID
 
@@ -315,4 +315,29 @@ bool GNUToolchain::ScanDependencies(
 	*/
 
 	return true;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Actual compilation
+
+bool GNUToolchain::Compile(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs)
+{
+	LogDebug("GNUToolchain::Compile() not implemented\n");
+	return false;
+}
+
+bool GNUToolchain::Link(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs)
+{
+	LogDebug("GNUToolchain::Link() not implemented\n");
+	return false;
 }

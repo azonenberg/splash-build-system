@@ -41,25 +41,25 @@ XilinxISEToolchain::XilinxISEToolchain(string basepath, int major, int minor)
 	m_majorVersion = major;
 	m_minorVersion = minor;
 	m_patchVersion = 0;
-	
+
 	//Format the full version
 	char tmp[128];
 	snprintf(tmp, sizeof(tmp), "Xilinx ISE %d.%d", m_majorVersion, m_minorVersion);
 	m_stringVersion = tmp;
-	
+
 	//Set the list of target architectures
 	//For now, only WebPack devices.
 	//TODO: determine if we have a full ISE license, add support for that
 	//TODO: add more ISE device families
-	
+
 	m_triplets.emplace("coolrunner2-xc2c32a");
 	m_triplets.emplace("coolrunner2-xc2c64a");
 	m_triplets.emplace("coolrunner2-xc2c128");
 	m_triplets.emplace("coolrunner2-xc2c256");
-	
+
 	m_triplets.emplace("spartan3a-xc3s50a");
 	m_triplets.emplace("spartan3a-xc3s200a");
-	
+
 	m_triplets.emplace("spartan6-xc6slx4");
 	m_triplets.emplace("spartan6-xc6slx9");
 	m_triplets.emplace("spartan6-xc6slx16");
@@ -69,17 +69,17 @@ XilinxISEToolchain::XilinxISEToolchain(string basepath, int major, int minor)
 	m_triplets.emplace("spartan6-xc6slx45t");
 	m_triplets.emplace("spartan6-xc6slx75");
 	m_triplets.emplace("spartan6-xc6slx75t");
-	
+
 	m_triplets.emplace("artix7-xc7a100t");
 	m_triplets.emplace("artix7-xc7a200t");
-	
+
 	m_triplets.emplace("kintex7-xc7k70t");
 	m_triplets.emplace("kintex7-xc7k160t");
-	
+
 	m_triplets.emplace("zynq7-xc7z010");
 	m_triplets.emplace("zynq7-xc7z020");
 	m_triplets.emplace("zynq7-xc7z030");
-	
+
 	//Generate the hash
 	m_hash = sha256(string("Xilinx ISE ") + m_stringVersion);
 }
@@ -90,3 +90,17 @@ XilinxISEToolchain::~XilinxISEToolchain()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Toolchain properties
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Actual compilation
+
+bool XilinxISEToolchain::Build(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs)
+{
+	LogDebug("XilinxISEToolchain::Build() not implemented\n");
+	return false;
+}

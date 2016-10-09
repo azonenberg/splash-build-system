@@ -120,3 +120,14 @@ bool GNUCPPToolchain::ScanDependencies(
 	return GNUToolchain::ScanDependencies(
 		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes);
 }
+
+bool GNUCPPToolchain::Build(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs)
+{
+	LogDebug("GNUCPPToolchain::Build() not implemented\n");
+	return false;
+}

@@ -49,7 +49,21 @@ public:
 		const std::vector<std::string>& sysdirs,
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes);
-	
+
+	virtual bool Compile(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs);
+
+	virtual bool Link(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs);
+
 protected:
 	std::string FlagToString(BuildFlag flag);
 

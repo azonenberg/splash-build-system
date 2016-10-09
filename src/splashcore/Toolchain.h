@@ -186,6 +186,12 @@ public:
 	std::string GetObjectSuffix()
 	{ return m_objSuffix; }
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Actual compilation stuff
+
+public:
+
 	virtual bool ScanDependencies(
 		std::string triplet,
 		std::string path,
@@ -193,6 +199,16 @@ public:
 		std::set<BuildFlag> flags,
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes) =0;
+
+	virtual bool Build(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs) =0;
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Internal state
 
 protected:
 

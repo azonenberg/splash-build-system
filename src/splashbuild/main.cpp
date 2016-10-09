@@ -350,6 +350,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	}
 
 	//Get each source file
+	set<string> fnames;
 	for(auto it : sources)
 	{
 		string fname = it.first;
@@ -367,6 +368,8 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 		LogDebug("    Writing input file %s\n", fpath.c_str());
 		if(!PutFileContents(fpath, data))
 			return;
+
+		fnames.emplace(fpath);
 	}
 
 	//Look up the list of flags
@@ -376,7 +379,19 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 
 	//Format the return message
 	SplashMsg reply;
-	//auto replym = reply.mutable_dependencyresults();
+	auto replym = reply.mutable_nodebuildresults();
+
+	//Do the actual build
+	map<string, string> outputs;
+	if(!chain->Build(
+		rxm.arch(),
+		fnames,
+		rxm.fname(),
+		flags,
+		outputs))
+	{
+		//TODO: handle failure
+	}
 
 	/*
 	//Run the scanner proper
@@ -389,7 +404,9 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 		SendMessage(sock, reply);
 		return;
 	}
+	*/
 
+	/*
 	//TODO: If the scan found files we're missing, ask for them!
 
 	//Successful completion of the scan, crunch the results

@@ -76,3 +76,14 @@ bool RemoteToolchain::ScanDependencies(
 	LogError("RemoteToolchain::ScanDependencies() cannot be used (must invoke scheduler to do a remote scan job)\n");
 	return false;
 }
+
+bool RemoteToolchain::Build(
+	string /*triplet*/,
+	set<string> /*sources*/,
+	string /*fname*/,
+	set<BuildFlag> /*flags*/,
+	map<string, string>& /*outputs*/)
+{
+	LogError("RemoteToolchain::Build() cannot be used (must invoke scheduler to do a remote scan job)\n");
+	return false;
+}

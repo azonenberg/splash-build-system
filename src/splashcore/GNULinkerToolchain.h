@@ -49,6 +49,13 @@ public:
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes);
 
+	virtual bool Build(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs);
+
 protected:
 };
 

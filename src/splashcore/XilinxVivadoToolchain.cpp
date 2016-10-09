@@ -41,26 +41,26 @@ XilinxVivadoToolchain::XilinxVivadoToolchain(string basepath, int major, int min
 	m_majorVersion = major;
 	m_minorVersion = minor;
 	m_patchVersion = 0;
-	
+
 	//Format the full version
 	char tmp[128];
 	snprintf(tmp, sizeof(tmp), "Xilinx Vivado %d.%d", m_majorVersion, m_minorVersion);
 	m_stringVersion = tmp;
-	
+
 	//Set the list of target architectures
 	//TODO: Do this based on version number etc
 	//We know that basic 7 series are supported everywhere
-	
+
 	m_triplets.emplace("artix7-xc7a100t");
 	m_triplets.emplace("artix7-xc7a200t");
-	
+
 	m_triplets.emplace("kintex7-xc7k70t");
 	m_triplets.emplace("kintex7-xc7k160t");
-	
+
 	m_triplets.emplace("zynq7-xc7z010");
 	m_triplets.emplace("zynq7-xc7z020");
 	m_triplets.emplace("zynq7-xc7z030");
-	
+
 	//Generate the hash
 	m_hash = sha256(string("Xilinx Vivado ") + m_stringVersion);
 }
@@ -71,3 +71,17 @@ XilinxVivadoToolchain::~XilinxVivadoToolchain()
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Toolchain properties
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Actual compilation
+
+bool XilinxVivadoToolchain::Build(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs)
+{
+	LogDebug("XilinxVivadoToolchain::Build() not implemented\n");
+	return false;
+}
