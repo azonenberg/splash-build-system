@@ -51,6 +51,7 @@ public:
 		std::map<std::string, std::string>& dephashes);
 
 	virtual bool Compile(
+		std::string exe,
 		std::string triplet,
 		std::set<std::string> sources,
 		std::string fname,
@@ -66,6 +67,7 @@ public:
 
 protected:
 	std::string FlagToString(BuildFlag flag);
+	bool VerifyFlags(std::string triplet);
 
 	/**
 		@brief Virtual include path we use for system include files.

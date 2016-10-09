@@ -104,11 +104,8 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 	//LogDebug("    Finding default include paths\n");
 
 	//We must have valid flags for this arch
-	if(m_archflags.find(arch) == m_archflags.end())
-	{
-		LogError("Don't know how to target %s\n", arch.c_str());
+	if(!VerifyFlags(arch))
 		return;
-	}
 	string aflags = m_archflags[arch];
 
 	//Ask the compiler what the paths are
@@ -179,6 +176,21 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	}
 }
 
+/**
+	@brief
+ */
+bool GNUToolchain::VerifyFlags(string triplet)
+{
+	//We must have valid flags for this arch
+	if(m_archflags.find(triplet) == m_archflags.end())
+	{
+		LogError("Don't know how to target %s\n", triplet.c_str());
+		return false;
+	}
+
+	return true;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actual operations
 
@@ -195,12 +207,9 @@ bool GNUToolchain::ScanDependencies(
 	set<string>& deps,
 	map<string, string>& dephashes)
 {
-	//We must have valid flags for this arch
-	if(m_archflags.find(triplet) == m_archflags.end())
-	{
-		LogError("Don't know how to target %s\n", triplet.c_str());
+	//Make sure we're good on the flags
+	if(!VerifyFlags(triplet))
 		return false;
-	}
 
 	//Look up some arch-specific stuff
 	string aflags = m_archflags[triplet];
@@ -320,14 +329,36 @@ bool GNUToolchain::ScanDependencies(
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actual compilation
 
+/**
+	@brief Compile one or more source files to an object file
+ */
 bool GNUToolchain::Compile(
+	string exe,
 	string triplet,
 	set<string> sources,
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs)
 {
-	LogDebug("GNUToolchain::Compile() not implemented\n");
+	LogDebug("        Compile for arch %s\n", triplet.c_str());
+
+	if(!VerifyFlags(triplet))
+		return false;
+
+	//Look up some arch-specific stuff
+	string aflags = m_archflags[triplet];
+	auto apath = m_virtualSystemIncludePath[triplet];
+
+	//Make the full scan command line
+	string cmdline = exe + " " + aflags + " -o " + fname + " ";
+	for(auto f : flags)
+		cmdline += FlagToString(f) + " ";
+	cmdline += "-c ";
+	for(auto s : sources)
+		cmdline += s + " ";
+	LogDebug("        Command line: %s\n", cmdline.c_str());
+
+	LogDebug("        GNUToolchain::Compile() not implemented\n");
 	return false;
 }
 

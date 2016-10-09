@@ -121,6 +121,9 @@ bool GNUCToolchain::ScanDependencies(
 		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes);
 }
 
+/**
+	@brief Compile stuff
+ */
 bool GNUCToolchain::Build(
 	string triplet,
 	set<string> sources,
@@ -128,6 +131,5 @@ bool GNUCToolchain::Build(
 	set<BuildFlag> flags,
 	map<string, string>& outputs)
 {
-	LogDebug("GNUCToolchain::Build() not implemented\n");
-	return false;
+	return GNUToolchain::Compile(m_basepath, triplet, sources, fname, flags, outputs);
 }
