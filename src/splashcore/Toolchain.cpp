@@ -53,19 +53,22 @@ void Toolchain::DebugPrint()
 	GetSupportedLanguages(langs);
 
 	LogVerbose("Toolchain %s:\n", GetHash().c_str());
-	LogVerbose("    Type:        %s\n", GetToolchainType().c_str());
+	LogIndenter li;
+	LogVerbose("Type:        %s\n", GetToolchainType().c_str());
 	if(GetPatchVersion() != 0)
-		LogVerbose("    Version:     %d.%d.%d\n", GetMajorVersion(), GetMinorVersion(), GetPatchVersion());
+		LogVerbose("Version:     %d.%d.%d\n", GetMajorVersion(), GetMinorVersion(), GetPatchVersion());
 	else
-		LogVerbose("    Version:     %d.%d\n", GetMajorVersion(), GetMinorVersion());
-	LogVerbose("    String ver:  %s\n", GetVersionString().c_str());
-	LogVerbose("    Path:        %s\n", GetBasePath().c_str());
-	LogVerbose("    Source languages:\n");
+		LogVerbose("Version:     %d.%d\n", GetMajorVersion(), GetMinorVersion());
+	LogVerbose("String ver:  %s\n", GetVersionString().c_str());
+	LogVerbose("Path:        %s\n", GetBasePath().c_str());
+	LogVerbose("Source languages:\n");
 	for(auto x : langs)
-		LogVerbose("        %s\n", x.c_str());
-	LogVerbose("    Target triplets:\n");
+		LogVerbose("    %s\n", x.c_str());
+
+	LogVerbose("Target triplets:\n");
+	LogIndenter li2;
 	for(auto x : m_triplets)
-		LogVerbose("        %s\n", x.c_str());
+		LogVerbose("%s\n", x.c_str());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

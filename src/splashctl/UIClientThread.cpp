@@ -48,6 +48,7 @@ bool OnToolchainListRequest(Socket& s, string& hostname, clientID id);
 void UIClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer client %s (%s) connected\n", hostname.c_str(), id.c_str());
+	LogIndenter li;
 
 	//Expect a DevInfo message
 	SplashMsg dinfo;
@@ -60,7 +61,7 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
 		return;
 	}
 	auto dinfom = dinfo.devinfo();
-	LogVerbose("    (architecture is %s)\n", dinfom.arch().c_str());
+	LogVerbose("(architecture is %s)\n", dinfom.arch().c_str());
 
 	while(true)
 	{

@@ -45,8 +45,9 @@ CPPExecutableNode::CPPExecutableNode(
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
 {
-	LogDebug("    Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
+	LogDebug("Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
 		toolchain.c_str(), path.c_str());
+	LogIndenter li;
 
 	//Sanity check: we must have some source files!
 	if(!node["sources"])

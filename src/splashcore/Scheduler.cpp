@@ -171,8 +171,9 @@ bool Scheduler::ScanDependencies(
 	WorkingCopy* wc,
 	set<string>& deps)
 {
-	LogDebug("        Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
+	LogDebug("Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
 		fname.c_str(), arch.c_str(), toolchain.c_str() );
+	LogIndenter li;
 
 	//Need mutex locked during scheduling so that if the golden node leaves halfway through
 	//we remain in a consistent state
@@ -185,7 +186,7 @@ bool Scheduler::ScanDependencies(
 	auto chain = g_nodeManager->GetAnyToolchainForHash(hash);
 	if(chain == NULL)
 		return false;
-	LogDebug("            Compiler hash is %s (%s)\n", hash.c_str(), chain->GetVersionString().c_str());
+	LogDebug("Compiler hash is %s (%s)\n", hash.c_str(), chain->GetVersionString().c_str());
 
 	//Find which node is supposed to run this job
 	auto id = g_nodeManager->GetGoldenNodeForToolchain(hash);
@@ -193,7 +194,7 @@ bool Scheduler::ScanDependencies(
 		return false;
 	auto build_wc = g_nodeManager->GetWorkingCopy(id);
 	string hostname = build_wc->GetHostname();
-	LogDebug("            Golden node for this toolchain is %s (%s)\n", id.c_str(), hostname.c_str());
+	LogDebug("Golden node for this toolchain is %s (%s)\n", id.c_str(), hostname.c_str());
 
 	//Create the scan job and submit it
 	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, arch, flags);

@@ -483,6 +483,7 @@ void BuildGraph::AddNode(BuildGraphNode* node)
 void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 {
 	LogDebug("Processing target %s in file %s\n", name.c_str(), path.c_str());
+	LogIndenter li;
 
 	//Complain if this target is already declared
 	if(m_targetReverseOrigins.find(name) != m_targetReverseOrigins.end())
