@@ -114,9 +114,12 @@ int main(int argc, char* argv[])
 
 	//Look for compilers
 	LogVerbose("Enumerating compilers...\n");
-	FindLinkers();
-	FindCPPCompilers();
-	FindFPGACompilers();
+	{
+		LogIndenter li;
+		FindLinkers();
+		FindCPPCompilers();
+		FindFPGACompilers();
+	}
 
 	//Get some basic metadata about our hardware and tell the server
 	SplashMsg binfo;
@@ -265,6 +268,7 @@ bool RefreshCachedFile(Socket& sock, string hash, string fname)
 void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 {
 	LogDebug("Got a dependency scan request\n");
+	LogIndenter li;
 
 	//Do setup stuff
 	Toolchain* chain = PrepBuild(rxm.toolchain());
@@ -291,7 +295,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	string data = g_cache->ReadCachedFile(hash);
 
 	//Write the source file
-	LogDebug("    Writing source file %s\n", aname.c_str());
+	LogDebug("Writing source file %s\n", aname.c_str());
 	if(!PutFileContents(aname, data))
 		return;
 
@@ -309,7 +313,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	map<string, string> hashes;
 	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes))
 	{
-		LogDebug("    Scan failed\n");
+		LogDebug("Scan failed\n");
 		replym->set_result(false);
 		SendMessage(sock, reply);
 		return;
@@ -318,7 +322,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	//TODO: If the scan found files we're missing, ask for them!
 
 	//Successful completion of the scan, crunch the results
-	LogDebug("    Scan completed\n");
+	LogDebug("Scan completed\n");
 	replym->set_result(true);
 	for(auto d : deps)
 	{
@@ -335,6 +339,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 {
 	LogDebug("\n\nBuild request\n");
+	LogIndenter li;
 
 	//Do setup stuff
 	Toolchain* chain = PrepBuild(rxm.toolchain());
@@ -365,7 +370,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 		MakeDirectoryRecursive(path, 0700);
 		string data = g_cache->ReadCachedFile(hash);
 		string fpath = g_builddir + "/" + fname;
-		LogDebug("    Writing input file %s\n", fpath.c_str());
+		LogDebug("Writing input file %s\n", fpath.c_str());
 		if(!PutFileContents(fpath, data))
 			return;
 
