@@ -82,7 +82,8 @@ bool RemoteToolchain::Build(
 	set<string> /*sources*/,
 	string /*fname*/,
 	set<BuildFlag> /*flags*/,
-	map<string, string>& /*outputs*/)
+	map<string, string>& /*outputs*/,
+	string& /*stdout*/)
 {
 	LogError("RemoteToolchain::Build() cannot be used (must invoke scheduler to do a remote scan job)\n");
 	return false;

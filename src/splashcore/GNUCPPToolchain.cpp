@@ -129,7 +129,8 @@ bool GNUCPPToolchain::Build(
 	set<string> sources,
 	string fname,
 	set<BuildFlag> flags,
-	map<string, string>& outputs)
+	map<string, string>& outputs,
+	string& stdout)
 {
-	return GNUToolchain::Compile(m_basepath, triplet, sources, fname, flags, outputs);
+	return GNUToolchain::Compile(m_basepath, triplet, sources, fname, flags, outputs, stdout);
 }

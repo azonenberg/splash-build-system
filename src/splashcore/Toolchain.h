@@ -205,7 +205,8 @@ public:
 		std::set<std::string> sources,
 		std::string fname,
 		std::set<BuildFlag> flags,
-		std::map<std::string, std::string>& outputs) =0;
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout) =0;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Internal state

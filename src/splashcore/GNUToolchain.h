@@ -56,7 +56,8 @@ public:
 		std::set<std::string> sources,
 		std::string fname,
 		std::set<BuildFlag> flags,
-		std::map<std::string, std::string>& outputs);
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
 
 	virtual bool Link(
 		std::string triplet,

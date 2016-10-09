@@ -390,13 +390,16 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	auto replym = reply.mutable_nodebuildresults();
 
 	//Do the actual build
+	chdir(g_builddir.c_str());
+	string stdout;
 	map<string, string> outputs;
 	if(!chain->Build(
 		rxm.arch(),
 		fnames,
-		rxm.fname(),
+		GetBasenameOfFile(rxm.fname()),
 		flags,
-		outputs))
+		outputs,
+		stdout))
 	{
 		//TODO: handle failure
 	}

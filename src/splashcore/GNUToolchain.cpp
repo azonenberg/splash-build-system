@@ -222,8 +222,6 @@ bool GNUToolchain::ScanDependencies(
 	cmdline += path;
 	LogDebug("Command line: %s\n", cmdline.c_str());
 
-	LogDebug("Dependency scan for arch %s\n", triplet.c_str());
-
 	//Run it
 	string makerule = ShellCommand(cmdline);
 
@@ -338,7 +336,8 @@ bool GNUToolchain::Compile(
 	set<string> sources,
 	string fname,
 	set<BuildFlag> flags,
-	map<string, string>& outputs)
+	map<string, string>& outputs,
+	string& stdout)
 {
 	LogDebug("Compile for arch %s\n", triplet.c_str());
 	LogIndenter li;
@@ -350,7 +349,7 @@ bool GNUToolchain::Compile(
 	string aflags = m_archflags[triplet];
 	auto apath = m_virtualSystemIncludePath[triplet];
 
-	//Make the full scan command line
+	//Make the full compile command line
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
 	for(auto f : flags)
 		cmdline += FlagToString(f) + " ";
@@ -359,8 +358,12 @@ bool GNUToolchain::Compile(
 		cmdline += s + " ";
 	LogDebug("Command line: %s\n", cmdline.c_str());
 
-	LogDebug("GNUToolchain::Compile() not implemented\n");
-	return false;
+	//Run the compile itself
+	if(0 != ShellCommand(cmdline, stdout))
+		return false;
+
+	//All good if we get here
+	return true;
 }
 
 bool GNUToolchain::Link(
