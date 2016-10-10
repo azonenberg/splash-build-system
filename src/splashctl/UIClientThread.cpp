@@ -136,7 +136,16 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		//Now we have the list of targets that need building
 		//Make them build themselves
 		for(auto node : missingtargets)
-			jobs.emplace(node->Build());
+		{
+			auto j = node->Build();
+			if(!j)
+			{
+				LogError("Failed to submit build job for node \"%s\"\n", node->GetFilePath().c_str());
+				continue;
+			}
+
+			jobs.emplace(j);
+		}
 	}
 
 	//Wait for build to complete

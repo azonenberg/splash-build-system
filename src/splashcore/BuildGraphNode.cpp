@@ -264,6 +264,11 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 	{
 		//Look up the graph node
 		auto h = wc->GetFileHash(d);
+		if(h == "")
+		{
+			LogError("Dependency \"%s\" is not in working copy\n", d.c_str());
+			return NULL;
+		}
 		auto n = m_graph->GetNodeWithHash(h);
 
 		//If the node has already been built, no action required

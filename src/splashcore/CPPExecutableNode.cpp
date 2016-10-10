@@ -43,7 +43,7 @@ CPPExecutableNode::CPPExecutableNode(
 	string path,
 	string toolchain,
 	YAML::Node& node)
-	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
+	: BuildGraphNode(graph, BuildFlag::LINK_TIME, /*toolchain*/ "object/generic", arch, config, name, scriptpath, path, node)
 {
 	LogDebug("Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
 		toolchain.c_str(), path.c_str());
@@ -169,7 +169,7 @@ CPPExecutableNode::CPPExecutableNode(
 		hashin += sha256(f);
 
 	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
-	hashin += g_nodeManager->GetToolchainHash(arch, toolchain);
+	hashin += g_nodeManager->GetToolchainHash(arch, /*toolchain*/"object/generic");
 	hashin += sha256(arch);
 
 	//Do not hash the output file name.
