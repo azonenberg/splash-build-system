@@ -216,7 +216,11 @@ int main(int argc, char* argv[])
  */
 void CleanBuildDir()
 {
-	string cmd = "rm -rf \"" + g_builddir + "/*\"";
+	//Verify there are no spaces (TODO: escape them?)
+	if(g_builddir.find(" ") != string::npos)
+		LogFatal("Handling of spaces in g_builddir not implemented\n");
+
+	string cmd = "rm -rf " + g_builddir + "/*";
 	ShellCommand(cmd.c_str());
 }
 
@@ -401,38 +405,28 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 		outputs,
 		stdout))
 	{
-		//TODO: handle failure
+		//Return the error code
+		replym->set_success(false);
 	}
+	else
+		replym->set_success(true);
 
-	/*
-	//Run the scanner proper
-	set<string> deps;
-	map<string, string> hashes;
-	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes))
+	//Set other flags
+	replym->set_stdout(stdout);
+	replym->set_fname(rxm.fname());
+
+	//Add our outputs
+	for(auto it : outputs)
 	{
-		LogDebug("Scan failed\n");
-		replym->set_result(false);
-		SendMessage(sock, reply);
-		return;
+		auto bf = replym->add_outputs();
+		bf->set_fname(it.first);
+		bf->set_hash(it.second);
+		bf->set_data(GetFileContents(it.first));
 	}
-	*/
 
-	/*
-	//TODO: If the scan found files we're missing, ask for them!
-
-	//Successful completion of the scan, crunch the results
-	LogDebug("Scan completed\n");
-	replym->set_result(true);
-	for(auto d : deps)
-	{
-		auto rd = replym->add_deps();
-		rd->set_fname(d);
-		rd->set_hash(hashes[d]);
-	}
+	//Successful completion of the scan, send the results to the server
+	LogDebug("Build finished\n");
 	SendMessage(sock, reply);
-	*/
-
-	//exit(-1);
 }
 
 void ShowVersion()

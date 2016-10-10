@@ -362,6 +362,17 @@ bool GNUToolchain::Compile(
 	if(0 != ShellCommand(cmdline, stdout))
 		return false;
 
+	//Get the outputs
+	vector<string> files;
+	FindFiles(".", files);
+
+	//No filtering needed, everything is toolchain output
+	for(auto f : files)
+	{
+		f = GetBasenameOfFile(f);
+		outputs[f] = sha256_file(f);
+	}
+
 	//All good if we get here
 	return true;
 }

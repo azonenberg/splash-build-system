@@ -34,6 +34,7 @@ using namespace std;
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
 bool ProcessBuildJob(Socket& s, string& hostname, Job* job);
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
+bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
@@ -307,11 +308,11 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 					return false;
 				break;
 
-			//Done, we have the dependencies
-			//case SplashMsg::kDependencyResults:
-			//	if(!ProcessDependencyResults(s, hostname, rxm, job))
-			//		return false;
-			//	return true;
+			//Done, we have the compiled files
+			case SplashMsg::kNodeBuildResults:
+				if(!ProcessBuildResults(s, hostname, rxm, job))
+					return false;
+				return true;
 
 			//Whatever it is, it makes no sense
 			default:
@@ -320,9 +321,18 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 		}
 	}
 
+	return true;
+}
+
+/**
+	@brief Deal with an incoming BuildResults message
+ */
+bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job)
+{
 	//TODO: Update server-side cache
 
 	//TODO: Unblock any jobs that are pending
+
 
 	return true;
 }
