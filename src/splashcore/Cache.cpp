@@ -239,7 +239,7 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const char* dat
 	//TODO: write the atime file?
 
 	//Remember that we have this file cached
-	m_cacheIndex.emplace(hash);
+	m_cacheIndex.emplace(id);
 
 	//TODO: add this file's size to the cache, if we went over the cap delete the LRU file
 }
