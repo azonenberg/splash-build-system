@@ -43,6 +43,8 @@ WorkingCopy::WorkingCopy(string hostname, clientID id)
 		m_haveClients[i] = 0;
 
 	//LogDebug("creating working copy %p for hostname %s, uuid %s\n", this, hostname.c_str(), id.c_str());
+
+	//TODO: How do we persist all of the state for output files etc?
 }
 
 WorkingCopy::~WorkingCopy()

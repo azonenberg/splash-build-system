@@ -150,6 +150,9 @@ CPPExecutableNode::CPPExecutableNode(
 		//Either way we have the node now. Add to our list of sources.
 		m_sources.emplace(fname);
 		m_dependencies.emplace(fname);
+
+		//Add the object file to our working copy
+		wc->UpdateFile(fname, h, false, false);
 	}
 
 	//Collect the linker flags

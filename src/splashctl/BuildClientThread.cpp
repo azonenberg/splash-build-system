@@ -369,17 +369,24 @@ bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job)
 
 		LogDebug("File %s has hash %s\n", ffname.c_str(), hash.c_str());
 
-		//See if this is the main output or something else
+		//Main node output? Add to the cache using the node's hash
+		string shash;
 		if(GetBasenameOfFile(ffname) == base)
 		{
 			LogIndenter li;
 			LogDebug("This is the compiled output for node %s (path %s)\n", nhash.c_str(), fname.c_str());
-
-			//If it is, add it to the cache
-			g_cache->AddFile(fname, nhash, hash, data.data(), data.length());
+			shash = nhash;
 		}
 
-		//TODO: Do whatever else we have to do for other files
+		//Otherwise, add it to the cache using the content hash
+		else
+			shash = hash;
+
+		//Add to the cache once we know which hash to use
+		g_cache->AddFile(fname, shash, hash, data.data(), data.length());
+
+		//Add the node to the working copy
+		node->GetGraph()->GetWorkingCopy()->UpdateFile(fname, shash, false, false);
 	}
 
 	return true;
