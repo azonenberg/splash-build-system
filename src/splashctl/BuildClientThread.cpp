@@ -329,10 +329,58 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
  */
 bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job)
 {
-	//TODO: Update server-side cache
+	auto res = msg.nodebuildresults();
 
-	//TODO: Unblock any jobs that are pending
+	LogDebug("Got build results\n");
+	LogIndenter li;
 
+	//Look up the build job
+	BuildJob* bj = dynamic_cast<BuildJob*>(job);
+	if(bj == NULL)
+	{
+		LogError("invalid job type (not a BuildJob)\n");
+		return false;
+	}
+	auto node = bj->GetOutputNode();
+	auto nhash = node->GetHash();
+
+	//See how the build ran
+	bool ok = res.success();
+	if(!ok)
+	{
+		//TODO: add reports etc anyway?
+		return true;
+	}
+
+	//Successful build if we get here
+	string stdout = res.stdout();
+	string fname = res.fname();
+	string dir = GetDirOfFile(fname);
+	string base = GetBasenameOfFile(fname);
+
+	//Go over the files and see what we have
+	for(int i=0; i<res.outputs_size(); i++)
+	{
+		auto file = res.outputs(i);
+
+		string ffname = file.fname();
+		string hash = file.hash();
+		string data = file.data();
+
+		LogDebug("File %s has hash %s\n", ffname.c_str(), hash.c_str());
+
+		//See if this is the main output or something else
+		if(GetBasenameOfFile(ffname) == base)
+		{
+			LogIndenter li;
+			LogDebug("This is the compiled output for node %s (path %s)\n", nhash.c_str(), fname.c_str());
+
+			//If it is, add it to the cache
+			g_cache->AddFile(fname, nhash, hash, data.data(), data.length());
+		}
+
+		//TODO: Do whatever else we have to do for other files
+	}
 
 	return true;
 }

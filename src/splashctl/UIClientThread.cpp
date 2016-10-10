@@ -100,6 +100,9 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	set<BuildGraphNode*> nodes;
 	set<Job*> jobs;
 
+	LogDebug("Beginning build\n");
+	LogIndenter li;
+
 	//Dispatch the build
 	{
 		//Look up our graph
@@ -127,6 +130,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			//Nope, it's missing
 			//Need to build it
 			missingtargets.emplace(node);
+			LogDebug("Target %s needs to be rebuilt\n", node->GetFilePath().c_str());
 		}
 
 		//Now we have the list of targets that need building
@@ -136,7 +140,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	}
 
 	//Wait for build to complete
-	LogDebug("Waiting for build jobs to complete\n");
+	LogDebug("UI client: Waiting for build jobs to complete\n");
 	bool failed = false;
 	while(true)
 	{
@@ -162,7 +166,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		usleep(1000);
 	}
 
-	LogDebug("Jobs completed\n");
+	LogDebug("UI client: Jobs completed\n");
 
 	//TODO: Report build status to client
 
