@@ -76,12 +76,12 @@ XilinxVivadoToolchain::~XilinxVivadoToolchain()
 // Actual compilation
 
 bool XilinxVivadoToolchain::Build(
-	string triplet,
-	set<string> sources,
-	string fname,
-	set<BuildFlag> flags,
-	map<string, string>& outputs,
-	string& stdout)
+	string /*triplet*/,
+	set<string> /*sources*/,
+	string /*fname*/,
+	set<BuildFlag> /*flags*/,
+	map<string, string>& /*outputs*/,
+	string& /*stdout*/)
 {
 	LogDebug("XilinxVivadoToolchain::Build() not implemented\n");
 	return false;
