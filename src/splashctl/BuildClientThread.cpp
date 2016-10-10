@@ -327,7 +327,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 /**
 	@brief Deal with an incoming BuildResults message
  */
-bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job)
+bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Job* job)
 {
 	auto res = msg.nodebuildresults();
 

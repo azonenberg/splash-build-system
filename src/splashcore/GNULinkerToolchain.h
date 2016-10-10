@@ -35,7 +35,9 @@
 /**
 	@brief A toolchain for linking compiled object files
  */
-class GNULinkerToolchain : public LinkerToolchain
+class GNULinkerToolchain
+	: public LinkerToolchain
+	, public GNUToolchain
 {
 public:
 	GNULinkerToolchain(std::string basepath, std::string triplet);

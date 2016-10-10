@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 	//Set up temporary directory (TODO: argument for this?)
 	g_tmpdir = "/tmp/splashbuild-tmp";
 	MakeDirectoryRecursive(g_tmpdir, 0700);
-	g_builddir = g_tmpdir + "/build";
+	g_builddir = g_tmpdir + "/workdir";
 	MakeDirectoryRecursive(g_builddir, 0700);
 
 	//Set up logging

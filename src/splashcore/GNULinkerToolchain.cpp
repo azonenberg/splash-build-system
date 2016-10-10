@@ -36,6 +36,7 @@ using namespace std;
 
 GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	: LinkerToolchain(basepath, TOOLCHAIN_GNU)
+	, GNUToolchain(triplet)
 {
 	//Get the full toolchain version
 	m_stringVersion = string("GNU Linker") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
@@ -91,7 +92,7 @@ bool GNULinkerToolchain::ScanDependencies(
 	set<string>& /*deps*/,
 	map<string, string>& /*dephashes*/)
 {
-	LogError("GNULinkerToolchain::ScanDependencies() is meaningless for now\n");
+	LogError("GNULinkerToolchain::ScanDependencies() is not yet implemented\n");
 	return false;
 }
 
@@ -103,6 +104,5 @@ bool GNULinkerToolchain::Build(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	LogDebug("GNULinkerToolchain::Build() not implemented\n");
-	return false;
+	return GNUToolchain::Link(m_basepath, triplet, sources, fname, flags, outputs, stdout);
 }

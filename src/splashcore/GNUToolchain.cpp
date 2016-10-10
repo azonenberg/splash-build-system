@@ -35,7 +35,7 @@ using namespace std;
 // Construction / destruction
 
 /**
-	@brief Figure out what flags we have to pass to the compiler in order to build for a specific architecture.
+	@brief Figure out what flags we have to pass to the compiler and linker in order to build for a specific architecture.
 
 	An empty string indicates this is the default.
 
@@ -339,6 +339,13 @@ bool GNUToolchain::Compile(
 	map<string, string>& outputs,
 	string& stdout)
 {
+	//If any source has a .o extension, we're linking and not compiling
+	for(auto s : sources)
+	{
+		if(s.find(".o") != string::npos)
+			return Link(exe, triplet, sources, fname, flags, outputs, stdout);
+	}
+
 	LogDebug("Compile for arch %s\n", triplet.c_str());
 	LogIndenter li;
 
@@ -378,12 +385,51 @@ bool GNUToolchain::Compile(
 }
 
 bool GNUToolchain::Link(
+	string exe,
 	string triplet,
 	set<string> sources,
 	string fname,
 	set<BuildFlag> flags,
-	map<string, string>& outputs)
+	map<string, string>& outputs,
+	string& stdout)
 {
-	LogDebug("GNUToolchain::Link() not implemented\n");
-	return false;
+	LogDebug("Link for arch %s\n", triplet.c_str());
+	LogIndenter li;
+
+	if(!VerifyFlags(triplet))
+		return false;
+
+	//Look up some arch-specific stuff
+	//Link using gcc/g++ instead of ld
+	string aflags = m_archflags[triplet];
+
+	//Make the full compile command line
+	string cmdline = exe + " " + aflags + " -o " + fname + " ";
+	for(auto f : flags)
+		cmdline += FlagToString(f) + " ";
+	for(auto s : sources)
+		cmdline += s + " ";
+
+	LogDebug("Command line: %s\n", cmdline.c_str());
+
+	//Run the compile itself
+	if(0 != ShellCommand(cmdline, stdout))
+	{
+		LogDebug("link failed\n");
+		return false;
+	}
+
+	//Get the outputs
+	vector<string> files;
+	FindFiles(".", files);
+
+	//No filtering needed, everything is toolchain output
+	for(auto f : files)
+	{
+		f = GetBasenameOfFile(f);
+		outputs[f] = sha256_file(f);
+	}
+
+	//All good if we get here
+	return true;
 }
