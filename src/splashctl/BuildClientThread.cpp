@@ -330,8 +330,6 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Job* job)
 {
 	auto res = msg.nodebuildresults();
-
-	LogDebug("Got build results\n");
 	LogIndenter li;
 
 	//Look up the build job
@@ -373,7 +371,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		string shash;
 		if(GetBasenameOfFile(ffname) == base)
 		{
-			LogIndenter li;
+
 			LogDebug("This is the compiled output for node %s (path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;
 		}

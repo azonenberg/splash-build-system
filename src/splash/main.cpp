@@ -187,7 +187,17 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	if(!SendMessage(s, cmd))
 		return 1;
 
-	//TODO: Get a response
+	//Get the compiled files back from the server
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	/*
+	if(msg.Payload_case() != SplashMsg::kToolchainList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+	*/
 
 	//We're good
 	return 0;

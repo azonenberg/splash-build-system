@@ -151,15 +151,20 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	//Wait for build to complete
 	LogDebug("UI client: Waiting for build jobs to complete\n");
 	bool failed = false;
-	while(true)
+	while(!jobs.empty())
 	{
+		LogIndenter li;
+
 		//See what's finished this pass
 		set<Job*> done;
 		for(auto j : jobs)
 		{
 			auto status = j->GetStatus();
 			if(status == BuildJob::STATUS_CANCELED)
+			{
+				done.emplace(j);
 				failed = true;
+			}
 			else if(status == BuildJob::STATUS_DONE)
 				done.emplace(j);
 		}
@@ -171,11 +176,13 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			j->Unref();
 		}
 
-		//Wait a little while (TODO: wait until one of the jobs has finished)
+		//Wait a little while (TODO: wait until one of the jobs has finished with an event or something?)
 		usleep(1000);
 	}
 
 	LogDebug("UI client: Jobs completed\n");
+
+	//NodeBuildResults
 
 	//TODO: Report build status to client
 
