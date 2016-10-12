@@ -532,11 +532,14 @@ string GetFileContents(string path)
 		return "";
 	}
 	fseek(fp, 0, SEEK_END);
-	long fsize = ftell(fp);
+	size_t fsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	char* buf = new char[fsize + 1];
-	buf[fsize] = 0;
-	fread(buf, 1, fsize, fp);
+	char* buf = new char[fsize];
+	if(fsize != fread(buf, 1, fsize, fp))
+	{
+		LogWarning("GetFileContents: Could not read file \"%s\"\n", path.c_str());
+		return "";
+	}
 	fclose(fp);
 	string tmp(buf, fsize);		//use range constructor since file may contain null bytes
 	delete[] buf;
@@ -581,6 +584,7 @@ string sha256(string str)
 		snprintf(buf, sizeof(buf), "%02x", output_buf_raw[i] & 0xFF);
 		ret += buf;
 	}
+
 	return ret;
 }
 
@@ -589,19 +593,7 @@ string sha256(string str)
  */
 string sha256_file(string path)
 {
-	FILE* fp = fopen(path.c_str(), "rb");
-	if(!fp)
-		LogFatal("sha256_file: Could not open file \"%s\"\n", path.c_str());
-	fseek(fp, 0, SEEK_END);
-	long fsize = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	char* buf = new char[fsize + 1];
-	buf[fsize] = 0;
-	fread(buf, 1, fsize, fp);
-	fclose(fp);
-	string tmp(buf);
-	delete[] buf;
-	return sha256(tmp);
+	return sha256(GetFileContents(path));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
