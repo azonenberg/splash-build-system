@@ -66,6 +66,7 @@ public:
 	void AddFile(std::string basename, std::string id, std::string hash, std::string data, std::string log = "");
 
 	std::string ReadCachedFile(std::string id);
+	std::string ReadCachedLog(std::string id);
 
 protected:
 

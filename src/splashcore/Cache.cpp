@@ -196,6 +196,26 @@ string Cache::ReadCachedFile(string id)
 }
 
 /**
+	@brief Reads the log from a file from the cache
+ */
+string Cache::ReadCachedLog(string id)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//Sanity check
+	if(m_cacheIndex.find(id) == m_cacheIndex.end())
+	{
+		LogError("Requested file %s is not in cache\n", id.c_str());
+		return "";
+	}
+
+	//Read the file
+	string ret = GetFileContents(GetStoragePath(id) + "/log");
+
+	return ret;
+}
+
+/**
 	@brief Adds a file to the cache
 
 	@param basename			Name of the file without directory information
@@ -224,6 +244,10 @@ void Cache::AddFile(string /*basename*/, string id, string hash, string data, st
 
 	//Write the hash
 	if(!PutFileContents(dirname + "/hash", hash))
+		return;
+
+	//Write the command stdout (not integrity checked)
+	if(!PutFileContents(dirname + "/log", log))
 		return;
 
 	//Sanity check
