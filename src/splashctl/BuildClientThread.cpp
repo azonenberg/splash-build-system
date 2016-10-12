@@ -371,7 +371,6 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		string shash;
 		if(GetBasenameOfFile(ffname) == base)
 		{
-
 			LogDebug("This is the compiled output for node %s (path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;
 		}
