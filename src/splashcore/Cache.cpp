@@ -154,6 +154,8 @@ bool Cache::ValidateCacheEntry(string id)
 	if(expected != found)
 	{
 		LogWarning("Cache directory %s is corrupted (hash match failed)\n", id.c_str());
+		LogDebug("Expected hash: %s\n", expected.c_str());
+		LogDebug("Found hash:    %s\n", found.c_str());
 		ShellCommand(string("rm -I ") + dir + "/*");
 		ShellCommand(string("rm -r ") + dir);
 		return false;
@@ -217,24 +219,23 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const char* dat
 		MakeDirectoryRecursive(dirname, 0600);
 
 	//Write the file data to it
-	string fname = dirname + "/data";
-	FILE* fp = fopen(fname.c_str(), "wb");
-	if(!fp)
-	{
-		LogWarning("Couldn't create cache file %s\n", fname.c_str());
+	string content(data, len);
+	if(!PutFileContents(dirname + "/data", content))
 		return;
-	}
-	if(len != fwrite(data, 1, len, fp))
-	{
-		fclose(fp);
-		LogWarning("Couldn't write cache file %s\n", fname.c_str());
-		return;
-	}
-	fclose(fp);
 
 	//Write the hash
 	if(!PutFileContents(dirname + "/hash", hash))
 		return;
+
+	//Sanity check
+	string chash = sha256(content);
+	if(chash != hash)
+	{
+		LogWarning("Adding new cache entry for id %s:\n", id.c_str());
+		LogIndenter li;
+		LogWarning("passed:     %s:\n", hash.c_str());
+		LogWarning("calculated: %s:\n", chash.c_str());
+	}
 
 	//TODO: write the atime file?
 
