@@ -41,7 +41,7 @@ recursive_config:
 
     # The target toolchain for this recursive_config block
     toolchain:     c++/generic
-    
+
     # Target architecture (just one by default)
     arches:
         - x86_64-linux-gnu

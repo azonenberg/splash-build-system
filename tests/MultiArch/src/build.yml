@@ -36,11 +36,11 @@ MultiArch:
 
     # type of compiler to use (generic C++ compiler, no preference on version or suite)
     toolchain:     c++/generic
-    
+
     # Target type (executable)
     # Other legal values: shared, static
     type: exe
-    
+
     # array of architectures we're being compiled for
     # The special target "global" pulls in the globally specified targets.
     # Having no "targets" section at all is equivalent to "targets: [global]" and is usually a sane default.
@@ -48,7 +48,7 @@ MultiArch:
     arches:
         - global
         - i386-linux-gnu
-        
+
     # array of source files (TODO support wildcards)
     sources:
         - main.cpp
