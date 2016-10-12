@@ -63,7 +63,7 @@ public:
 	bool IsCached(std::string id);
 	bool ValidateCacheEntry(std::string id);
 
-	void AddFile(std::string basename, std::string id, std::string hash, const char* data, uint64_t len);
+	void AddFile(std::string basename, std::string id, std::string hash, const char* data, uint64_t len, std::string log = "");
 
 	std::string ReadCachedFile(std::string id);
 

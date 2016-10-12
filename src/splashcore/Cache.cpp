@@ -203,8 +203,9 @@ string Cache::ReadCachedFile(string id)
 	@param hash				SHA-256 sum of the file
 	@param data				Content of the file
 	@param len				Length of the file
+	@param log				Standard output of the command that built this file
  */
-void Cache::AddFile(string /*basename*/, string id, string hash, const char* data, uint64_t len)
+void Cache::AddFile(string /*basename*/, string id, string hash, const char* data, uint64_t len, std::string log)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
