@@ -263,7 +263,7 @@ bool RefreshCachedFile(Socket& sock, string hash, string fname)
 		string edat;
 		if(!GetRemoteFileByHash(sock, g_clientSettings->GetServerHostname(), hash, edat))
 			return false;
-		g_cache->AddFile(fname, hash, sha256(edat), edat.c_str(), edat.size());
+		g_cache->AddFile(fname, hash, sha256(edat), edat, "");
 	}
 
 	return true;

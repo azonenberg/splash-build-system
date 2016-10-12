@@ -308,7 +308,7 @@ bool GNUToolchain::ScanDependencies(
 		string data = GetFileContents(files[i]);
 		string hash = sha256(data);
 		if(!g_cache->IsCached(hash))
-			g_cache->AddFile(f, hash, hash, data.c_str(), data.size());
+			g_cache->AddFile(f, hash, hash, data, "");
 
 		//Add virtual path to output dep list
 		deps.emplace(f);

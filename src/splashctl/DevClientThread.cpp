@@ -142,7 +142,7 @@ bool OnFileChanged(Socket& s, const FileChanged& msg, string& hostname, clientID
 		string buf = data.filedata().filedata();
 
 		//Write the file to cache
-		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf.c_str(), buf.length());
+		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, "");
 	}
 
 	//Update the file's status in our working copy

@@ -237,7 +237,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 			string edat;
 			if(!GetRemoteFileByHash(s, hostname, h, edat))
 				return false;
-			g_cache->AddFile(f, h, sha256(edat), edat.c_str(), edat.size());
+			g_cache->AddFile(f, h, sha256(edat), edat, "");
 		}
 
 		//Now that the file is in cache server side, add it to the dependency list
@@ -380,7 +380,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 			shash = hash;
 
 		//Add to the cache once we know which hash to use
-		g_cache->AddFile(fname, shash, hash, data.data(), data.length());
+		g_cache->AddFile(fname, shash, hash, data, stdout);
 
 		//Add the node to the working copy
 		node->GetGraph()->GetWorkingCopy()->UpdateFile(fname, shash, false, false);

@@ -201,11 +201,10 @@ string Cache::ReadCachedFile(string id)
 	@param basename			Name of the file without directory information
 	@param id				Object ID hash
 	@param hash				SHA-256 sum of the file
-	@param data				Content of the file
-	@param len				Length of the file
+	@param data				The data to write
 	@param log				Standard output of the command that built this file
  */
-void Cache::AddFile(string /*basename*/, string id, string hash, const char* data, uint64_t len, std::string log)
+void Cache::AddFile(string /*basename*/, string id, string hash, string data, string log)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -220,8 +219,7 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const char* dat
 		MakeDirectoryRecursive(dirname, 0600);
 
 	//Write the file data to it
-	string content(data, len);
-	if(!PutFileContents(dirname + "/data", content))
+	if(!PutFileContents(dirname + "/data", data))
 		return;
 
 	//Write the hash
@@ -229,7 +227,7 @@ void Cache::AddFile(string /*basename*/, string id, string hash, const char* dat
 		return;
 
 	//Sanity check
-	string chash = sha256(content);
+	string chash = sha256(data);
 	if(chash != hash)
 	{
 		LogWarning("Adding new cache entry for id %s:\n", id.c_str());
