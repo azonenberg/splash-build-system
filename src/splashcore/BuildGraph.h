@@ -95,6 +95,9 @@ public:
 
 	void GetTargets(std::set<BuildGraphNode*>& nodes, std::string target, std::string arch, std::string config);
 
+	std::string GetBuildArtifactPath()
+	{ return m_buildArtifactPath; }
+
 protected:
 	void Rebuild();
 	void InternalRemove(std::string path);

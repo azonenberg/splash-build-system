@@ -182,9 +182,44 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 	LogDebug("UI client: Jobs completed\n");
 
-	//NodeBuildResults
+	//Make a list of all nodes in the graph, even those we did not build this round
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	BuildGraph& graph = wc->GetGraph();
+	lock_guard<recursive_mutex> lock(graph.GetMutex());
 
-	//TODO: Report build status to client
+	//Create a sorted list of output paths of ALL graph nodes, even those which are not targets
+	set<string> paths;
+	for(auto it : *wc)
+		paths.emplace(it.first);
+
+	//Filter out those not in the build directory (TODO: can we do this faster than O(n)?)
+	//and send the whole list to the client for syncing.
+	LogDebug("Build dir list\n");
+	SplashMsg result;
+	auto resultm = result.mutable_buildresults();
+	string bapath = graph.GetBuildArtifactPath() + "/";
+	for(auto f : paths)
+	{
+		//If the file is not in the build directory, skip it
+		if(f.find(bapath) != 0)
+			continue;
+		LogIndenter li;
+
+		//Look up the ID of this file
+		//(not hash of the file content)
+		string hash = wc->GetFileHash(f);
+
+		//Add the file
+		//TODO: supply stdout only if asked and have client cache it?
+		auto res = resultm->add_results();
+		res->set_fname(f);
+		res->set_hash(hash);
+		res->set_stdout(g_cache->ReadCachedLog(hash));
+	}
+
+	//Go send the list to the client
+	if(!SendMessage(s, result, hostname))
+		return false;
 
 	return true;
 }

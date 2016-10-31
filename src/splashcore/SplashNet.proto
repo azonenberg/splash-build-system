@@ -289,6 +289,21 @@ message NodeBuildResults
 	repeated	BuiltFile	outputs		= 4;	//The output files
 };
 
+//Metadata for a single compiled artifact.
+//Does not include content since that can be huge and may be cached clientside already
+message BuildResult
+{
+				string		fname		= 1;	//Name of the file
+				string		hash		= 2;	//Hash
+				string		stdout		= 3;	//TODO: maybe cache this clientside?
+}
+
+//Summary of a completed compile
+message BuildResults
+{
+	repeated	BuildResult	results		= 1;	//The results of thi sbuild
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -319,5 +334,6 @@ message SplashMsg
 		BuildRequest			buildRequest			= 21;
 		NodeBuildRequest		nodeBuildRequest		= 22;
 		NodeBuildResults		nodeBuildResults		= 23;
+		BuildResults			buildResults			= 24;
 	}
 };

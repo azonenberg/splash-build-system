@@ -69,6 +69,12 @@ public:
 		return m_haveClients[type];
 	}
 
+	std::map<std::string, std::string>::const_iterator begin()
+	{ return m_fileMap.begin(); }
+
+	std::map<std::string, std::string>::const_iterator end()
+	{ return m_fileMap.end(); }
+
 protected:
 
 	//Type of clients we have connected

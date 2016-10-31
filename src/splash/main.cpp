@@ -191,13 +191,30 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	SplashMsg msg;
 	if(!RecvMessage(s, msg))
 		return 1;
-	/*
-	if(msg.Payload_case() != SplashMsg::kToolchainList)
+	if(msg.Payload_case() != SplashMsg::kBuildResults)
 	{
 		LogError("Got wrong message type back\n");
 		return 1;
 	}
-	*/
+
+	//Loop over the generated files and see where we stand
+	auto result = msg.buildresults();
+	for(int i=0; i<result.results_size(); i++)
+	{
+		auto r = result.results(i);
+		auto f = r.fname();
+		auto h = r.hash();
+
+		LogNotice("%s\n", f.c_str());
+		LogIndenter li;
+		LogDebug("hash = %s\n", h.c_str());
+
+		string stdout = r.stdout();
+		if(stdout != "")
+			LogNotice("%s\n", stdout.c_str());
+	}
+
+	LogDebug("TODO: what next?\n");
 
 	//We're good
 	return 0;
