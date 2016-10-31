@@ -411,6 +411,13 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	else
 		replym->set_success(true);
 
+	//Do some cleanup on the stdout:
+	//* Remove blank lines and whitespace at the end
+	//* Replace absolute paths to our build dir with "/"
+	while (isspace(stdout[stdout.length()-1]))
+		stdout.resize(stdout.length() - 1);
+	stdout = str_replace(g_builddir, "", stdout);
+
 	//Set other flags
 	replym->set_stdout(stdout);
 	replym->set_fname(rxm.fname());

@@ -191,6 +191,7 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	SplashMsg msg;
 	if(!RecvMessage(s, msg))
 		return 1;
+	LogNotice("Build completed\n");
 	if(msg.Payload_case() != SplashMsg::kBuildResults)
 	{
 		LogError("Got wrong message type back\n");
@@ -205,13 +206,17 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		auto f = r.fname();
 		auto h = r.hash();
 
-		LogNotice("%s\n", f.c_str());
-		LogIndenter li;
-		LogDebug("hash = %s\n", h.c_str());
+		//TODO: Pull the file if we don't already have it clientside
+		//TODO: Copy file from cache to working dir
 
+		//If stdout is empty, don't print the file name (needless clutter)
 		string stdout = r.stdout();
-		if(stdout != "")
-			LogNotice("%s\n", stdout.c_str());
+		if(stdout == "")
+			continue;
+
+		LogNotice("%s:\n", f.c_str());
+		LogIndenter li;
+		LogNotice("%s\n", stdout.c_str());
 	}
 
 	LogDebug("TODO: what next?\n");
