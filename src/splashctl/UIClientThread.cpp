@@ -72,11 +72,19 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
 
 		switch(msg.Payload_case())
 		{
+			//Requesting a build
 			case SplashMsg::kBuildRequest:
 				if(!OnBuildRequest(s, msg.buildrequest(), hostname, id))
 					return;
 				break;
 
+			//Asking for a file from our cache
+			case SplashMsg::kContentRequestByHash:
+				if(!ProcessContentRequest(s, hostname, msg))
+					return;
+				break;
+
+			//Reuesting info about the server
 			case SplashMsg::kInfoRequest:
 				if(!OnInfoRequest(s, msg.inforequest(), hostname, id))
 					return;
@@ -197,6 +205,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	LogDebug("Build dir list\n");
 	SplashMsg result;
 	auto resultm = result.mutable_buildresults();
+	resultm->set_status(!failed);
 	string bapath = graph.GetBuildArtifactPath() + "/";
 	for(auto f : paths)
 	{
@@ -211,10 +220,12 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 		//Add the file
 		//TODO: supply stdout only if asked and have client cache it?
+		//TODO: set executable more sanely
 		auto res = resultm->add_results();
 		res->set_fname(f);
 		res->set_hash(hash);
 		res->set_stdout(g_cache->ReadCachedLog(hash));
+		res->set_executable(true);
 	}
 
 	//Go send the list to the client

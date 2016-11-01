@@ -107,6 +107,10 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 
+	//Initialize the cache
+	//TODO: Separate caches for each instance if we multithread? Or one + sharing?
+	g_cache = new Cache("splash");
+
 	//If the command is "init" we have to process it BEFORE loading the config or connecting to the server
 	//since the config doesn't yet exist!
 	if(cmd == "init")
@@ -146,6 +150,7 @@ int main(int argc, char* argv[])
 		return ProcessListToolchainsCommand(sock, args);
 
 	//Clean up and finish
+	delete g_cache;
 	delete g_clientSettings;
 	return 0;
 }
@@ -191,7 +196,6 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	SplashMsg msg;
 	if(!RecvMessage(s, msg))
 		return 1;
-	LogNotice("Build completed\n");
 	if(msg.Payload_case() != SplashMsg::kBuildResults)
 	{
 		LogError("Got wrong message type back\n");
@@ -199,6 +203,7 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	}
 
 	//Loop over the generated files and see where we stand
+	LogNotice("\n");
 	auto result = msg.buildresults();
 	for(int i=0; i<result.results_size(); i++)
 	{
@@ -206,8 +211,42 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		auto f = r.fname();
 		auto h = r.hash();
 
-		//TODO: Pull the file if we don't already have it clientside
-		//TODO: Copy file from cache to working dir
+		if(f.find("..") != string::npos)
+		{
+			LogError("Filename \"%s\" contains directory traversal, skipping\n", f.c_str());
+			continue;
+		}
+
+		//See if we have the file in our local cache.
+		//If not, download it
+		string edat;
+		if(!g_cache->IsCached(h))
+		{
+			if(!GetRemoteFileByHash(s, g_clientSettings->GetServerHostname(), h, edat))
+			{
+				LogError("Could not get file \"%s\" (hash = \"%s\") from server\n",
+					f.c_str(), h.c_str());
+				continue;
+			}
+			g_cache->AddFile(f, h, sha256(edat), edat, "");
+		}
+		else
+			edat = g_cache->ReadCachedFile(h);
+
+		//Make the directory if needed, then write the file
+		string path = GetDirOfFile(f);
+		MakeDirectoryRecursive(path, 0700);
+		if(!PutFileContents(f, edat))
+		{
+			LogError("Failed to write file \"%s\"", f.c_str());
+			continue;
+		}
+
+		//Set the file executable if we need to
+		if(r.executable())
+			chmod(f.c_str(), 0700);
+		else
+			chmod(f.c_str(), 0600);
 
 		//If stdout is empty, don't print the file name (needless clutter)
 		string stdout = r.stdout();
@@ -219,10 +258,17 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		LogNotice("%s\n", stdout.c_str());
 	}
 
-	LogDebug("TODO: what next?\n");
-
-	//We're good
-	return 0;
+	//Print overall status
+	if(!result.status())
+	{
+		LogNotice("\nBuild failed\n");
+		return 1;
+	}
+	else
+	{
+		LogNotice("\nBuild complete\n");
+		return 0;
+	}
 }
 
 /**

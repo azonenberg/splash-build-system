@@ -296,12 +296,14 @@ message BuildResult
 				string		fname		= 1;	//Name of the file
 				string		hash		= 2;	//Hash
 				string		stdout		= 3;	//TODO: maybe cache this clientside?
+				bool		executable	= 4;	//Check if this file should be chmodded +x
 }
 
 //Summary of a completed compile
 message BuildResults
 {
-	repeated	BuildResult	results		= 1;	//The results of thi sbuild
+				bool		status		= 1;	//Status of the build (true = pass)
+	repeated	BuildResult	results		= 2;	//The results of thi sbuild
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
