@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
 	MakeDirectoryRecursive(g_builddir, 0700);
 
 	//Set up logging
-	g_log_sinks.emplace(g_log_sinks.begin(), new STDLogSink(console_verbosity));
+	g_log_sinks.emplace(g_log_sinks.begin(), new ColoredSTDLogSink(console_verbosity));
 
 	//Print header
 	if(console_verbosity >= Severity::NOTICE)
