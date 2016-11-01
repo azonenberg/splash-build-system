@@ -168,7 +168,10 @@ void FindXilinxISECompilers()
 	//Canonicalize the path in case /opt is a symlink to NFS etc
 	string xilinxdir = "/opt/Xilinx";
 	if(!DoesDirectoryExist(xilinxdir))
+	{
 		LogDebug("No %s found, giving up\n", xilinxdir.c_str());
+		return;
+	}
 	xilinxdir = CanonicalizePath(xilinxdir);
 
 	//Search for all subdirectories and see if any of them look like ISE
@@ -209,7 +212,10 @@ void FindXilinxVivadoCompilers()
 	//Canonicalize the path in case /opt is a symlink to NFS etc
 	string xilinxdir = "/opt/Xilinx/Vivado";
 	if(!DoesDirectoryExist(xilinxdir))
+	{
 		LogDebug("No %s found, giving up\n", xilinxdir.c_str());
+		return;
+	}
 	xilinxdir = CanonicalizePath(xilinxdir);
 
 	//Search for all subdirectories and see if any of them look like Vivado
