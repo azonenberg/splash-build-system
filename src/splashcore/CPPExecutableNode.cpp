@@ -68,8 +68,6 @@ CPPExecutableNode::CPPExecutableNode(
 	//Collect the compiler flags
 	set<BuildFlag> compileFlags;
 	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
-	//for(auto x : compileFlags)
-	//	LogDebug("        Compile flag: %s\n", static_cast<string>(x).c_str());
 
 	//Look up the source files and see if we have source nodes for them yet
 	vector<BuildGraphNode*> sources;
@@ -163,6 +161,21 @@ CPPExecutableNode::CPPExecutableNode(
 	//TODO: The toolchain specified for us is the OBJECT FILE generation toolchain.
 	//How do we find the LINKER to use?
 
+	UpdateHash();
+}
+
+CPPExecutableNode::~CPPExecutableNode()
+{
+}
+
+/**
+	@brief Calculate our hash. Must only be called from the constructor.
+ */
+void CPPExecutableNode::UpdateHash()
+{
+	//Look up the working copy we're part of
+	WorkingCopy* wc = m_graph->GetWorkingCopy();
+
 	//Calculate our hash.
 	//Dependencies and flags are obvious
 	string hashin;
@@ -172,8 +185,8 @@ CPPExecutableNode::CPPExecutableNode(
 		hashin += sha256(f);
 
 	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
-	hashin += g_nodeManager->GetToolchainHash(arch, /*toolchain*/"object/generic");
-	hashin += sha256(arch);
+	hashin += g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
+	hashin += sha256(m_arch);
 
 	//Do not hash the output file name.
 	//Having multiple files with identical inputs merged into a single node is *desirable*.
@@ -181,8 +194,3 @@ CPPExecutableNode::CPPExecutableNode(
 	//Done, calculate final hash
 	m_hash = sha256(hashin);
 }
-
-CPPExecutableNode::~CPPExecutableNode()
-{
-}
-

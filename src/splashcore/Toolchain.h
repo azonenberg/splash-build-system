@@ -175,6 +175,12 @@ public:
 	{ return m_shlibSuffix; }
 
 	/**
+		@brief Get the prefix used for shared libaries
+	 */
+	std::string GetSharedLibraryPrefix()
+	{ return m_shlibPrefix; }
+
+	/**
 		@brief Get the suffix, including the dot, used for static libraries
 	 */
 	std::string GetStaticLibrarySuffix()
@@ -294,6 +300,13 @@ protected:
 		Must be set in the constructor.
 	 */
 	std::string m_objSuffix;
+
+	/**
+		@brief Prefix used for shared library files.
+
+		Must be set in the constructor.
+	 */
+	std::string m_shlibPrefix;
 };
 
 #endif

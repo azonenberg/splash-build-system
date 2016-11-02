@@ -101,10 +101,8 @@ bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id)
 /**
 	@brief Process a msgBulkFileData
  */
-bool OnBulkFileData(Socket& s, const BulkFileData& msg, string& hostname, clientID id)
+bool OnBulkFileData(Socket& /*s*/, const BulkFileData& msg, string& /*hostname*/, clientID id)
 {
-	LogDebug("Got a bulk file data\n");
-
 	for(int i=0; i<msg.data_size(); i++)
 	{
 		auto d = msg.data(i);

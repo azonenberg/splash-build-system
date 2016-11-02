@@ -304,7 +304,7 @@ bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id)
 /**
 	@brief Processes a "splash list-clients" request
  */
-bool OnClientListRequest(Socket& s, string& hostname, clientID id)
+bool OnClientListRequest(Socket& s, string& hostname, clientID /*id*/)
 {
 	//Prep the result
 	SplashMsg result;

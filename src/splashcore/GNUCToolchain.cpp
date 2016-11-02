@@ -83,6 +83,7 @@ GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 		m_shlibSuffix = ".dll";
 		m_stlibSuffix = ".lib";
 		m_objSuffix = ".obj";
+		m_shlibPrefix = "";
 	}
 
 	//Set suffixes for POSIX
@@ -92,6 +93,7 @@ GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 		m_shlibSuffix = ".so";
 		m_stlibSuffix = ".a";
 		m_objSuffix = ".o";
+		m_shlibPrefix = "lib";
 	}
 
 	//Generate the hash

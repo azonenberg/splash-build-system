@@ -69,6 +69,7 @@ public:
 		TYPE_DEBUG		= 5,		//enable/disable debug symbols or debugging features
 		TYPE_ANALYSIS	= 6,		//enable/disable profiling, tracing, etc
 		TYPE_DIALECT	= 7,		//control which dialect of a language is being used
+		TYPE_OUTPUT		= 8,		//control the output file (extension, soname, etc)
 		
 		TYPE_INVALID	= 0			//placeholder
 	};
@@ -90,6 +91,7 @@ protected:
 	void LoadDebugFlag();
 	void LoadAnalysisFlag();
 	void LoadDialectFlag();
+	void LoadOutputFlag();
 	
 	/**
 		@brief Usage flags (bitmask of FlagUsage)

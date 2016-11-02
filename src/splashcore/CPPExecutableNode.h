@@ -48,6 +48,7 @@ public:
 	virtual ~CPPExecutableNode();
 
 protected:
+	void UpdateHash();
 };
 
 #endif

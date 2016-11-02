@@ -72,6 +72,8 @@ BuildFlag::BuildFlag(string flag)
 		LoadAnalysisFlag();
 	else if(sgroup == "dialect")
 		LoadDialectFlag();
+	else if(sgroup == "output")
+		LoadOutputFlag();
 	else
 		LogParseError("Unknown flag group \"%s\"\n", group);
 }
@@ -159,4 +161,16 @@ void BuildFlag::LoadDialectFlag()
 
 	else
 		LogParseError("Flag \"dialect/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadOutputFlag()
+{
+	m_type = TYPE_OUTPUT;
+
+	//output/shared: produce a shared library
+	if(m_flag == "shared")
+		m_usage = COMPILE_TIME;
+
+	else
+		LogParseError("Flag \"output/%s\" is unknown\n", m_flag.c_str());
 }

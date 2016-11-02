@@ -165,6 +165,10 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	else if(s == "dialect/c++11")
 		return "--std=c++11";
 
+	//Output file formats
+	else if(s == "output/shared")
+		return "-shared";
+
 	//Warning levels
 	else if(s == "warning/max")
 		return "-Wall -Wextra -Wcast-align -Winit-self -Wmissing-declarations -Wswitch -Wwrite-strings";

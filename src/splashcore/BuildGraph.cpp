@@ -549,6 +549,13 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		}
 	}
 
+	//Not overriding, copy defaults
+	else
+	{
+		for(auto a : darches)
+			arches.emplace(a);
+	}
+
 	//See what configurations we might be building for
 	set<string> configs;
 	GetConfigNames(toolchain, path, configs);
@@ -566,7 +573,11 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			//If none could be determined, skip this target for now
 			string exepath = GetOutputFilePath(toolchain, c, a, type, name);
 			if(exepath == "")
+			{
+				LogWarning("exepath for %s, %s, %s, %s, %s is empty\n",
+					toolchain.c_str(), c.c_str(), a.c_str(), type.c_str(), name.c_str());
 				continue;
+			}
 
 			//C/C++ executables
 			if(chaintype == "c++")
@@ -574,16 +585,19 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 				if( (type == "exe") || type.empty() )
 					target = new CPPExecutableNode(this, a, c, name, path, exepath, toolchain, node);
 
+				else if(type == "shlib")
+					target = new CPPSharedLibraryNode(this, a, c, name, path, exepath, toolchain, node);
+
 				else
 				{
-					LogParseError("Don't know what to do with target type \"%s\"", type.c_str());
+					LogParseError("Don't know what to do with target type \"%s\"\n", type.c_str());
 					continue;
 				}
 			}
 
 			else
 			{
-				LogParseError("Don't know what to do with toolchain type \"%s\"", chaintype.c_str());
+				LogParseError("Don't know what to do with toolchain type \"%s\"\n", chaintype.c_str());
 				continue;
 			}
 
@@ -687,11 +701,6 @@ string BuildGraph::GetOutputFilePath(
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	string path = m_buildArtifactPath + "/";
-	path += arch + "/";
-	path += config + "/";
-	path += name;
-
 	//Look up a toolchain to query
 	lock_guard<NodeManager> lock2(*g_nodeManager);
 	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
@@ -701,6 +710,17 @@ string BuildGraph::GetOutputFilePath(
 			toolchain.c_str(), arch.c_str());
 		return "";
 	}
+
+	string path = m_buildArtifactPath + "/";
+	path += arch + "/";
+	path += config + "/";
+
+	//Figure out the prefix
+	if(type == "shlib")
+		path += chain->GetSharedLibraryPrefix();
+
+	//Add the actual target name
+	path += name;
 
 	//Figure out the suffix
 	if(type == "exe")
