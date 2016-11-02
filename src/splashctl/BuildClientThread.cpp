@@ -219,7 +219,10 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 	//If the scan failed, we can't do anything else
 	auto res = msg.dependencyresults();
 	if(!res.result())
+	{
+		job->SetErrors(res.stdout());
 		return false;
+	}
 
 	//Crunch the results
 	for(int i=0; i<res.deps_size(); i++)

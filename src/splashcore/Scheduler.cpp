@@ -209,7 +209,9 @@ bool Scheduler::ScanDependencies(
 		status = job->GetStatus();
 		if(status == Job::STATUS_CANCELED)
 		{
-			LogWarning("Job canceled\n");
+			//TODO: pass this down to the client?
+			LogError("Dependency scan failed: %s\n",
+				job->GetErrors().c_str());
 			job->Unref();
 			return false;
 		}

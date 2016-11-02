@@ -45,7 +45,8 @@ public:
 		std::string root,
 		std::set<BuildFlag> flags,
 		std::set<std::string>& deps,
-		std::map<std::string, std::string>& dephashes);
+		std::map<std::string, std::string>& dephashes,
+		std::string& output);
 	
 protected:
 };

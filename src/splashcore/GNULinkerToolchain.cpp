@@ -90,7 +90,8 @@ bool GNULinkerToolchain::ScanDependencies(
 	string /*root*/,
 	set<BuildFlag> /*flags*/,
 	set<string>& /*deps*/,
-	map<string, string>& /*dephashes*/)
+	map<string, string>& /*dephashes*/,
+	string& /*output*/)
 {
 	LogError("GNULinkerToolchain::ScanDependencies() is not yet implemented\n");
 	return false;
@@ -102,7 +103,7 @@ bool GNULinkerToolchain::Build(
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
-	string& stdout)
+	string& output)
 {
-	return GNUToolchain::Link(m_basepath, triplet, sources, fname, flags, outputs, stdout);
+	return GNUToolchain::Link(m_basepath, triplet, sources, fname, flags, outputs, output);
 }

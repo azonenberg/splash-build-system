@@ -48,7 +48,8 @@ public:
 		std::set<BuildFlag> flags,
 		const std::vector<std::string>& sysdirs,
 		std::set<std::string>& deps,
-		std::map<std::string, std::string>& dephashes);
+		std::map<std::string, std::string>& dephashes,
+		std::string& output);
 
 	virtual bool Compile(
 		std::string exe,
@@ -57,7 +58,7 @@ public:
 		std::string fname,
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
-		std::string& stdout);
+		std::string& output);
 
 	virtual bool Link(
 		std::string exe,
@@ -66,7 +67,7 @@ public:
 		std::string fname,
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
-		std::string& stdout);
+		std::string& output);
 
 protected:
 	std::string FlagToString(BuildFlag flag);

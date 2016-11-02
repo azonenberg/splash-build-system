@@ -318,10 +318,16 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	//Run the scanner proper
 	set<string> deps;
 	map<string, string> hashes;
-	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes))
+	string output;
+	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes, output))
 	{
+		//trim off trailing newlines
+		while(isspace(output[output.length() - 1]))
+			output.resize(output.length() - 1);
+
 		LogDebug("Scan failed\n");
 		replym->set_result(false);
+		replym->set_stdout(output);
 		SendMessage(sock, reply);
 		return;
 	}

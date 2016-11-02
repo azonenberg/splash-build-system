@@ -49,7 +49,8 @@ public:
 		std::string root,
 		std::set<BuildFlag> flags,
 		std::set<std::string>& deps,
-		std::map<std::string, std::string>& dephashes);
+		std::map<std::string, std::string>& dephashes,
+		std::string& output);
 
 	virtual bool Build(
 		std::string triplet,
@@ -57,7 +58,7 @@ public:
 		std::string fname,
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
-		std::string& stdout);
+		std::string& output);
 
 protected:
 };

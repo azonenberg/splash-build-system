@@ -209,7 +209,8 @@ bool GNUToolchain::ScanDependencies(
 	set<BuildFlag> flags,
 	const vector<string>& sysdirs,
 	set<string>& deps,
-	map<string, string>& dephashes)
+	map<string, string>& dephashes,
+	string& output)
 {
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
@@ -224,10 +225,16 @@ bool GNUToolchain::ScanDependencies(
 	for(auto f : flags)
 		cmdline += FlagToString(f) + " ";
 	cmdline += path;
+	cmdline += " 2>&1";
 	LogDebug("Command line: %s\n", cmdline.c_str());
 
 	//Run it
-	string makerule = ShellCommand(cmdline);
+	string makerule;
+	if(0 != ShellCommand(cmdline, makerule))
+	{
+		output = makerule;
+		return false;
+	}
 
 	//Parse it
 	size_t offset = makerule.find(':');
@@ -296,8 +303,11 @@ bool GNUToolchain::ScanDependencies(
 			//Including random headers by absolute path is not portable!
 			if(longest_prefix == "")
 			{
-				LogError("Path %s could not be resolved to a system or project include directory\n",
+				char tmp[1024];
+				snprintf(tmp, sizeof(tmp),
+					"Path %s could not be resolved to a system or project include directory\n",
 					f.c_str());
+				output += tmp;
 				return false;
 			}
 
@@ -341,13 +351,13 @@ bool GNUToolchain::Compile(
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
-	string& stdout)
+	string& output)
 {
 	//If any source has a .o extension, we're linking and not compiling
 	for(auto s : sources)
 	{
 		if(s.find(".o") != string::npos)
-			return Link(exe, triplet, sources, fname, flags, outputs, stdout);
+			return Link(exe, triplet, sources, fname, flags, outputs, output);
 	}
 
 	LogDebug("Compile for arch %s\n", triplet.c_str());
@@ -370,7 +380,7 @@ bool GNUToolchain::Compile(
 	LogDebug("Command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
-	if(0 != ShellCommand(cmdline, stdout))
+	if(0 != ShellCommand(cmdline, output))
 		return false;
 
 	//Get the outputs
@@ -395,7 +405,7 @@ bool GNUToolchain::Link(
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
-	string& stdout)
+	string& output)
 {
 	LogDebug("Link for arch %s\n", triplet.c_str());
 	LogIndenter li;
@@ -417,7 +427,7 @@ bool GNUToolchain::Link(
 	LogDebug("Command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
-	if(0 != ShellCommand(cmdline, stdout))
+	if(0 != ShellCommand(cmdline, output))
 	{
 		LogDebug("link failed\n");
 		return false;

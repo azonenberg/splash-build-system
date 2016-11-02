@@ -117,10 +117,11 @@ bool GNUCToolchain::ScanDependencies(
 	string root,
 	set<BuildFlag> flags,
 	set<string>& deps,
-	map<string, string>& dephashes)
+	map<string, string>& dephashes,
+	string& output)
 {
 	return GNUToolchain::ScanDependencies(
-		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes);
+		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes, output);
 }
 
 /**
@@ -132,7 +133,7 @@ bool GNUCToolchain::Build(
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
-	string& stdout)
+	string& output)
 {
-	return GNUToolchain::Compile(m_basepath, triplet, sources, fname, flags, outputs, stdout);
+	return GNUToolchain::Compile(m_basepath, triplet, sources, fname, flags, outputs, output);
 }

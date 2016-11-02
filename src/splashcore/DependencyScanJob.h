@@ -73,6 +73,12 @@ public:
 	const std::map<std::string, std::string>& GetOutput()
 	{ return m_output; }
 
+	const std::string& GetErrors()
+	{ return m_errors; }
+
+	void SetErrors(const std::string& err)
+	{ m_errors = err; }
+
 protected:
 
 	/// @brief Path of the input file
@@ -94,6 +100,11 @@ protected:
 		The hash is needed b/c we may have system headers, etc
 	 */
 	std::map<std::string, std::string> m_output;
+
+	/**
+		@brief Errors from the scan
+	 */
+	std::string m_errors;
 };
 
 #endif
