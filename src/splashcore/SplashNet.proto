@@ -49,6 +49,13 @@ message FileChanged
 	bool	config		= 4;	//set to true if the file is a build script and we should load the config
 };
 
+//Reports that a lot of files changed clientside
+//(used for initial startup, mostly)
+message BulkFileChanged
+{
+	repeated FileChanged	files	= 1;	//The files
+};
+
 //Report that a file was deleted clientside
 message FileRemoved
 {
@@ -59,12 +66,28 @@ message FileRemoved
 message FileAck
 {
 	bool	fileCached	= 1;	//true if in cache, false if we have to send content
+	string	fname		= 2;	//name of the file
+};
+
+//Acknowledgements for a lot of files
+message BulkFileAck
+{
+	repeated FileAck acks = 1;	//the acks
 };
 
 //Send contents of a file to the server
 message FileData
 {
 	bytes	fileData	= 1;	//the contents of the file
+	string	fname		= 2;	//the name of the file
+	string	hash 		= 3;	//sha256 of the file
+	string	id			= 4;	//ID hash of the file
+};
+
+//Send contents of multiple files to the server
+message BulkFileData
+{
+	repeated FileData data = 1;	//the files
 };
 
 //Report basic info about a build server, so we can schedule jobs more effectively
@@ -337,5 +360,8 @@ message SplashMsg
 		NodeBuildRequest		nodeBuildRequest		= 22;
 		NodeBuildResults		nodeBuildResults		= 23;
 		BuildResults			buildResults			= 24;
+		BulkFileChanged			bulkFileChanged			= 25;
+		BulkFileAck				bulkFileAck				= 26;
+		BulkFileData			bulkFileData			= 27;
 	}
 };

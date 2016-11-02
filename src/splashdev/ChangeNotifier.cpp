@@ -31,30 +31,88 @@
 
 using namespace std;
 
+bool ProcessBulkFileAck(Socket& s, SplashMsg& msg)
+{
+	//Sanity check
+	if(msg.Payload_case() != SplashMsg::kBulkFileAck)
+	{
+		LogWarning("Invalid message (expected bulkFileAck, got %d instead)\n",
+			msg.Payload_case());
+		return false;
+	}
+	auto ack = msg.bulkfileack();
+
+	//Prepare the response message
+	SplashMsg cont;
+	auto contm = cont.mutable_bulkfiledata();
+	bool empty = true;
+
+	//Look at the response and see what's what
+	for(int i=0; i<ack.acks_size(); i++)
+	{
+		//Skip the file if it's already in cache server side
+		auto a = ack.acks(i);
+		if(a.filecached())
+			continue;
+
+		//Server does NOT have it in cache! Send the content
+		//But first, make sure the file name is valid
+		string fname = a.fname();
+		if( (fname.find("..") != string::npos) || (fname[0] == '/') )
+		{
+			LogError("File name \"%s\" is invalid (contains .. or leading /)\n", fname.c_str());
+			return false;
+		}
+
+		//LogDebug("new content for %s is not in cache, sending file to server\n", fname.c_str());
+
+		//Send the stuff
+		empty = false;
+		auto c = contm->add_data();
+		string data = GetFileContents(fname);
+		string hash = sha256(data);
+		c->set_fname(fname);
+		c->set_hash(hash);
+		c->set_id(hash);
+		c->set_filedata(data);
+	}
+
+	//If we have at least one file worth of content to send, do so
+	if(!empty)
+	{
+		if(!SendMessage(s, cont, "server"))
+			return false;
+	}
+
+	return true;
+}
+
 /**
-	@brief Sends change notifications to the server for a given directory
+	@brief Makes a change notification message for a given directory
 
 	@param s			Server socket
 	@param path			Path to the directory that changed
  */
-void SendChangeNotificationForDir(Socket& s, string path)
+void BuildChangeNotificationForDir(BulkFileChanged* msg, string path)
 {
 	//Stop if it doesn't exist (sanity check)
 	if(!DoesDirectoryExist(path))
 		return;
+
+	//LogDebug("Sending change notification for %s\n", path.c_str());
 
 	//See if we have a build.yml in this directory
 	//If so, pre-send its config section (since it may contain config inherited by our children)
 	string scriptpath = path + "/build.yml";
 	bool hasScript = DoesFileExist(scriptpath);
 	if(hasScript)
-		SendChangeNotificationForFile(s, scriptpath, false, true);
+		BuildChangeNotificationForFile(msg, scriptpath, false, true);
 
 	//Send change notices for our subdirectories
 	vector<string> children;
 	FindSubdirs(path, children);
 	for(auto x : children)
-		SendChangeNotificationForDir(s, x);
+		BuildChangeNotificationForDir(msg, x);
 
 	//Send change notices for our files
 	//(except for the build script, if present).
@@ -64,24 +122,24 @@ void SendChangeNotificationForDir(Socket& s, string path)
 	for(auto x : files)
 	{
 		if(x != scriptpath)
-			SendChangeNotificationForFile(s, x, true, false);
+			BuildChangeNotificationForFile(msg, x, true, false);
 	}
 
 	//Finally, load the body of the build script
 	//(but not the config, since that would require re-parsing our children)
 	if(hasScript)
-		SendChangeNotificationForFile(s, scriptpath, true, false);
+		BuildChangeNotificationForFile(msg, scriptpath, true, false);
 }
 
 /**
-	@brief Sends a change notification to the server for a single file
+	@brief Builds a change notification for a single file
 
-	@param s			Server socket
+	@param msg			Server socket
 	@param path			Path to the file that changed
 	@param body			True if we should re-parse the body (only meaningful if path is a build.yml)
 	@param config		True if we should re-parse the config section (only meaningful if path is a build.yml)
  */
-void SendChangeNotificationForFile(Socket& s, string path, bool body, bool config)
+void BuildChangeNotificationForFile(BulkFileChanged* msg, string path, bool body, bool config)
 {
 	//Hash the file
 	string hash = sha256_file(path);
@@ -94,42 +152,14 @@ void SendChangeNotificationForFile(Socket& s, string path, bool body, bool confi
 	else
 		LogWarning("Changed file %s is not within project root\n", path.c_str());
 
-	LogDebug("Sending change notification for %s\n", path.c_str());
+	//LogDebug("Sending change notification for %s\n", path.c_str());
 
 	//Tell the server it changed
-	SplashMsg change;
-	auto mcg = change.mutable_filechanged();
+	auto mcg = msg->add_files();
 	mcg->set_fname(fname);
 	mcg->set_hash(hash);
 	mcg->set_body(body);
 	mcg->set_config(config);
-	if(!SendMessage(s, change, "server"))
-		return;
-
-	//Ask the server if they need content of the file
-	SplashMsg ack;
-	if(!RecvMessage(s, ack, "server"))
-		return;
-	if(ack.Payload_case() != SplashMsg::kFileAck)
-	{
-		LogWarning("Invalid message (expected fileAck, got %d instead)\n",
-			ack.Payload_case());
-		return;
-	}
-
-	//Don't send the file if the server already has it in the cache
-	if(ack.fileack().filecached())
-		return;
-
-	LogDebug("    new content is not in cache, sending file to server\n");
-
-	//Read the file into RAM
-	//TODO: cap for HUGE files, don't send them to the server by default
-	SplashMsg data;
-	auto mdat = data.mutable_filedata();
-	mdat->set_filedata(GetFileContents(path));
-	if(!SendMessage(s, data, "server"))
-		return;
 }
 
 void SendDeletionNotificationForFile(Socket& s, std::string path)

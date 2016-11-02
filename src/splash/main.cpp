@@ -211,9 +211,9 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		auto f = r.fname();
 		auto h = r.hash();
 
-		if(f.find("..") != string::npos)
+		if( (f.find("..") != string::npos) || (f[0] == '/') )
 		{
-			LogError("Filename \"%s\" contains directory traversal, skipping\n", f.c_str());
+			LogError("Filename \"%s\" contains directory traversal or absolute path, skipping\n", f.c_str());
 			continue;
 		}
 

@@ -104,7 +104,18 @@ int main(int argc, char* argv[])
 	//Recursively send file-changed notifications for everything in our working directory
 	//(in case anything changed while we weren't running)
 	LogVerbose("Sending initial change notifications...\n");
-	SendChangeNotificationForDir(sock, g_clientSettings->GetProjectRoot());
+	double start = GetTime();
+	SplashMsg icn;
+	BuildChangeNotificationForDir(icn.mutable_bulkfilechanged(), g_clientSettings->GetProjectRoot());
+	if(!SendMessage(sock, icn))
+		return 1;
+	SplashMsg icr;
+	if(!RecvMessage(sock, icr))
+		return 1;
+	if(!ProcessBulkFileAck(sock, icr))
+		return 1;
+	double dt = GetTime() - start;
+	LogVerbose("Change notifications sent (in %.3f sec)\n", dt);
 
 	//Open the source directory and start an inotify watcher on it and all subdirectories
 	int hnotify = inotify_init();

@@ -61,5 +61,15 @@ void WatchedFileChanged(Socket& s, int type, string fname)
 
 	//File modified or moved? Send the new status
 	if( ( (type & IN_MODIFY) == IN_MODIFY ) || ( (type & IN_MOVED_TO) == IN_MOVED_TO ) )
-		SendChangeNotificationForFile(s, fname);
+	{
+		SplashMsg icn;
+		BuildChangeNotificationForFile(icn.mutable_bulkfilechanged(), fname);
+		if(!SendMessage(s, icn))
+			return;
+		SplashMsg icr;
+		if(!RecvMessage(s, icr))
+			return;
+		if(!ProcessBulkFileAck(s, icr))
+			return;
+	}
 }

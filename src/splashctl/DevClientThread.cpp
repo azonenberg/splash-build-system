@@ -31,7 +31,8 @@
 
 using namespace std;
 
-bool OnFileChanged(Socket& s, const FileChanged& msg, string& hostname, clientID id);
+bool OnBulkFileData(Socket& s, const BulkFileData& msg, string& hostname, clientID id);
+bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, clientID id);
 bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id);
 
 void DevClientThread(Socket& s, string& hostname, clientID id)
@@ -61,8 +62,13 @@ void DevClientThread(Socket& s, string& hostname, clientID id)
 
 		switch(msg.Payload_case())
 		{
-			case SplashMsg::kFileChanged:
-				if(!OnFileChanged(s, msg.filechanged(), hostname, id))
+			case SplashMsg::kBulkFileChanged:
+				if(!OnBulkFileChanged(s, msg.bulkfilechanged(), hostname, id))
+					return;
+				break;
+
+			case SplashMsg::kBulkFileData:
+				if(!OnBulkFileData(s, msg.bulkfiledata(), hostname, id))
 					return;
 				break;
 
@@ -93,60 +99,80 @@ bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id)
 }
 
 /**
-	@brief Process a msgFileChanged
+	@brief Process a msgBulkFileData
  */
-bool OnFileChanged(Socket& s, const FileChanged& msg, string& hostname, clientID id)
+bool OnBulkFileData(Socket& s, const BulkFileData& msg, string& hostname, clientID id)
 {
-	string fname = msg.fname();
-	string hash = msg.hash();
+	LogDebug("Got a bulk file data\n");
 
-	//See if we have the file in the global cache
-	//This is a source file since it's in a client's working copy.
-	//As a result, the object ID is just the sha256sum of the file itself
-	bool hit = g_cache->IsCached(hash);
-
-	//Debug print
-	if(hit)
+	for(int i=0; i<msg.data_size(); i++)
 	{
-		LogVerbose("File %s on node %s changed (new version already in cache)\n",
-			fname.c_str(),
-			hostname.c_str());
-	}
-	else
-	{
-		LogVerbose("File %s on node %s changed (fetching content from client)\n",
-			fname.c_str(),
-			hostname.c_str());
-	}
+		auto d = msg.data(i);
 
-	//Report status to the client
-	SplashMsg ack;
-	auto ackm = ack.mutable_fileack();
-	ackm->set_filecached(hit);
-	if(!SendMessage(s, ack, hostname))
-		return false;
-
-	//If it's not in the cache, add it
-	if(!hit)
-	{
-		//Get data from client
-		SplashMsg data;
-		if(!RecvMessage(s, data, hostname))
-			return false;
-		if(data.Payload_case() != SplashMsg::kFileData)
-		{
-			LogWarning("Connection from %s dropped (expected fileData, got %d instead)\n",
-				hostname.c_str(), data.Payload_case());
-			return false;
-		}
-		string buf = data.filedata().filedata();
+		string fname = d.fname();
 
 		//Write the file to cache
-		g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, buf, "");
+		g_cache->AddFile(GetBasenameOfFile(fname), d.id(), d.hash(), d.filedata(), "");
+
+		//Update the file's status in our working copy
+		//(and re-run build scripts if needed)
+		g_nodeManager->GetWorkingCopy(id)->UpdateFile(fname, d.hash(), true, true);
 	}
 
-	//Update the file's status in our working copy
-	g_nodeManager->GetWorkingCopy(id)->UpdateFile(fname, hash, msg.body(), msg.config());
+	return true;
+}
+
+/**
+	@brief Process a msgBulkFileChanged
+ */
+bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, clientID id)
+{
+	//Build the response
+	SplashMsg ack;
+	auto ackm = ack.mutable_bulkfileack();
+
+	for(int i=0; i<msg.files_size(); i++)
+	{
+		auto mfc = msg.files(i);
+
+		string fname = mfc.fname();
+		string hash = mfc.hash();
+
+		//See if we have the file in the global cache
+		//This is a source file since it's in a client's working copy.
+		//As a result, the object ID is just the sha256sum of the file itself
+		bool hit = g_cache->IsCached(hash);
+
+		//Debug print
+		/*
+		if(hit)
+		{
+			LogVerbose("File %s on node %s changed (new version already in cache)\n",
+				fname.c_str(),
+				hostname.c_str());
+		}
+		else
+		{
+			LogVerbose("File %s on node %s changed (fetching content from client)\n",
+				fname.c_str(),
+				hostname.c_str());
+		}
+		*/
+
+		//Report status to the client
+		auto fack = ackm->add_acks();
+		fack->set_fname(fname);
+		fack->set_filecached(hit);
+
+		//If it's in the cache, update the status now
+		//(if not, wait until the file data comes in)
+		if(hit)
+			g_nodeManager->GetWorkingCopy(id)->UpdateFile(fname, hash, mfc.body(), mfc.config());
+	}
+
+	//Send it to the client
+	if(!SendMessage(s, ack, hostname))
+		return false;
 
 	return true;
 }

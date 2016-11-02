@@ -573,6 +573,12 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			{
 				if( (type == "exe") || type.empty() )
 					target = new CPPExecutableNode(this, a, c, name, path, exepath, toolchain, node);
+
+				else
+				{
+					LogParseError("Don't know what to do with target type \"%s\"", type.c_str());
+					continue;
+				}
 			}
 
 			else
