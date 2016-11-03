@@ -98,7 +98,7 @@ CPPExecutableNode::CPPExecutableNode(
 		//If we already have a node, save it
 		if(m_graph->HasNodeWithHash(hash))
 		{
-			LogDebug("Already have source node for %s\n", fname.c_str());
+			//LogDebug("Already have source node for %s\n", fname.c_str());
 			sources.push_back(m_graph->GetNodeWithHash(hash));
 			continue;
 		}

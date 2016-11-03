@@ -34,6 +34,7 @@ using namespace std;
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
 bool ProcessBuildJob(Socket& s, string& hostname, Job* job);
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
+bool ProcessBulkHashRequest(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
 bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
@@ -185,7 +186,10 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 		//Get a response. It's either "done" or "get more files"
 		SplashMsg rxm;
 		if(!RecvMessage(s, rxm, hostname))
+		{
+			LogError("failed to recv\n");
 			return false;
+		}
 
 		auto type = rxm.Payload_case();
 
@@ -194,6 +198,12 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 			//Asking for more data
 			case SplashMsg::kContentRequestByHash:
 				if(!ProcessContentRequest(s, hostname, rxm))
+					return false;
+				break;
+
+			//Asking for more data
+			case SplashMsg::kBulkHashRequest:
+				if(!ProcessBulkHashRequest(s, hostname, rxm, job))
 					return false;
 				break;
 
@@ -216,6 +226,8 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
  */
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job)
 {
+	//LogDebug("Got dependency results\n");
+
 	//If the scan failed, we can't do anything else
 	auto res = msg.dependencyresults();
 	if(!res.result())
@@ -248,6 +260,42 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 	}
 
 	//all good
+	return true;
+}
+
+/**
+	@brief Responds to a client's request for more data
+ */
+bool ProcessBulkHashRequest(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job)
+{
+	//Get the request info
+	auto res = msg.bulkhashrequest();
+
+	//Pull out the working copy etc from the job
+	auto wc = job->GetWorkingCopy();
+
+	//Set up the reply
+	SplashMsg resp;
+	auto respm = resp.mutable_bulkhashresponse();
+
+	//Go over the list of files and see if we can find them
+	for(int i=0; i<res.fnames_size(); i++)
+	{
+		auto f = res.fnames(i);
+
+		//Make a reply
+		auto rp = respm->add_files();
+		rp->set_fname(f);
+
+		//Look it up
+		string h = wc->GetFileHash(f);
+		rp->set_hash(h);
+		rp->set_found(h != "");
+	}
+
+	//Send it
+	if(!SendMessage(s, resp, hostname))
+		return false;
 	return true;
 }
 

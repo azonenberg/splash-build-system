@@ -332,22 +332,78 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 			replym->set_result(false);
 			replym->set_stdout(output);
 			SendMessage(sock, reply);
+
+			//we failed anyway, no point in checking SendMessage return value
 			return;
 		}
 
 		//If the scan found files we're missing, ask for them!
 		if(!missingFiles.empty())
 		{
-			LogWarning("Found missing files\n");
+			//Ask the server for the hashes of these files
+			SplashMsg hreq;
+			auto hreqm = hreq.mutable_bulkhashrequest();
+			//LogDebug("Found missing files, asking server for hashes\n");
 			for(auto f : missingFiles)
 			{
 				LogIndenter li;
-				LogNotice("%s\n", f.c_str());
+				hreqm->add_fnames(f);
 			}
+			if(!SendMessage(sock, hreq))
+				return;
+
+			LogIndenter li;
+
+			//Wait for response
+			SplashMsg hresp;
+			if(!RecvMessage(sock, hresp))
+				return;
+			if(hresp.Payload_case() != SplashMsg::kBulkHashResponse)
+			{
+				LogWarning("Bad message (expected BulkHashResponse, got %d instead)\n", hresp.Payload_case());
+				return;
+			}
+
+			//Process the response
+			auto hres = hresp.bulkhashresponse();
+			for(int i=0; i<hres.files_size(); i++)
+			{
+				auto f = hres.files(i);
+
+				//Complain if we couldn't find the file
+				if(!f.found())
+				{
+					replym->set_result(false);
+					replym->set_stdout(string("File ") + f.fname() + " was not found on server\n");
+					SendMessage(sock, reply);
+					LogWarning("Couldn't find file %s\n", f.fname().c_str());
+					return;
+				}
+
+				//Make sure the file name is valid
+				//TODO: return error?
+				string fname = f.fname();
+				if( (fname.find("..") != string::npos) || (fname[0] == '/') )
+					return;
+
+				//Pull file into cache if needed, then write to disk
+				string hash = f.hash();
+				if(!RefreshCachedFile(sock, hash, fname))
+					return;
+				string data = g_cache->ReadCachedFile(hash);
+				//LogDebug("Writing source file %s\n", fname.c_str());
+				fname = g_builddir + "/" + fname;
+				MakeDirectoryRecursive(GetDirOfFile(fname), 0700);
+				if(!PutFileContents(fname, data))
+					return;
+			}
+
+			//Got the files, try it again
+			continue;
 		}
 
 		//Successful completion of the scan, crunch the results
-		LogDebug("Scan completed\n");
+		//LogDebug("Scan completed\n");
 		replym->set_result(true);
 		for(auto d : deps)
 		{
@@ -356,6 +412,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 			rd->set_hash(hashes[d]);
 		}
 		SendMessage(sock, reply);
+		return;
 	}
 }
 

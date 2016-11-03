@@ -333,7 +333,22 @@ message BuildResults
 //Ask for the hash of a given file, given the name
 message BulkHashRequest
 {
-	repeated	string		fnames		= 3;	//List of file names we need to look up
+	repeated	string		fnames		= 1;	//List of file names we need to look up
+};
+
+//The hash of a file we asked for
+message HashResponse
+{
+				string		fname		= 1;	//Name of the file we asked for
+				string		hash		= 2;	//Hash of the file (if found)
+				bool		found		= 3;	//Indicates if the file was found in the working copy
+};
+
+//Response to a BulkHashRequest
+message BulkHashResponse
+{
+	repeated	HashResponse	files	= 1;	//List of files we were asked to look up
+												//(whether found or not)
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -371,5 +386,6 @@ message SplashMsg
 		BulkFileAck				bulkFileAck				= 26;
 		BulkFileData			bulkFileData			= 27;
 		BulkHashRequest			bulkHashRequest			= 28;
+		BulkHashResponse		bulkHashResponse		= 29;
 	}
 };

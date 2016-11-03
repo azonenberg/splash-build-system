@@ -227,7 +227,7 @@ bool GNUToolchain::ScanDependencies(
 		cmdline += FlagToString(f) + " ";
 	cmdline += path;
 	cmdline += " 2>&1";
-	LogDebug("Command line: %s\n", cmdline.c_str());
+	//LogDebug("Command line: %s\n", cmdline.c_str());
 
 	//Run it
 	string makerule;
@@ -322,7 +322,7 @@ bool GNUToolchain::ScanDependencies(
 				//TODO: Canonicalize this
 				else
 				{
-					missingFiles.emplace(str_replace(root, "", GetDirOfFile(path)) + "/" + f);
+					missingFiles.emplace(str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f);
 					continue;
 				}
 			}

@@ -94,7 +94,10 @@ bool WorkingCopy::HasFile(string path)
 string WorkingCopy::GetFileHash(string path)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
-	return m_fileMap[path];
+
+	if(m_fileMap.find(path) != m_fileMap.end())
+		return m_fileMap[path];
+	return "";
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
