@@ -46,7 +46,8 @@ public:
 		std::string exeSuffix,
 		std::string shlibSuffix,
 		std::string stlibSuffix,
-		std::string objSuffix);
+		std::string objSuffix,
+		std::string shlibPrefix);
 	virtual ~RemoteToolchain();
 
 	void AddLanguage(Language l)

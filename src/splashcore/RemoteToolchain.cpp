@@ -44,7 +44,8 @@ RemoteToolchain::RemoteToolchain(
 		string exeSuffix,
 		string shlibSuffix,
 		string stlibSuffix,
-		string objSuffix)
+		string objSuffix,
+		string shlibPrefix)
 : Toolchain("", type)
 {
 	m_hash = hash;
@@ -56,6 +57,7 @@ RemoteToolchain::RemoteToolchain(
 	m_shlibSuffix = shlibSuffix;
 	m_stlibSuffix = stlibSuffix;
 	m_objSuffix = objSuffix;
+	m_shlibPrefix = shlibPrefix;
 }
 
 RemoteToolchain::~RemoteToolchain()

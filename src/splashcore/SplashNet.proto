@@ -122,6 +122,7 @@ message AddCompiler
 				string	shlibSuffix	= 8;	//Shared library suffix, including the dot if required (.dll, .so, etc)
 				string	stlibSuffix = 9;	//Static library suffix, including the dot if required (.lib, .a, etc)
 				string	objSuffix	= 10;	//Object file suffix, including the dot if requied (.obj, .o, etc)
+				string	shlibPrefix	= 11;	//Shared library prefix ("lib" etc)
 };
 
 //Request that a build server perform a dependency scan on a specific source file

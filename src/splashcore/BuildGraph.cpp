@@ -732,6 +732,8 @@ string BuildGraph::GetOutputFilePath(
 	else
 		LogParseError("Unknown type \"%s\"\n", type.c_str());
 
+	LogIndenter li;
+	LogDebug("final path = %s\n", path.c_str());
 	return path;
 }
 
