@@ -72,7 +72,8 @@ bool RemoteToolchain::ScanDependencies(
 	set<BuildFlag> /*flags*/,
 	set<string>& /*deps*/,
 	map<string, string>& /*dephashes*/,
-	string& /*output*/)
+	string& /*output*/,
+	set<string>& /*missingFiles*/)
 {
 	LogError("RemoteToolchain::ScanDependencies() cannot be used (must invoke scheduler to do a remote scan job)\n");
 	return false;

@@ -46,7 +46,8 @@ public:
 		std::set<BuildFlag> flags,
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes,
-		std::string& output);
+		std::string& output,
+		std::set<std::string>& missingFiles);
 	
 protected:
 };

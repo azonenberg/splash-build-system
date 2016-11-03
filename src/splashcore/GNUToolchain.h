@@ -49,7 +49,8 @@ public:
 		const std::vector<std::string>& sysdirs,
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes,
-		std::string& output);
+		std::string& output,
+		std::set<std::string>& missingFiles);
 
 	virtual bool Compile(
 		std::string exe,

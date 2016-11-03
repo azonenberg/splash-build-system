@@ -118,10 +118,11 @@ bool GNUCToolchain::ScanDependencies(
 	set<BuildFlag> flags,
 	set<string>& deps,
 	map<string, string>& dephashes,
-	string& output)
+	string& output,
+	set<string>& missingFiles)
 {
 	return GNUToolchain::ScanDependencies(
-		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes, output);
+		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes, output, missingFiles);
 }
 
 /**

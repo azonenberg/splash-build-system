@@ -316,34 +316,47 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	auto replym = reply.mutable_dependencyresults();
 
 	//Run the scanner proper
-	set<string> deps;
-	map<string, string> hashes;
-	string output;
-	if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes, output))
+	while(true)
 	{
-		//trim off trailing newlines
-		while(isspace(output[output.length() - 1]))
-			output.resize(output.length() - 1);
+		set<string> deps;
+		map<string, string> hashes;
+		string output;
+		set<string> missingFiles;
+		if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes, output, missingFiles))
+		{
+			//trim off trailing newlines
+			while(isspace(output[output.length() - 1]))
+				output.resize(output.length() - 1);
 
-		LogDebug("Scan failed\n");
-		replym->set_result(false);
-		replym->set_stdout(output);
+			LogDebug("Scan failed\n");
+			replym->set_result(false);
+			replym->set_stdout(output);
+			SendMessage(sock, reply);
+			return;
+		}
+
+		//If the scan found files we're missing, ask for them!
+		if(!missingFiles.empty())
+		{
+			LogWarning("Found missing files\n");
+			for(auto f : missingFiles)
+			{
+				LogIndenter li;
+				LogNotice("%s\n", f.c_str());
+			}
+		}
+
+		//Successful completion of the scan, crunch the results
+		LogDebug("Scan completed\n");
+		replym->set_result(true);
+		for(auto d : deps)
+		{
+			auto rd = replym->add_deps();
+			rd->set_fname(d);
+			rd->set_hash(hashes[d]);
+		}
 		SendMessage(sock, reply);
-		return;
 	}
-
-	//TODO: If the scan found files we're missing, ask for them!
-
-	//Successful completion of the scan, crunch the results
-	LogDebug("Scan completed\n");
-	replym->set_result(true);
-	for(auto d : deps)
-	{
-		auto rd = replym->add_deps();
-		rd->set_fname(d);
-		rd->set_hash(hashes[d]);
-	}
-	SendMessage(sock, reply);
 }
 
 /**

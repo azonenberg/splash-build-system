@@ -210,7 +210,8 @@ bool GNUToolchain::ScanDependencies(
 	const vector<string>& sysdirs,
 	set<string>& deps,
 	map<string, string>& dephashes,
-	string& output)
+	string& output,
+	set<string>& missingFiles)
 {
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
@@ -278,8 +279,9 @@ bool GNUToolchain::ScanDependencies(
 	//LogDebug("Absolute paths:\n");
 	for(size_t i=1; i<files.size(); i++)
 	{
-		//If the path begins with our working copy directory, trim it off and call the rest the relative path
 		string f = files[i];
+
+		//If the path begins with our working copy directory, trim it off and call the rest the relative path
 		if(f.find(root) == 0)
 		{
 			//LogDebug("        local dir\n");
@@ -289,6 +291,7 @@ bool GNUToolchain::ScanDependencies(
 		//No go - loop over the system include paths
 		else
 		{
+			//If it's located in a system include directory, that's a hit
 			string longest_prefix = "";
 			for(auto dir : sysdirs)
 			{
@@ -300,15 +303,28 @@ bool GNUToolchain::ScanDependencies(
 			}
 
 			//If it's not in the project dir OR a system path, we have a problem.
-			//Including random headers by absolute path is not portable!
 			if(longest_prefix == "")
 			{
-				char tmp[1024];
-				snprintf(tmp, sizeof(tmp),
-					"Path %s could not be resolved to a system or project include directory\n",
-					f.c_str());
-				output += tmp;
-				return false;
+				//If it's an absolute path, fail.
+				//Including random headers by absolute path is not portable!
+				if(f[0] == '/')
+				{
+					char tmp[1024];
+					snprintf(tmp, sizeof(tmp),
+						"Absolute path %s could not be resolved to a system or project include directory\n",
+						f.c_str());
+					output += tmp;
+					return false;
+				}
+
+				//Relative path, but we don't have it locally
+				//Ask the server for it (by best-guess filename)
+				//TODO: Canonicalize this
+				else
+				{
+					missingFiles.emplace(str_replace(root, "", GetDirOfFile(path)) + "/" + f);
+					continue;
+				}
 			}
 
 			//Trim off the prefix and go

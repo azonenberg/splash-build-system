@@ -330,6 +330,12 @@ message BuildResults
 	repeated	BuildResult	results		= 2;	//The results of thi sbuild
 };
 
+//Ask for the hash of a given file, given the name
+message BulkHashRequest
+{
+	repeated	string		fnames		= 3;	//List of file names we need to look up
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -364,5 +370,6 @@ message SplashMsg
 		BulkFileChanged			bulkFileChanged			= 25;
 		BulkFileAck				bulkFileAck				= 26;
 		BulkFileData			bulkFileData			= 27;
+		BulkHashRequest			bulkHashRequest			= 28;
 	}
 };

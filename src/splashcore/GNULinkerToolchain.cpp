@@ -91,7 +91,8 @@ bool GNULinkerToolchain::ScanDependencies(
 	set<BuildFlag> /*flags*/,
 	set<string>& /*deps*/,
 	map<string, string>& /*dephashes*/,
-	string& /*output*/)
+	string& /*output*/,
+	set<string>& /*missingFiles*/)
 {
 	LogError("GNULinkerToolchain::ScanDependencies() is not yet implemented\n");
 	return false;
