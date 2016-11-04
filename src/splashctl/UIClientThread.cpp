@@ -200,7 +200,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 	//Filter out those not in the build directory (TODO: can we do this faster than O(n)?)
 	//and send the whole list to the client for syncing.
-	LogDebug("Build dir list\n");
+	//LogDebug("Build dir list\n");
 	SplashMsg result;
 	auto resultm = result.mutable_buildresults();
 	resultm->set_status(!failed);
