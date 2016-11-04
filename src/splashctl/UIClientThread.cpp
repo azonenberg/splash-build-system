@@ -161,8 +161,6 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	bool failed = false;
 	while(!jobs.empty())
 	{
-		LogIndenter li;
-
 		//See what's finished this pass
 		set<Job*> done;
 		for(auto j : jobs)

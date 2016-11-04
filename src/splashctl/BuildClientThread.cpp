@@ -149,6 +149,9 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			//TODO: Put it back in the queue or something fault tolerant?
 			bj->SetCanceled();
 			bj->Unref();
+
+			//TODO: Distinguish "job failed to run" from "job ran but was canceled"
+			//TODO: Don't quit the loop just because one job failed to run!!
 			break;
 		}
 
@@ -316,7 +319,9 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 	BuildGraphNode* node = bj->GetOutputNode();
 	auto wc = node->GetGraph()->GetWorkingCopy();
 	auto path = node->GetFilePath();
+
 	LogDebug("Run build job %s\n", path.c_str());
+	LogIndenter li;
 
 	//Look up the flags
 	set<BuildFlag> flags;
@@ -381,6 +386,8 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
  */
 bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Job* job)
 {
+	LogDebug("Build results\n");
+
 	auto res = msg.nodebuildresults();
 	LogIndenter li;
 
@@ -398,8 +405,9 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 	bool ok = res.success();
 	if(!ok)
 	{
-		//TODO: add reports etc anyway?
-		return true;
+		//TODO: add stdout to the job
+		LogError("Build failed!\n%s", res.stdout().c_str());
+		return false;
 	}
 
 	//Successful build if we get here
@@ -417,7 +425,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		string hash = file.hash();
 		string data = file.data();
 
-		LogDebug("File %s has hash %s\n", ffname.c_str(), hash.c_str());
+		LogDebug("Compiled file %s has hash %s\n", ffname.c_str(), hash.c_str());
 
 		//Main node output? Add to the cache using the node's hash
 		string shash;

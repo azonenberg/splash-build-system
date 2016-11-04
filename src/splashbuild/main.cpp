@@ -509,7 +509,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	}
 
 	//Successful completion of the scan, send the results to the server
-	LogDebug("Build finished\n");
+	LogDebug("Build finished (status = %d)\n", replym->success());
 	SendMessage(sock, reply);
 }
 

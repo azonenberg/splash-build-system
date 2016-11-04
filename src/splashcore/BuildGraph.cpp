@@ -504,7 +504,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			name.c_str(), path.c_str());
 		return;
 	}
-	string toolchain = node["toolchain"].as<std::string>();
+	string toolchain = node["toolchain"].as<std::string>();\
 
 	//Get the toolchain type
 	string chaintype;
@@ -565,6 +565,16 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	//We need separate nodes for each architecture since they can have different dependencies etc
 	for(auto a : arches)
 	{
+		//If we don't have any toolchains for this architecture, skip it
+		if(NULL == g_nodeManager->GetAnyToolchainForName(a, toolchain))
+		{
+			LogError(
+				"Target \"%s\" (declared in \"%s\") needs a toolchain of type \"%s\" for architecture \"%s\", "
+				"but no nodes could provide it\n",
+				name.c_str(), path.c_str(), toolchain.c_str(), a.c_str());
+			continue;
+		}
+
 		for(auto c : configs)
 		{
 			BuildGraphNode* target = NULL;
@@ -733,7 +743,7 @@ string BuildGraph::GetOutputFilePath(
 		LogParseError("Unknown type \"%s\"\n", type.c_str());
 
 	LogIndenter li;
-	LogDebug("final path = %s\n", path.c_str());
+	//LogDebug("final path = %s\n", path.c_str());
 	return path;
 }
 
