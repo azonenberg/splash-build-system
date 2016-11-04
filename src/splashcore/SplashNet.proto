@@ -295,6 +295,7 @@ message NodeBuildRequest
 	repeated	Dependency	sources		= 3;	//List of source files we're using
 	repeated	string		flags		= 4;	//List of meta-flags for the compile
 				string		fname		= 5;	//File name of the output
+	repeated	Dependency	deps		= 6;	//List of non-source dependencies
 };
 
 //A single file built by a compile

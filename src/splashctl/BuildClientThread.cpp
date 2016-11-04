@@ -359,7 +359,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 	set<BuildFlag> flags;
 	node->GetFlagsForUseAt(bj->GetFlagUsage(), flags);
 
-	//Build the scan request
+	//Build the request
 	SplashMsg req;
 	auto reqm = req.mutable_nodebuildrequest();
 	reqm->set_arch(node->GetArch());
@@ -368,6 +368,13 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 	{
 		string hash = wc->GetFileHash(src);
 		auto dep = reqm->add_sources();
+		dep->set_fname(src);
+		dep->set_hash(hash);
+	}
+	for(auto src : node->GetDependencies())
+	{
+		string hash = wc->GetFileHash(src);
+		auto dep = reqm->add_deps();
 		dep->set_fname(src);
 		dep->set_hash(hash);
 	}
@@ -461,7 +468,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		string shash;
 		if(GetBasenameOfFile(ffname) == base)
 		{
-			LogDebug("This is the compiled output for node %s (path %s)\n", nhash.c_str(), fname.c_str());
+			LogDebug("This is the compiled output for node %s\n(path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;
 		}
 

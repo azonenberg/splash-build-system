@@ -42,6 +42,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm);
 void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm);
 Toolchain* PrepBuild(string toolhash);
 bool RefreshCachedFile(Socket& sock, string hash, string fname);
+bool GrabSourceFile(Socket& sock, string fname, string hash);
 
 //Temporary directory we work in
 string g_tmpdir;
@@ -260,7 +261,7 @@ bool RefreshCachedFile(Socket& sock, string hash, string fname)
 	if(!g_cache->IsCached(hash))
 	{
 		//Ask for the file
-		LogDebug("Source file %s (%s) is not in cache, requesting it from server\n", fname.c_str(), hash.c_str());
+		LogDebug("Source file %s (%s) is not in cache yet\n", fname.c_str(), hash.c_str());
 		string edat;
 		if(!GetRemoteFileByHash(sock, g_clientSettings->GetServerHostname(), hash, edat))
 			return false;
@@ -417,6 +418,24 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	}
 }
 
+bool GrabSourceFile(Socket& sock, string fname, string hash)
+{
+	//See if we have the file in our local cache
+	if(!RefreshCachedFile(sock, hash, fname))
+		return false;
+
+	//Write it
+	string path = g_builddir + "/" + GetDirOfFile(fname);
+	MakeDirectoryRecursive(path, 0700);
+	string data = g_cache->ReadCachedFile(hash);
+	string fpath = g_builddir + "/" + fname;
+	LogDebug("Writing input file %s\n", fpath.c_str());
+	if(!PutFileContents(fpath, data))
+		return false;
+
+	return true;
+}
+
 /**
 	@brief Process a "build request" message from a client
  */
@@ -432,10 +451,16 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 
 	//Look up the list of sources
 	map<string, string> sources;				//Map of fname to hash
+	map<string, string> deps;
 	for(int i=0; i<rxm.sources_size(); i++)
 	{
 		auto src = rxm.sources(i);
 		sources[src.fname()] = src.hash();
+	}
+	for(int i=0; i<rxm.deps_size(); i++)
+	{
+		auto src = rxm.deps(i);
+		deps[src.fname()] = src.hash();
 	}
 
 	//Get each source file
@@ -443,22 +468,15 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(auto it : sources)
 	{
 		string fname = it.first;
-		string hash = it.second;
-
-		//See if we have the file in our local cache
-		if(!RefreshCachedFile(sock, hash, fname))
+		if(!GrabSourceFile(sock, fname, it.second))
 			return;
-
-		//Write it
-		string path = g_builddir + "/" + GetDirOfFile(fname);
-		MakeDirectoryRecursive(path, 0700);
-		string data = g_cache->ReadCachedFile(hash);
-		string fpath = g_builddir + "/" + fname;
-		LogDebug("Writing input file %s\n", fpath.c_str());
-		if(!PutFileContents(fpath, data))
+		fnames.emplace(g_builddir + "/" + fname);
+	}
+	for(auto it : deps)
+	{
+		string fname = it.first;
+		if(!GrabSourceFile(sock, fname, it.second))
 			return;
-
-		fnames.emplace(fpath);
 	}
 
 	//Look up the list of flags

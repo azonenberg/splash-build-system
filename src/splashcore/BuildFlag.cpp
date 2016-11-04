@@ -169,7 +169,7 @@ void BuildFlag::LoadOutputFlag()
 
 	//output/shared: produce a shared library
 	if(m_flag == "shared")
-		m_usage = COMPILE_TIME;
+		m_usage = COMPILE_TIME | LINK_TIME;
 
 	else
 		LogParseError("Flag \"output/%s\" is unknown\n", m_flag.c_str());

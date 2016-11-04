@@ -388,8 +388,11 @@ bool GNUToolchain::Compile(
 
 	//Make the full compile command line
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
-	for(auto f : flags)
+	cmdline += "-nostdinc ";					//make sure we only include files the server provided
+	cmdline += "-nostdinc++ ";
+	for(auto f : flags)							//special flags
 		cmdline += FlagToString(f) + " ";
+	cmdline += string("-I") + apath + "/ ";		//include the virtual system path
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";

@@ -228,6 +228,10 @@ void Cache::AddFile(string /*basename*/, string id, string hash, string data, st
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
+	//If the content is already in the cache, skip it
+	if(IsCached(id))
+		return;
+
 	//Create the directory. If it already exists, delete whatever junk was in there
 	string dirname = GetStoragePath(id);
 	if(DoesDirectoryExist(dirname))
