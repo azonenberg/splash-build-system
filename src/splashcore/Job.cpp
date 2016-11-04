@@ -39,6 +39,7 @@ Job::Job(Job::Priority prio, string toolchain)
 	, m_toolchainHash(toolchain)
 	, m_status(STATUS_PENDING)
 	, m_refcount(1)				//one ref, to our creator
+	, m_ok(false)
 {
 
 }
@@ -88,10 +89,11 @@ void Job::SetPending()
 	m_status = STATUS_PENDING;
 }
 
-void Job::SetDone()
+void Job::SetDone(bool ok)
 {
 	lock_guard<mutex> lock(m_mutex);
 	m_status = STATUS_DONE;
+	m_ok = ok;
 }
 
 void Job::SetCanceled()
@@ -142,9 +144,9 @@ bool Job::IsRunnable()
 }
 
 /**
-	@brief Checks if this job is failed (at least one dependency job was canceled)
+	@brief Checks if this job is failed (at least one dependency job was canceled or failed)
  */
-bool Job::IsFailed()
+bool Job::IsCanceledByDeps()
 {
 	lock_guard<mutex> lock(m_mutex);
 
@@ -155,6 +157,10 @@ bool Job::IsFailed()
 
 		//If the dependency was canceled we will never be runnable
 		if(status == STATUS_CANCELED)
+			return true;
+
+		//If the dependency completed, but failed, we will never be runnable
+		if( (status == STATUS_DONE) && (!d->IsSuccessful()) )
 			return true;
 	}
 

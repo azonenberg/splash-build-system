@@ -216,6 +216,10 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		//(not hash of the file content)
 		string hash = wc->GetFileHash(f);
 
+		//If not in the cache, skip it
+		if(!g_cache->IsCached(hash))
+			continue;
+
 		//Add the file
 		//TODO: supply stdout only if asked and have client cache it?
 		//TODO: set executable more sanely

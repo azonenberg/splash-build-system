@@ -80,7 +80,7 @@ public:
 	Status GetStatus();
 
 	void SetPending();
-	void SetDone();
+	void SetDone(bool ok);
 	void SetCanceled();
 	void SetRunning();
 
@@ -94,7 +94,10 @@ public:
 	void AddDependency(Job* job);
 
 	bool IsRunnable();
-	bool IsFailed();
+	bool IsCanceledByDeps();
+
+	bool IsSuccessful()
+	{ return m_ok; }
 
 protected:
 
@@ -117,6 +120,9 @@ protected:
 
 	/// @brief Jobs we depend on
 	std::set<Job*> m_dependencies;
+
+	/// @brief True if we completed successfully
+	bool m_ok;
 };
 
 #endif

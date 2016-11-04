@@ -31,11 +31,11 @@
 
 using namespace std;
 
-bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job);
-bool ProcessBuildJob(Socket& s, string& hostname, Job* job);
-bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
+bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& ok);
+bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok);
+bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job, bool& ok);
 bool ProcessBulkHashRequest(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job);
-bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job);
+bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job, bool& ok);
 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
@@ -113,18 +113,34 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
+			//If the job was canceled by dependencies, we cannot run it (ever)
+			if(djob->IsCanceledByDeps())
+			{
+				djob->SetCanceled();
+				djob->Unref();
+				continue;
+			}
+
+			//If the job is not runnable, figure out what to do
+			if(!djob->IsRunnable())
+			{
+				LogWarning("Job is not runnable yet!\n");
+			}
+
 			//Tell the dev client that the scan is in progress
 			djob->SetRunning();
 
 			//Push the job out to the client and run it
-			if(ProcessScanJob(s, hostname, djob))
+			bool ok = true;
+			if(ProcessScanJob(s, hostname, djob, ok))
 			{
-				djob->SetDone();
+				djob->SetDone(ok);
 				djob->Unref();
 				continue;
 			}
 
 			//Job FAILED to run (client disconnected?) - update status
+			//TODO: Put it back in the queue or something fault tolerant?
 			djob->SetCanceled();
 			djob->Unref();
 			continue;
@@ -134,13 +150,28 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		Job* bj = g_scheduler->PopJob(id);
 		if(bj != NULL)
 		{
+			//If the job was canceled by dependencies, we cannot run it (ever)
+			if(bj->IsCanceledByDeps())
+			{
+				bj->SetCanceled();
+				bj->Unref();
+				continue;
+			}
+
+			//If the job is not runnable, figure out what to do
+			if(!bj->IsRunnable())
+			{
+				LogWarning("Job is not runnable yet!\n");
+			}
+
 			//We've kicked off the job, let others know
 			bj->SetRunning();
 
 			//Push the job out to the client and run it
-			if(ProcessBuildJob(s, hostname, bj))
+			bool ok = true;
+			if(ProcessBuildJob(s, hostname, bj, ok))
 			{
-				bj->SetDone();
+				bj->SetDone(ok);
 				bj->Unref();
 				continue;
 			}
@@ -149,9 +180,6 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			//TODO: Put it back in the queue or something fault tolerant?
 			bj->SetCanceled();
 			bj->Unref();
-
-			//TODO: Distinguish "job failed to run" from "job ran but was canceled"
-			//TODO: Don't quit the loop just because one job failed to run!!
 			break;
 		}
 
@@ -162,8 +190,10 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 
 /**
 	@brief Runs a dependency-scan job
+
+	@return True if we can continue. False only on unrecoverable error.
  */
-bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
+bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& ok)
 {
 	//Grab the job settings
 	string chain = job->GetToolchain();
@@ -213,9 +243,7 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 
 			//Done, we have the dependencies
 			case SplashMsg::kDependencyResults:
-				if(!ProcessDependencyResults(s, hostname, rxm, job))
-					return false;
-				return true;
+				return ProcessDependencyResults(s, hostname, rxm, job, ok);
 
 			//Whatever it is, it makes no sense
 			default:
@@ -227,8 +255,10 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job)
 
 /**
 	@brief Crunch data coming out of a DependencyResults packet
+
+	@return True if we can continue. False only on unrecoverable error.
  */
-bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job)
+bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job, bool& ok)
 {
 	//LogDebug("Got dependency results\n");
 
@@ -237,7 +267,8 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 	if(!res.result())
 	{
 		job->SetErrors(res.stdout());
-		return false;
+		ok = false;
+		return true;
 	}
 
 	//Crunch the results
@@ -264,6 +295,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 	}
 
 	//all good
+	ok = true;
 	return true;
 }
 
@@ -306,7 +338,7 @@ bool ProcessBulkHashRequest(Socket& s, string& hostname, SplashMsg& msg, Depende
 /**
 	@brief Runs a build job
  */
-bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
+bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 {
 	//Make sure it's a build job (if not, it was somehow put in the wrong queue)
 	BuildJob* bj = dynamic_cast<BuildJob*>(job);
@@ -367,9 +399,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 
 			//Done, we have the compiled files
 			case SplashMsg::kNodeBuildResults:
-				if(!ProcessBuildResults(s, hostname, rxm, job))
-					return false;
-				return true;
+				return ProcessBuildResults(s, hostname, rxm, job, ok);
 
 			//Whatever it is, it makes no sense
 			default:
@@ -384,7 +414,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job)
 /**
 	@brief Deal with an incoming BuildResults message
  */
-bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Job* job)
+bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Job* job, bool& ok)
 {
 	LogDebug("Build results\n");
 
@@ -402,12 +432,12 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 	auto nhash = node->GetHash();
 
 	//See how the build ran
-	bool ok = res.success();
+	ok = res.success();
 	if(!ok)
 	{
 		//TODO: add stdout to the job
-		LogError("Build failed!\n%s", res.stdout().c_str());
-		return false;
+		LogError("Build failed!\n%s\n", res.stdout().c_str());
+		return true;
 	}
 
 	//Successful build if we get here

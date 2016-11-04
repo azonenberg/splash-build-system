@@ -569,7 +569,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		if(NULL == g_nodeManager->GetAnyToolchainForName(a, toolchain))
 		{
 			LogError(
-				"Target \"%s\" (declared in \"%s\") needs a toolchain of type \"%s\" for architecture \"%s\", "
+				"Target \"%s\" (declared in \"%s\") needs a toolchain of type \"%s\" for architecture \"%s\",\n"
 				"but no nodes could provide it\n",
 				name.c_str(), path.c_str(), toolchain.c_str(), a.c_str());
 			continue;
