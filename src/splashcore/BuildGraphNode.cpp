@@ -140,6 +140,10 @@ BuildGraphNode::BuildGraphNode(
 		}
 	}
 
+	//No flags specified, import base flags
+	else
+		graph->GetFlags(toolchain, config, path, m_flags);
+
 	//anything else is handled in base class (source files etc)
 
 	//Look up the hash of our toolchain
