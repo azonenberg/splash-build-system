@@ -83,6 +83,8 @@ Cache::Cache(string cachename)
 					continue;
 				}
 
+				//TODO: load fail records too
+
 				//Cache entry is valid, add to the cache table
 				m_cacheIndex.emplace(oid);
 			}
@@ -106,6 +108,9 @@ NodeInfo::NodeState Cache::GetState(string id)
 	if(IsCached(id))
 		return NodeInfo::READY;
 
+	else if(IsFailed(id))
+		return NodeInfo::FAILED;
+
 	//TODO: check if it's building
 
 	else
@@ -122,6 +127,21 @@ bool Cache::IsCached(string id)
 	lock_guard<recursive_mutex> lock(m_mutex);
 
 	if(m_cacheIndex.find(id) != m_cacheIndex.end())
+		return true;
+
+	return false;
+}
+
+/**
+	@brief Determine if a particular object is in the cache with a "fail" record.
+
+	@param id		Object ID hash
+ */
+bool Cache::IsFailed(string id)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(m_cacheFails.find(id) != m_cacheFails.end())
 		return true;
 
 	return false;
@@ -216,6 +236,39 @@ string Cache::ReadCachedLog(string id)
 }
 
 /**
+	@brief Adds a new file's metadata to the cache, reporting that we couldn't actually make it
+ */
+void Cache::AddFailedFile(string basename, string id, string log)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//If the content is already in the cache, skip it
+	if(IsCached(id) || IsFailed(id))
+		return;
+
+	//Create the directory. If it already exists, delete whatever junk was in there
+	string dirname = GetStoragePath(id);
+	if(DoesDirectoryExist(dirname))
+	{
+		LogWarning("Cache directory %s already exists but was not loaded, removing dead files\n", id.c_str());
+		ShellCommand(string("rm -I ") + dirname + "/*");
+	}
+	else
+		MakeDirectoryRecursive(dirname, 0600);
+
+	//Create the "failed" record
+	if(!PutFileContents(dirname + "/failed", ""))
+		return;
+
+	//Write the command stdout (not integrity checked)
+	if(!PutFileContents(dirname + "/log", log))
+		return;
+
+	//Remember that we have this file cached
+	m_cacheFails.emplace(id);
+}
+
+/**
 	@brief Adds a file to the cache
 
 	@param basename			Name of the file without directory information
@@ -229,14 +282,14 @@ void Cache::AddFile(string /*basename*/, string id, string hash, string data, st
 	lock_guard<recursive_mutex> lock(m_mutex);
 
 	//If the content is already in the cache, skip it
-	if(IsCached(id))
+	if(IsCached(id) || IsFailed(id))
 		return;
 
 	//Create the directory. If it already exists, delete whatever junk was in there
 	string dirname = GetStoragePath(id);
 	if(DoesDirectoryExist(dirname))
 	{
-		LogWarning("Cache directory %s already exists but was not loaded, removing dead files\n", hash.c_str());
+		LogWarning("Cache directory %s already exists but was not loaded, removing dead files\n", id.c_str());
 		ShellCommand(string("rm -I ") + dirname + "/*");
 	}
 	else

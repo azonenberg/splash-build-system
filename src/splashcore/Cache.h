@@ -61,9 +61,11 @@ public:
 	NodeInfo::NodeState GetState(std::string id);
 
 	bool IsCached(std::string id);
+	bool IsFailed(std::string id);
 	bool ValidateCacheEntry(std::string id);
 
 	void AddFile(std::string basename, std::string id, std::string hash, std::string data, std::string log = "");
+	void AddFailedFile(std::string basename, std::string id, std::string log);
 
 	std::string ReadCachedFile(std::string id);
 	std::string ReadCachedLog(std::string id);
@@ -77,6 +79,9 @@ protected:
 
 	//Set of hashes we have in the cache
 	std::unordered_set<std::string> m_cacheIndex;
+
+	//Set of hashes we have in the cache that failed to build
+	std::unordered_set<std::string> m_cacheFails;
 
 	//TODO: map<string, time_t>		mapping hashes to last-used times
 
