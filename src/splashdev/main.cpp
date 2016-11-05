@@ -161,6 +161,10 @@ int main(int argc, char* argv[])
  */
 void WatchDirRecursively(int hnotify, string dir)
 {
+	//Do not watch the build directory for obvious reasons
+	if(dir == "build")
+		return;
+
 	//LogDebug("    Recursively watching directory %s\n", dir.c_str());
 
 	//Watch changes to the directory
