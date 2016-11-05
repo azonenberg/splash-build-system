@@ -259,6 +259,7 @@ message NodeInfo
 		READY = 0;			//ready to go
 		BUILDING = 1;		//build in progress
 		MISSING = 2;		//nothing yet
+		FAILED = 3;			//built with errors
 	};
 
 				string		hash		= 1;	//SHA-256 node hash
