@@ -467,11 +467,10 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 
 	//If the build failed, add a dummy cached file with the proper ID and stdout
 	//so we can query the result in the cache later on.
-	//TODO: Need some way of marking a cache entry "bad" so we don't try using it?
 	ok = res.success();
 	if(!ok)
 	{
-		g_cache->AddFile(fname, nhash, sha256(""), "", stdout);
+		g_cache->AddFailedFile(fname, nhash, stdout);
 		//LogError("Build failed!\n%s\n", res.stdout().c_str());
 		return true;
 	}
