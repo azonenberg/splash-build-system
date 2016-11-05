@@ -61,14 +61,11 @@ CPPObjectNode::CPPObjectNode(
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
 	//TODO: handle generated headers, etc
+	//If the scan fails, declare us un-buildable
 	set<string> deps;
 	string errors;
 	if(!g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy(), deps, errors))
-	{
-		//If the scan fails, declare us un-buildable
-		//LogError("CPPObjectNode: depscan failed with errors!%s\n", errors.c_str());
 		m_invalidInput = true;
-	}
 
 	//Dependencies scanned OK, update our stuff
 	else
@@ -119,9 +116,8 @@ CPPObjectNode::CPPObjectNode(
 
 	//If the dependency scan failed, add a dummy cached file with the proper ID and stdout
 	//so we can query the result in the cache later on.
-	//TODO: Need some way of marking a cache entry "bad" so we don't try using it?
 	if(m_invalidInput)
-		g_cache->AddFile(GetFilePath(), m_hash, sha256(""), "", errors);
+		g_cache->AddFailedFile(GetFilePath(), m_hash, errors);
 }
 
 CPPObjectNode::~CPPObjectNode()
