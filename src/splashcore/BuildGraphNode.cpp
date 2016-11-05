@@ -280,6 +280,10 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 		if(state == NodeInfo::READY)
 			continue;
 
+		//If the build failed, die now
+		if(state == NodeInfo::FAILED)
+			return NULL;
+
 		//If not, build it
 		deps.emplace(n->Build());
 	}
