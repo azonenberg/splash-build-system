@@ -388,7 +388,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 					replym->set_result(false);
 					replym->set_stdout(string("File ") + f.fname() + " was not found on server\n");
 					SendMessage(sock, reply);
-					LogWarning("Couldn't find file %s\n", f.fname().c_str());
+					//LogWarning("Couldn't find file %s\n", f.fname().c_str());
 					return;
 				}
 

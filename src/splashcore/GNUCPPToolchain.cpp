@@ -122,7 +122,17 @@ bool GNUCPPToolchain::ScanDependencies(
 	set<string>& missingFiles)
 {
 	return GNUToolchain::ScanDependencies(
-		m_basepath, arch, path, root, flags, m_defaultIncludePaths[arch], deps, dephashes, output, missingFiles);
+		m_basepath,
+		arch,
+		path,
+		root,
+		flags,
+		m_defaultIncludePaths[arch],
+		deps,
+		dephashes,
+		output,
+		missingFiles,
+		true);
 }
 
 /**

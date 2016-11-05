@@ -50,7 +50,8 @@ public:
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes,
 		std::string& output,
-		std::set<std::string>& missingFiles);
+		std::set<std::string>& missingFiles,
+		bool cpp);
 
 	virtual bool Compile(
 		std::string exe,

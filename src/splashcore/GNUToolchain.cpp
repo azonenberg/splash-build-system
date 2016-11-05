@@ -101,7 +101,7 @@ GNUToolchain::GNUToolchain(string arch)
 
 void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bool cpp, string arch)
 {
-	//LogDebug("    Finding default include paths\n");
+	//LogDebug("    Finding default include paths for %s (c++=%d)\n", arch.c_str(), cpp);
 
 	//We must have valid flags for this arch
 	if(!VerifyFlags(arch))
@@ -110,9 +110,11 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 
 	//Ask the compiler what the paths are
 	vector<string> lines;
-	string cmd = exe + " " + aflags + " -E -Wp,-v ";
+	string cmd = exe + " " + aflags + " -c --verbose ";
 	if(cpp)
 		cmd += "-x c++ ";
+	else
+		cmd += "-x c ";
 	cmd += "- < /dev/null 2>&1";
 	ParseLines(ShellCommand(cmd), lines);
 
@@ -129,11 +131,18 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 	for(; i<lines.size(); i++)
 	{
 		auto line = lines[i];
+
 		if(line == "End of search list.")
 			break;
 		if(line[0] == '#')
 			continue;
-		paths.push_back(line.substr(1));
+
+		//Some compilers end paths with a dot. Trim it off
+		if(line[line.length() - 1] == '.')
+			paths.push_back(line.substr(1, line.length() - 2));
+
+		else
+			paths.push_back(line.substr(1));
 	}
 
 	//Debug dump
@@ -211,7 +220,8 @@ bool GNUToolchain::ScanDependencies(
 	set<string>& deps,
 	map<string, string>& dephashes,
 	string& output,
-	set<string>& missingFiles)
+	set<string>& missingFiles,
+	bool cpp)
 {
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
@@ -225,6 +235,10 @@ bool GNUToolchain::ScanDependencies(
 	string cmdline = exe + " " + aflags + " -M -MG ";
 	for(auto f : flags)
 		cmdline += FlagToString(f) + " ";
+	if(cpp)
+		cmdline += "-x c++ ";
+	else
+		cmdline += "-x c ";
 	cmdline += path;
 	cmdline += " 2>&1";
 	//LogDebug("Command line: %s\n", cmdline.c_str());
@@ -277,9 +291,12 @@ bool GNUToolchain::ScanDependencies(
 	//First entry is always the source file itself, so we can skip that
 	//Loop over the other entries and convert them to system/project relative paths
 	//LogDebug("Absolute paths:\n");
+	LogIndenter li;
 	for(size_t i=1; i<files.size(); i++)
 	{
 		string f = files[i];
+		//LogDebug("%s\n", f.c_str());
+		LogIndenter li;
 
 		//If the path begins with our working copy directory, trim it off and call the rest the relative path
 		if(f.find(root) == 0)
@@ -302,34 +319,53 @@ bool GNUToolchain::ScanDependencies(
 					longest_prefix = dir;
 			}
 
-			//If it's not in the project dir OR a system path, we have a problem.
-			if(longest_prefix == "")
+			//It's an absolute path to a standard system include directory
+			if(longest_prefix != "")
 			{
-				//If it's an absolute path, fail.
-				//Including random headers by absolute path is not portable!
-				if(f[0] == '/')
-				{
-					char tmp[1024];
-					snprintf(tmp, sizeof(tmp),
-						"Absolute path %s could not be resolved to a system or project include directory\n",
-						f.c_str());
-					output += tmp;
-					return false;
-				}
-
-				//Relative path, but we don't have it locally
-				//Ask the server for it (by best-guess filename)
-				//TODO: Canonicalize this
-				else
-				{
-					missingFiles.emplace(str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f);
-					continue;
-				}
+				//Trim off the prefix and go
+				//LogDebug("        system dir %s\n", longest_prefix.c_str());
+				f = apath + "/" + f.substr(longest_prefix.length() + 1);
+				continue;
 			}
 
-			//Trim off the prefix and go
-			//LogDebug("        system dir %s\n", longest_prefix.c_str());
-			f = apath + "/" + f.substr(longest_prefix.length() + 1);
+			//If it's an absolute path but NOT in a system include dir, fail.
+			//Including random headers by absolute path is not portable!
+			if(f[0] == '/')
+			{
+				char tmp[1024];
+				snprintf(tmp, sizeof(tmp),
+					"Absolute path %s could not be resolved to a system include directory\n",
+					f.c_str());
+				output += tmp;
+				return false;
+			}
+
+			/*
+			//If we get here, it's a relative path.
+			//Search all system include dirs for it
+			for(auto dir : sysdirs)
+			{
+				string search = dir + "/" + f;
+				LogDebug("Trying %s\n", search.c_str());
+
+				if(DoesFileExist(search))
+				{
+					LogDebug("Resolved relative path \"%s\" to system path \"%s\"\n",
+						f.c_str(), search.c_str());
+					f = apath + "/" + f;
+				}
+			}
+			*/
+
+			//Relative path, but we don't have it locally
+			//Ask the server for it (by best-guess filename)
+			//TODO: Canonicalize this
+			if(longest_prefix == "")
+			{
+				//LogDebug("Unable to resolve include %s\n", f.c_str());
+				missingFiles.emplace(str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f);
+				continue;
+			}
 		}
 
 		//TODO: Don't even read the file if we already have it in the cache?

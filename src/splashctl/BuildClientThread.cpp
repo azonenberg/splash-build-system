@@ -274,7 +274,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		auto dep = res.deps(i);
 		string h = dep.hash();
 		string f = dep.fname();
-		//LogDebug("    %-50s has hash %s\n", f.c_str(), h.c_str());
+		LogDebug("%-50s has hash %s\n", f.c_str(), h.c_str());
 
 		if(!ValidatePath(f))
 		{
