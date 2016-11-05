@@ -211,42 +211,53 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		auto f = r.fname();
 		auto h = r.hash();
 
-		if( (f.find("..") != string::npos) || (f[0] == '/') )
+		if(!ValidatePath(f))
 		{
-			LogError("Filename \"%s\" contains directory traversal or absolute path, skipping\n", f.c_str());
+			LogError("Filename \"%s\" is invalid, skipping\n", f.c_str());
 			continue;
 		}
 
-		//See if we have the file in our local cache.
-		//If not, download it
-		string edat;
-		if(!g_cache->IsCached(h))
+		//If the node failed to build, don't worry about caching or downloading the output
+		if(!r.ok())
 		{
-			if(!GetRemoteFileByHash(s, g_clientSettings->GetServerHostname(), h, edat))
+			//Delete the output path since it failed to build
+			unlink(f.c_str());
+		}
+
+		//Node built OK, grab the contents from somewhere
+		else
+		{
+			//See if we have the file in our local cache.
+			//If not, download it
+			string edat;
+			if(!g_cache->IsCached(h))
 			{
-				LogError("Could not get file \"%s\" (hash = \"%s\") from server\n",
-					f.c_str(), h.c_str());
+				if(!GetRemoteFileByHash(s, g_clientSettings->GetServerHostname(), h, edat))
+				{
+					LogError("Could not get file \"%s\" (hash = \"%s\") from server\n",
+						f.c_str(), h.c_str());
+					continue;
+				}
+				g_cache->AddFile(f, h, sha256(edat), edat, "");
+			}
+			else
+				edat = g_cache->ReadCachedFile(h);
+
+			//Make the directory if needed, then write the file
+			string path = GetDirOfFile(f);
+			MakeDirectoryRecursive(path, 0700);
+			if(!PutFileContents(f, edat))
+			{
+				LogError("Failed to write file \"%s\"", f.c_str());
 				continue;
 			}
-			g_cache->AddFile(f, h, sha256(edat), edat, "");
-		}
-		else
-			edat = g_cache->ReadCachedFile(h);
 
-		//Make the directory if needed, then write the file
-		string path = GetDirOfFile(f);
-		MakeDirectoryRecursive(path, 0700);
-		if(!PutFileContents(f, edat))
-		{
-			LogError("Failed to write file \"%s\"", f.c_str());
-			continue;
+			//Set the file executable if we need to
+			if(r.executable())
+				chmod(f.c_str(), 0700);
+			else
+				chmod(f.c_str(), 0600);
 		}
-
-		//Set the file executable if we need to
-		if(r.executable())
-			chmod(f.c_str(), 0700);
-		else
-			chmod(f.c_str(), 0600);
 
 		//If stdout is empty, don't print the file name (needless clutter)
 		string stdout = r.stdout();

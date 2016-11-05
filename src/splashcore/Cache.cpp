@@ -203,7 +203,7 @@ string Cache::ReadCachedFile(string id)
 	lock_guard<recursive_mutex> lock(m_mutex);
 
 	//Sanity check
-	if(m_cacheIndex.find(id) == m_cacheIndex.end())
+	if(!IsCached(id))
 	{
 		LogError("Requested file %s is not in cache\n", id.c_str());
 		return "";
@@ -223,9 +223,9 @@ string Cache::ReadCachedLog(string id)
 	lock_guard<recursive_mutex> lock(m_mutex);
 
 	//Sanity check
-	if(m_cacheIndex.find(id) == m_cacheIndex.end())
+	if(!IsCached(id) && !IsFailed(id))
 	{
-		LogError("Requested file %s is not in cache\n", id.c_str());
+		LogError("Requested log %s is not in cache\n", id.c_str());
 		return "";
 	}
 

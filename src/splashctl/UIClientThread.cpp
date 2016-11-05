@@ -165,7 +165,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			{
 				//The build fails if at least one node cannot be built
 				failed = true;
-				LogError("Failed to submit build job for node \"%s\"\n", node->GetFilePath().c_str());
+				//LogError("Failed to submit build job for node \"%s\"\n", node->GetFilePath().c_str());
 				continue;
 			}
 
@@ -230,18 +230,29 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		//(not hash of the file content)
 		string hash = wc->GetFileHash(f);
 
-		//If not in the cache, skip it
-		if(!g_cache->IsCached(hash))
-			continue;
+		//If cached successfully, add the result
+		if(g_cache->IsCached(hash))
+		{
+			//Add the file
+			//TODO: supply stdout only if asked and have client cache it?
+			//TODO: set executable bit more sanely
+			auto res = resultm->add_results();
+			res->set_fname(f);
+			res->set_hash(hash);
+			res->set_stdout(g_cache->ReadCachedLog(hash));
+			res->set_executable(true);
+			res->set_ok(true);
+		}
 
-		//Add the file
-		//TODO: supply stdout only if asked and have client cache it?
-		//TODO: set executable more sanely
-		auto res = resultm->add_results();
-		res->set_fname(f);
-		res->set_hash(hash);
-		res->set_stdout(g_cache->ReadCachedLog(hash));
-		res->set_executable(true);
+		//If cached fail, add that result
+		else if(g_cache->IsFailed(hash))
+		{
+			auto res = resultm->add_results();
+			res->set_fname(f);
+			res->set_stdout(g_cache->ReadCachedLog(hash));
+			res->set_executable(true);
+			res->set_ok(false);
+		}
 	}
 
 	//Go send the list to the client
