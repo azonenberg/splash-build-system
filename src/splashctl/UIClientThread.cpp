@@ -130,13 +130,25 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		{
 			auto state = node->GetOutputState();
 
-			//Done? No action required
-			if(state == NodeInfo::READY)
-				continue;
+			switch(state)
+			{
+				//Done? No action required
+				case NodeInfo::READY:
+					continue;
 
-			//Currently building? No action required
-			else if(state == NodeInfo::BUILDING)
-				continue;
+				//Currently building? No action required
+				case NodeInfo::BUILDING:
+					continue;
+
+				//Failed to build? We're going to fail no matter what
+				case NodeInfo::FAILED:
+					failed = true;
+					continue;
+
+				default:
+					break;
+			}
+
 
 			//Nope, it's missing
 			//Need to build it
