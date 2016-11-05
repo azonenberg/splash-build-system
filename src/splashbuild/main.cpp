@@ -242,7 +242,7 @@ Toolchain* PrepBuild(string toolhash)
 	}
 
 	Toolchain* chain = g_toolchains[toolhash];
-	LogDebug("Toolchain: %s\n", chain->GetVersionString().c_str());
+	//LogDebug("Toolchain: %s\n", chain->GetVersionString().c_str());
 
 	//Make sure we have a clean slate to build in
 	//LogDebug("Cleaning temp directory\n");
@@ -256,8 +256,6 @@ Toolchain* PrepBuild(string toolhash)
  */
 bool RefreshCachedFile(Socket& sock, string hash, string fname)
 {
-	LogIndenter li;
-
 	if(!ValidatePath(fname))
 	{
 		LogWarning("path %s failed to validate\n", fname.c_str());
@@ -342,7 +340,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 			while(isspace(output[output.length() - 1]))
 				output.resize(output.length() - 1);
 
-			LogDebug("Scan failed\n");
+			//LogDebug("Scan failed\n");
 			replym->set_result(false);
 			replym->set_stdout(output);
 			SendMessage(sock, reply);

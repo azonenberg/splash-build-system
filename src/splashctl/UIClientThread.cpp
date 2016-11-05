@@ -48,7 +48,6 @@ bool OnToolchainListRequest(Socket& s, string& hostname, clientID id);
 void UIClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer client %s (%s) connected\n", hostname.c_str(), id.c_str());
-	LogIndenter li;
 
 	//Expect a DevInfo message
 	SplashMsg dinfo;
@@ -108,8 +107,12 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	set<BuildGraphNode*> nodes;
 	set<Job*> jobs;
 
-	LogDebug("Beginning build\n");
-	LogIndenter li;
+	LogDebug("UI client: Beginning build\n");
+
+	//Prepare the response
+	SplashMsg result;
+	auto resultm = result.mutable_buildresults();
+	bool failed = false;
 
 	//Dispatch the build
 	{
@@ -148,6 +151,8 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			auto j = node->Build();
 			if(!j)
 			{
+				//The build fails if at least one node cannot be built
+				failed = true;
 				LogError("Failed to submit build job for node \"%s\"\n", node->GetFilePath().c_str());
 				continue;
 			}
@@ -158,7 +163,6 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 	//Wait for build to complete
 	LogDebug("UI client: Waiting for build jobs to complete\n");
-	bool failed = false;
 	while(!jobs.empty())
 	{
 		//See what's finished this pass
@@ -201,8 +205,6 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	//Filter out those not in the build directory (TODO: can we do this faster than O(n)?)
 	//and send the whole list to the client for syncing.
 	//LogDebug("Build dir list\n");
-	SplashMsg result;
-	auto resultm = result.mutable_buildresults();
 	resultm->set_status(!failed);
 	string bapath = graph.GetBuildArtifactPath() + "/";
 	for(auto f : paths)

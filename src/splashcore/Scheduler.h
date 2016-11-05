@@ -53,7 +53,8 @@ public:
 		std::string toolchain,
 		std::set<BuildFlag> flags,
 		WorkingCopy* wc,
-		std::set<std::string>& deps);
+		std::set<std::string>& deps,
+		std::string& errors);
 
 	//Node creation/deletion
 	void RemoveNode(clientID id);

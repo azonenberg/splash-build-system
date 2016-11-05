@@ -161,7 +161,7 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 	@brief Immediately schedules a dependency-scan job and blocks until it completes.
 
 	@return		True on a successful scan
-				False if the scan could not complete (parse error,
+				False if the scan could not complete (parse error, etc
  */
 bool Scheduler::ScanDependencies(
 	string fname,
@@ -169,7 +169,8 @@ bool Scheduler::ScanDependencies(
 	string toolchain,
 	set<BuildFlag> flags,
 	WorkingCopy* wc,
-	set<string>& deps)
+	set<string>& deps,
+	std::string& errors)
 {
 	LogDebug("Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
 		fname.c_str(), arch.c_str(), toolchain.c_str() );
@@ -209,8 +210,9 @@ bool Scheduler::ScanDependencies(
 		status = job->GetStatus();
 		if(status == Job::STATUS_CANCELED)
 		{
-			//TODO: pass this down to the client?
-			LogError("Dependency scan failed: %s\n",
+			errors = job->GetErrors();
+
+			LogError("Dependency scan canceled: %s\n",
 				job->GetErrors().c_str());
 			job->Unref();
 			return false;
@@ -220,6 +222,14 @@ bool Scheduler::ScanDependencies(
 		usleep(250);
 	}
 	//LogDebug("Job done\n");
+
+	//If we're done, but with errors, fail
+	if(!job->IsSuccessful())
+	{
+		errors = job->GetErrors();
+		job->Unref();
+		return false;
+	}
 
 	//Add dependencies to the working copy as needed
 	auto output = job->GetOutput();

@@ -50,18 +50,7 @@ CPPObjectNode::CPPObjectNode(
 		path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
 	LogIndenter li;
 
-	//Run the dependency scanner on this file to see what other stuff we need to pull in.
-	//This will likely require pulling a lot of files from the golden node.
-	//TODO: handle generated headers, etc
-	//If the scan fails, give up and declare us un-buildable
-	set<string> deps;
-	if(!g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy(), deps))
-	{
-		m_invalidInput = true;
-		return;
-	}
-
-	//Add a dependency for the source file itself
+	//Add an automatic dependency for the source file itself
 	auto wc = graph->GetWorkingCopy();
 	auto h = wc->GetFileHash(fname);
 	if(!graph->HasNodeWithHash(h))
@@ -69,32 +58,49 @@ CPPObjectNode::CPPObjectNode(
 	m_sources.emplace(fname);
 	m_dependencies.emplace(fname);
 
-	//Add source nodes if we don't have them already
-	for(auto d : deps)
+	//Run the dependency scanner on this file to see what other stuff we need to pull in.
+	//This will likely require pulling a lot of files from the golden node.
+	//TODO: handle generated headers, etc
+	set<string> deps;
+	string errors;
+	if(!g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy(), deps, errors))
 	{
-		auto h = wc->GetFileHash(d);
-
-		//Create a new node if needed
-		if(!graph->HasNodeWithHash(h))
-			graph->AddNode(new CPPSourceNode(graph, d, h));
-
-		//Either way, we have the node now. Add it to our list of inputs.
-		m_dependencies.emplace(d);
+		//If the scan fails, declare us un-buildable
+		//LogError("CPPObjectNode: depscan failed with errors!%s\n", errors.c_str());
+		m_invalidInput = true;
 	}
 
-	//Dump the output
-	/*
-	for(auto d : m_dependencies)
+	//Dependencies scanned OK, update our stuff
+	else
 	{
-		auto h = wc->GetFileHash(d);
-		LogDebug("            dependency %s (%s)\n",
-			d.c_str(),
-			h.c_str());
+		//Add source nodes if we don't have them already
+		for(auto d : deps)
+		{
+			auto h = wc->GetFileHash(d);
+
+			//Create a new node if needed
+			if(!graph->HasNodeWithHash(h))
+				graph->AddNode(new CPPSourceNode(graph, d, h));
+
+			//Either way, we have the node now. Add it to our list of inputs.
+			m_dependencies.emplace(d);
+		}
+
+		//Dump the output
+		/*
+		for(auto d : m_dependencies)
+		{
+			auto h = wc->GetFileHash(d);
+			LogDebug("            dependency %s (%s)\n",
+				d.c_str(),
+				h.c_str());
+		}
+		*/
 	}
-	*/
 
 	//Calculate our hash.
 	//Dependencies and flags are obvious
+	//NOTE: This needs to happen *even if our dependency scan failed* so that we can identify the scan errors
 	string hashin;
 	for(auto d : m_dependencies)
 		hashin += wc->GetFileHash(d);
@@ -110,9 +116,14 @@ CPPObjectNode::CPPObjectNode(
 
 	//Done, calculate final hash
 	m_hash = sha256(hashin);
+
+	//If the dependency scan failed, add a dummy cached file with the proper ID and stdout
+	//so we can query the result in the cache later on.
+	//TODO: Need some way of marking a cache entry "bad" so we don't try using it?
+	if(m_invalidInput)
+		g_cache->AddFile(GetFilePath(), m_hash, sha256(""), "", errors);
 }
 
 CPPObjectNode::~CPPObjectNode()
 {
 }
-
