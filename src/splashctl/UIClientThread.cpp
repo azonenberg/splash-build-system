@@ -186,7 +186,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		usleep(1000);
 	}
 
-	LogDebug("UI client: Jobs completed\n");
+	//LogDebug("UI client: Jobs completed\n");
 
 	//Make a list of all nodes in the graph, even those we did not build this round
 	auto wc = g_nodeManager->GetWorkingCopy(id);

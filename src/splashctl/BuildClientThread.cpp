@@ -220,10 +220,7 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& o
 		//Get a response. It's either "done" or "get more files"
 		SplashMsg rxm;
 		if(!RecvMessage(s, rxm, hostname))
-		{
-			LogError("failed to recv\n");
 			return false;
-		}
 
 		auto type = rxm.Payload_case();
 
@@ -462,20 +459,24 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 	auto node = bj->GetOutputNode();
 	auto nhash = node->GetHash();
 
-	//See how the build ran
-	ok = res.success();
-	if(!ok)
-	{
-		//TODO: add stdout to the job
-		LogError("Build failed!\n%s\n", res.stdout().c_str());
-		return true;
-	}
-
-	//Successful build if we get here
+	//Pull out node properties
 	string stdout = res.stdout();
 	string fname = res.fname();
 	string dir = GetDirOfFile(fname);
 	string base = GetBasenameOfFile(fname);
+
+	//If the build failed, add a dummy cached file with the proper ID and stdout
+	//so we can query the result in the cache later on.
+	//TODO: Need some way of marking a cache entry "bad" so we don't try using it?
+	ok = res.success();
+	if(!ok)
+	{
+		g_cache->AddFile(fname, nhash, sha256(""), "", stdout);
+		//LogError("Build failed!\n%s\n", res.stdout().c_str());
+		return true;
+	}
+
+	//Successful build if we get here
 
 	//Go over the files and see what we have
 	for(int i=0; i<res.outputs_size(); i++)

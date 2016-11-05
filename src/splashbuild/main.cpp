@@ -297,7 +297,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	string adir = g_builddir + "/" + dir;
 	string aname = g_builddir + "/" + fname;
 
-	if(!ValidatePath(src))
+	if(!ValidatePath(fname))
 	{
 		LogWarning("path %s failed to validate\n", fname.c_str());
 		return;

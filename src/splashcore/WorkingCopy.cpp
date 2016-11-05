@@ -118,7 +118,7 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 	bool has_script = HasFile(buildscript);
 
 	//See if we created a new file
-	bool created = (m_fileMap.find(path) == m_fileMap.end());
+	//bool created = (m_fileMap.find(path) == m_fileMap.end());
 
 	//Update our records for the new file before doing anything else
 	//since future processing may depend on this file existing.
@@ -133,12 +133,13 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 	if(is_script)
 		m_graph.UpdateScript(path, hash, body, config);
 
-	//If we created a new source file, and have a build.yml in the directory, re-run its targets
-	//This is necessary if we added references to the script before creating the file.
-	if(created && has_script && !is_script && config)
+	//If we have a build.yml in the directory, re-run its targets even if we didn't make the file new
+	//(since we may have added an include statement, etc
+	if(has_script && !is_script && config)
 		m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false);
 
-	//TODO: Have a list of nodes that depend on each file and re-hash them all?
+	//TODO: Have a list of nodes that depend on each file and re-create them?
+	//The current "rerun current dir" stuff only works if we do not allow pulling source from another directory!
 }
 
 /**

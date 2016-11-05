@@ -63,7 +63,7 @@ void WatchedFileChanged(Socket& s, int type, string fname)
 	if( ( (type & IN_MODIFY) == IN_MODIFY ) || ( (type & IN_MOVED_TO) == IN_MOVED_TO ) )
 	{
 		SplashMsg icn;
-		BuildChangeNotificationForFile(icn.mutable_bulkfilechanged(), fname);
+		BuildChangeNotificationForFile(icn.mutable_bulkfilechanged(), fname, true, true);
 		if(!SendMessage(s, icn))
 			return;
 		SplashMsg icr;
