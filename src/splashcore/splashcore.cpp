@@ -725,7 +725,7 @@ bool ProcessContentRequest(Socket& s, string remote, SplashMsg& msg)
 }
 
 /**
-	@brief Makes sure a filename is a safe relative path (no .. or leading /)
+	@brief Makes sure a filename is a safe relative path and safe to put in a command-line arg
 
 	TODO: Allow ..s as long as they don't go above the relative root?
  */
@@ -734,6 +734,21 @@ bool ValidatePath(string fname)
 	if(fname[0] == '/')
 		return false;
 	if(fname.find("..") != string::npos)
+		return false;
+
+	//TODO: Separate function for escaping fnames passed as shell args
+	//(at least spaces should be allowed eventually)
+	if(fname.find(" ") != string::npos)
+		return false;
+	if(fname.find("\\") != string::npos)
+		return false;
+	if(fname.find("|") != string::npos)
+		return false;
+	if(fname.find("&") != string::npos)
+		return false;
+	if(fname.find(";") != string::npos)
+		return false;
+	if(fname.find("`") != string::npos)
 		return false;
 
 	return true;
