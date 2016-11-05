@@ -279,6 +279,12 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		string f = dep.fname();
 		//LogDebug("    %-50s has hash %s\n", f.c_str(), h.c_str());
 
+		if(!ValidatePath(f))
+		{
+			LogWarning("path %s failed to validate\n", f.c_str());
+			continue;
+		}
+
 		//For each file, see if we have it in the cache already.
 		//If not, ask the client for it.
 		//TODO: do batched requests to cut latency
@@ -318,6 +324,12 @@ bool ProcessBulkHashRequest(Socket& s, string& hostname, SplashMsg& msg, Depende
 	for(int i=0; i<res.fnames_size(); i++)
 	{
 		auto f = res.fnames(i);
+
+		if(!ValidatePath(f))
+		{
+			LogWarning("path %s failed to validate\n", f.c_str());
+			continue;
+		}
 
 		//Make a reply
 		auto rp = respm->add_files();
@@ -366,6 +378,12 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 	reqm->set_toolchain(node->GetToolchainHash());
 	for(auto src : node->GetSources())
 	{
+		if(!ValidatePath(src))
+		{
+			LogWarning("path %s failed to validate\n", src.c_str());
+			continue;
+		}
+
 		string hash = wc->GetFileHash(src);
 		auto dep = reqm->add_sources();
 		dep->set_fname(src);
@@ -373,6 +391,12 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 	}
 	for(auto src : node->GetDependencies())
 	{
+		if(!ValidatePath(src))
+		{
+			LogWarning("path %s failed to validate\n", src.c_str());
+			continue;
+		}
+
 		string hash = wc->GetFileHash(src);
 		auto dep = reqm->add_deps();
 		dep->set_fname(src);
@@ -462,13 +486,19 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		string hash = file.hash();
 		string data = file.data();
 
+		if(!ValidatePath(ffname))
+		{
+			LogWarning("path %s failed to validate\n", ffname.c_str());
+			continue;
+		}
+
 		LogDebug("Compiled file %s has hash %s\n", ffname.c_str(), hash.c_str());
 
 		//Main node output? Add to the cache using the node's hash
 		string shash;
 		if(GetBasenameOfFile(ffname) == base)
 		{
-			LogDebug("This is the compiled output for node %s\n(path %s)\n", nhash.c_str(), fname.c_str());
+			//LogDebug("This is the compiled output for node %s\n(path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;
 		}
 

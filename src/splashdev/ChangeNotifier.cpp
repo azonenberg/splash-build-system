@@ -58,7 +58,7 @@ bool ProcessBulkFileAck(Socket& s, SplashMsg& msg)
 		//Server does NOT have it in cache! Send the content
 		//But first, make sure the file name is valid
 		string fname = a.fname();
-		if( (fname.find("..") != string::npos) || (fname[0] == '/') )
+		if(!ValidatePath(fname))
 		{
 			LogError("File name \"%s\" is invalid (contains .. or leading /)\n", fname.c_str());
 			return false;

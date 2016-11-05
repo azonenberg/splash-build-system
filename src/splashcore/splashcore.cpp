@@ -723,3 +723,18 @@ bool ProcessContentRequest(Socket& s, string remote, SplashMsg& msg)
 
 	return true;
 }
+
+/**
+	@brief Makes sure a filename is a safe relative path (no .. or leading /)
+
+	TODO: Allow ..s as long as they don't go above the relative root?
+ */
+bool ValidatePath(string fname)
+{
+	if(fname[0] == '/')
+		return false;
+	if(fname.find("..") != string::npos)
+		return false;
+
+	return true;
+}

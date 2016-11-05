@@ -258,6 +258,12 @@ bool RefreshCachedFile(Socket& sock, string hash, string fname)
 {
 	LogIndenter li;
 
+	if(!ValidatePath(fname))
+	{
+		LogWarning("path %s failed to validate\n", fname.c_str());
+		return false;
+	}
+
 	if(!g_cache->IsCached(hash))
 	{
 		//Ask for the file
@@ -290,6 +296,12 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	string dir = GetDirOfFile(fname);
 	string adir = g_builddir + "/" + dir;
 	string aname = g_builddir + "/" + fname;
+
+	if(!ValidatePath(src))
+	{
+		LogWarning("path %s failed to validate\n", fname.c_str());
+		return;
+	}
 
 	//Create the relative path as needed
 	//LogDebug("    Making build directory %s for source file %s\n", adir.c_str(), basename.c_str());
@@ -385,8 +397,11 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 				//Make sure the file name is valid
 				//TODO: return error?
 				string fname = f.fname();
-				if( (fname.find("..") != string::npos) || (fname[0] == '/') )
-					return;
+				if(!ValidatePath(fname))
+				{
+					LogWarning("path %s failed to validate\n", fname.c_str());
+					continue;
+				}
 
 				//Pull file into cache if needed, then write to disk
 				string hash = f.hash();

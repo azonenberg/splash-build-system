@@ -176,6 +176,8 @@ bool ConnectToServer(Socket& sock, ClientHello::ClientType type);
 bool GetRemoteFileByHash(Socket& sock, std::string hostname, std::string hash, std::string& content);
 bool ProcessContentRequest(Socket& s, std::string remote, SplashMsg& msg);
 
+bool ValidatePath(std::string fname);
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global data
 
