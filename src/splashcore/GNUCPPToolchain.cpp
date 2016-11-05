@@ -70,7 +70,7 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 	for(auto t : m_triplets)
 	{
 		vector<string> paths;
-		FindDefaultIncludePaths(paths, basepath, false, t);
+		FindDefaultIncludePaths(paths, basepath, true, t);
 		m_defaultIncludePaths[t] = paths;
 		m_virtualSystemIncludePath[t] =
 			"__sysinclude__/" + str_replace(" ", "_", m_stringVersion) + "_" + t;
