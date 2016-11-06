@@ -253,6 +253,8 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& o
 /**
 	@brief Crunch data coming out of a DependencyResults packet
 
+	TODO: Bulk download of files from the client as needed?
+
 	@return True if we can continue. False only on unrecoverable error.
  */
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job, bool& ok)
@@ -274,7 +276,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		auto dep = res.deps(i);
 		string h = dep.hash();
 		string f = dep.fname();
-		LogDebug("%-50s has hash %s\n", f.c_str(), h.c_str());
+		//LogDebug("%-50s has hash %s\n", f.c_str(), h.c_str());
 
 		if(!ValidatePath(f))
 		{

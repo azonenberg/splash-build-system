@@ -60,7 +60,8 @@ public:
 		std::string fname,
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
-		std::string& output);
+		std::string& output,
+		bool cpp);
 
 	virtual bool Link(
 		std::string exe,
@@ -69,7 +70,8 @@ public:
 		std::string fname,
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
-		std::string& output);
+		std::string& output,
+		bool cpp);
 
 protected:
 	std::string FlagToString(BuildFlag flag);

@@ -241,7 +241,7 @@ bool GNUToolchain::ScanDependencies(
 		cmdline += "-x c ";
 	cmdline += path;
 	cmdline += " 2>&1";
-	//LogDebug("Command line: %s\n", cmdline.c_str());
+	LogDebug("Dep command line: %s\n", cmdline.c_str());
 
 	//Run it
 	string makerule;
@@ -315,22 +315,25 @@ bool GNUToolchain::ScanDependencies(
 				if(f.find(dir) != 0)
 					continue;
 
-				if(dir.length() > longest_prefix.length())
-					longest_prefix = dir;
+				//if(dir.length() > longest_prefix.length())
+				//	longest_prefix = dir;
+
+				//Match the FIRST directory
+				longest_prefix = dir;
+				break;
 			}
 
 			//It's an absolute path to a standard system include directory
 			if(longest_prefix != "")
 			{
 				//Trim off the prefix and go
-				//LogDebug("        system dir %s\n", longest_prefix.c_str());
+				string old_f = f;
 				f = apath + "/" + f.substr(longest_prefix.length() + 1);
-				continue;
 			}
 
 			//If it's an absolute path but NOT in a system include dir, fail.
 			//Including random headers by absolute path is not portable!
-			if(f[0] == '/')
+			else if(f[0] == '/')
 			{
 				char tmp[1024];
 				snprintf(tmp, sizeof(tmp),
@@ -340,27 +343,10 @@ bool GNUToolchain::ScanDependencies(
 				return false;
 			}
 
-			/*
-			//If we get here, it's a relative path.
-			//Search all system include dirs for it
-			for(auto dir : sysdirs)
-			{
-				string search = dir + "/" + f;
-				LogDebug("Trying %s\n", search.c_str());
-
-				if(DoesFileExist(search))
-				{
-					LogDebug("Resolved relative path \"%s\" to system path \"%s\"\n",
-						f.c_str(), search.c_str());
-					f = apath + "/" + f;
-				}
-			}
-			*/
-
-			//Relative path, but we don't have it locally
+			//Relative path - we don't have it locally
 			//Ask the server for it (by best-guess filename)
-			//TODO: Canonicalize this
-			if(longest_prefix == "")
+			//TODO: Canonicalize this?
+			else if(longest_prefix == "")
 			{
 				//LogDebug("Unable to resolve include %s\n", f.c_str());
 				missingFiles.emplace(str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f);
@@ -403,13 +389,14 @@ bool GNUToolchain::Compile(
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
-	string& output)
+	string& output,
+	bool cpp)
 {
 	//If any source has a .o extension, we're linking and not compiling
 	for(auto s : sources)
 	{
 		if(s.find(".o") != string::npos)
-			return Link(exe, triplet, sources, fname, flags, outputs, output);
+			return Link(exe, triplet, sources, fname, flags, outputs, output, cpp);
 	}
 
 	LogDebug("Compile for arch %s\n", triplet.c_str());
@@ -426,13 +413,17 @@ bool GNUToolchain::Compile(
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
 	cmdline += "-nostdinc ";					//make sure we only include files the server provided
 	cmdline += "-nostdinc++ ";
+	if(cpp)
+		cmdline += "-x c++ ";
+	else
+		cmdline += "-x c ";
 	for(auto f : flags)							//special flags
 		cmdline += FlagToString(f) + " ";
 	cmdline += string("-I") + apath + "/ ";		//include the virtual system path
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";
-	LogDebug("Command line: %s\n", cmdline.c_str());
+	LogDebug("Compile command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
@@ -460,7 +451,8 @@ bool GNUToolchain::Link(
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
-	string& output)
+	string& output,
+	bool /*cpp*/)
 {
 	LogDebug("Link for arch %s\n", triplet.c_str());
 	LogIndenter li;
@@ -485,6 +477,7 @@ bool GNUToolchain::Link(
 	if(0 != ShellCommand(cmdline, output))
 	{
 		LogDebug("link failed\n");
+		//LogError("%s\n", output.c_str());
 		return false;
 	}
 

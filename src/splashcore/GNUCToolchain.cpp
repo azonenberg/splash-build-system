@@ -146,5 +146,5 @@ bool GNUCToolchain::Build(
 	map<string, string>& outputs,
 	string& output)
 {
-	return GNUToolchain::Compile(m_basepath, triplet, sources, fname, flags, outputs, output);
+	return GNUToolchain::Compile(m_basepath, triplet, sources, fname, flags, outputs, output, false);
 }

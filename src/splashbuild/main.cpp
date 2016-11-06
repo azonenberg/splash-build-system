@@ -418,7 +418,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 		}
 
 		//Successful completion of the scan, crunch the results
-		//LogDebug("Scan completed\n");
+		LogDebug("Scan completed (%zu dependencies)\n", deps.size());
 		replym->set_result(true);
 		for(auto d : deps)
 		{
@@ -442,7 +442,7 @@ bool GrabSourceFile(Socket& sock, string fname, string hash)
 	MakeDirectoryRecursive(path, 0700);
 	string data = g_cache->ReadCachedFile(hash);
 	string fpath = g_builddir + "/" + fname;
-	LogDebug("Writing input file %s\n", fpath.c_str());
+	//LogDebug("Writing input file %s\n", fpath.c_str());
 	if(!PutFileContents(fpath, data))
 		return false;
 
@@ -488,6 +488,11 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(auto it : deps)
 	{
 		string fname = it.first;
+
+		//Don't grab the dep again if it's also a source
+		if(sources.find(fname) != sources.end())
+			continue;
+
 		if(!GrabSourceFile(sock, fname, it.second))
 			return;
 	}
