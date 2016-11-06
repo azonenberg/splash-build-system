@@ -218,8 +218,9 @@ bool Scheduler::ScanDependencies(
 			return false;
 		}
 
-		//Block for 250 us (typical slow LAN round trip time)
-		usleep(250);
+		//Block for 2 ms (most jobs take way longer than this, the impact of waiting is miniscule)
+		//TODO: have some kind of true block vs busy-polling
+		usleep(2 * 1000);
 	}
 	//LogDebug("Job done\n");
 

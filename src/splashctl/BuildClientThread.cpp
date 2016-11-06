@@ -183,8 +183,9 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			break;
 		}
 
-		//Wait a while for more work
-		usleep(100);
+		//Wait 50 ms for more work.
+		//This shouldn't hurt performance much as we only get here when the run queue is empty.
+		usleep(50 * 1000);
 	}
 }
 

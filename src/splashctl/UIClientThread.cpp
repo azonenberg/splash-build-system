@@ -199,7 +199,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		}
 
 		//Wait a little while (TODO: wait until one of the jobs has finished with an event or something?)
-		usleep(1000);
+		usleep(50 * 1000);
 	}
 
 	//LogDebug("UI client: Jobs completed\n");
