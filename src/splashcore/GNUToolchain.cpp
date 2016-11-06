@@ -177,6 +177,8 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	//Output file formats
 	else if(s == "output/shared")
 		return "-shared";
+	else if(s == "output/reloc")
+		return "-fPIC";
 
 	//Warning levels
 	else if(s == "warning/max")
@@ -241,7 +243,7 @@ bool GNUToolchain::ScanDependencies(
 		cmdline += "-x c ";
 	cmdline += path;
 	cmdline += " 2>&1";
-	LogDebug("Dep command line: %s\n", cmdline.c_str());
+	//LogDebug("Dep command line: %s\n", cmdline.c_str());
 
 	//Run it
 	string makerule;

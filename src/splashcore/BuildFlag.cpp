@@ -171,6 +171,10 @@ void BuildFlag::LoadOutputFlag()
 	if(m_flag == "shared")
 		m_usage = COMPILE_TIME | LINK_TIME;
 
+	//output/reloc: produce relocatable binaries
+	else if(m_flag == "reloc")
+		m_usage = COMPILE_TIME | LINK_TIME;
+
 	else
 		LogParseError("Flag \"output/%s\" is unknown\n", m_flag.c_str());
 }
