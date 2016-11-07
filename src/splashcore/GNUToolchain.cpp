@@ -411,7 +411,7 @@ bool GNUToolchain::Compile(
 	string aflags = m_archflags[triplet];
 	auto apath = m_virtualSystemIncludePath[triplet];
 
-	//Make the full compile command line
+	//Figure out compile flags
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
 	cmdline += "-nostdinc ";					//make sure we only include files the server provided
 	cmdline += "-nostdinc++ ";
@@ -421,6 +421,8 @@ bool GNUToolchain::Compile(
 		cmdline += "-x c ";
 	for(auto f : flags)							//special flags
 		cmdline += FlagToString(f) + " ";
+
+	//Finish it up
 	cmdline += string("-I") + apath + "/ ";		//include the virtual system path
 	cmdline += "-c ";
 	for(auto s : sources)
@@ -470,9 +472,14 @@ bool GNUToolchain::Link(
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
 	for(auto f : flags)
 		cmdline += FlagToString(f) + " ";
+
+	//If we're building a shared library, set the soname
+	//TODO: provide an interface for setting the library version?
+	if(flags.find(BuildFlag("output/shared")) != flags.end())
+		cmdline += string("-Wl,-soname,") + GetBasenameOfFile(fname) + ".0 ";
+
 	for(auto s : sources)
 		cmdline += s + " ";
-
 	LogDebug("Command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
