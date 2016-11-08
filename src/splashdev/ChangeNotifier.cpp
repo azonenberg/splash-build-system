@@ -103,6 +103,10 @@ void BuildChangeNotificationForDir(BulkFileChanged* msg, string path)
 	if(DoesFileExist(path  + "/.splashignore"))
 		return;
 
+	//If the directory is our build directory, don't do anything
+	if(path == g_clientSettings->GetProjectRoot() + "/build")
+		return;
+
 	//LogDebug("Sending change notification for %s\n", path.c_str());
 
 	//See if we have a build.yml in this directory
