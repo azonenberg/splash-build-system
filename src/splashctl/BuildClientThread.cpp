@@ -495,6 +495,8 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 			continue;
 		}
 
+		//Get the full path of the file
+		ffname = dir + "/" + ffname;
 		LogDebug("Compiled file %s has hash %s\n", ffname.c_str(), hash.c_str());
 
 		//Main node output? Add to the cache using the node's hash
@@ -510,10 +512,11 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 			shash = hash;
 
 		//Add to the cache once we know which hash to use
-		g_cache->AddFile(fname, shash, hash, data, stdout);
+		g_cache->AddFile(ffname, shash, hash, data, stdout);
 
 		//Add the node to the working copy
-		node->GetGraph()->GetWorkingCopy()->UpdateFile(fname, shash, false, false);
+		//LogDebug("Adding %s to wc %p as %s\n", ffname.c_str(), node->GetGraph()->GetWorkingCopy(), shash.c_str());
+		node->GetGraph()->GetWorkingCopy()->UpdateFile(ffname, shash, false, false);
 	}
 
 	return true;
