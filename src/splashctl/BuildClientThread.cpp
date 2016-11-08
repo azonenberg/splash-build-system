@@ -40,7 +40,6 @@ bool ProcessBuildResults(Socket& s, string& hostname, SplashMsg& msg, Job* job, 
 void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Build server %s (%s) connected\n", hostname.c_str(), id.c_str());
-	LogIndenter li;
 
 	//Expect a BuildInfo message
 	SplashMsg binfo;
