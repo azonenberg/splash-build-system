@@ -165,6 +165,10 @@ void WatchDirRecursively(int hnotify, string dir)
 	if(dir == "build")
 		return;
 
+	//If the directory has a ".splashignore" file in it, don't do anything
+	if(DoesFileExist(dir  + "/.splashignore"))
+		return;
+
 	//LogDebug("    Recursively watching directory %s\n", dir.c_str());
 
 	//Watch changes to the directory
