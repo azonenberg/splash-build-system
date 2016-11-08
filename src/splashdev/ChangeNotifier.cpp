@@ -99,6 +99,10 @@ void BuildChangeNotificationForDir(BulkFileChanged* msg, string path)
 	if(!DoesDirectoryExist(path))
 		return;
 
+	//If the directory has a ".splashignore" file in it, don't do anything
+	if(DoesFileExist(dir  + "/.splashignore"))
+		return;
+
 	//LogDebug("Sending change notification for %s\n", path.c_str());
 
 	//See if we have a build.yml in this directory
