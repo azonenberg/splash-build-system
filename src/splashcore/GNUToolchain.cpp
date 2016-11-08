@@ -475,8 +475,11 @@ bool GNUToolchain::Link(
 
 	//If we're building a shared library, set the soname
 	//TODO: provide an interface for setting the library version?
-	if(flags.find(BuildFlag("output/shared")) != flags.end())
-		cmdline += string("-Wl,-soname,") + GetBasenameOfFile(fname) + ".0 ";
+	bool is_shared = flags.find(BuildFlag("output/shared")) != flags.end();
+	string basename = GetBasenameOfFile(fname);
+	string soname = basename + ".0";
+	if(is_shared)
+		cmdline += string("-Wl,-soname,") + soname + " ";
 
 	for(auto s : sources)
 		cmdline += s + " ";
@@ -499,6 +502,14 @@ bool GNUToolchain::Link(
 	{
 		f = GetBasenameOfFile(f);
 		outputs[f] = sha256_file(f);
+	}
+
+	//If we built a shared library, make soname copy
+	if(is_shared)
+	{
+		outputs[soname] = outputs[basename];
+		string stuff = GetFileContents(fname);
+		PutFileContents(soname, stuff);
 	}
 
 	//All good if we get here
