@@ -476,9 +476,10 @@ bool GNUToolchain::Link(
 	//If we're building a shared library, set the soname
 	//TODO: provide an interface for setting the library version?
 	bool is_shared = flags.find(BuildFlag("output/shared")) != flags.end();
+	bool using_elf = (triplet.find("linux") != string::npos) || (triplet.find("elf") != string::npos);
 	string basename = GetBasenameOfFile(fname);
 	string soname = basename + ".0";
-	if(is_shared)
+	if(is_shared && using_elf)
 		cmdline += string("-Wl,-soname,") + soname + " ";
 
 	for(auto s : sources)
@@ -505,7 +506,7 @@ bool GNUToolchain::Link(
 	}
 
 	//If we built a shared library, make soname copy
-	if(is_shared)
+	if(is_shared && using_elf)
 	{
 		outputs[soname] = outputs[basename];
 		string stuff = GetFileContents(fname);
