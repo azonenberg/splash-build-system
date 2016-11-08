@@ -238,7 +238,7 @@ string Cache::ReadCachedLog(string id)
 /**
 	@brief Adds a new file's metadata to the cache, reporting that we couldn't actually make it
  */
-void Cache::AddFailedFile(string basename, string id, string log)
+void Cache::AddFailedFile(string /*basename*/, string id, string log)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
