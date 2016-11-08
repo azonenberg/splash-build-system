@@ -36,7 +36,7 @@ using namespace std;
 
 GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	: LinkerToolchain(basepath, TOOLCHAIN_GNU)
-	, GNUToolchain(triplet)
+	, GNUToolchain(triplet, basepath, GNU_LD)
 {
 	//Get the full toolchain version
 	m_stringVersion = string("GNU Linker") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");

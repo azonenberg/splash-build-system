@@ -41,7 +41,7 @@ using namespace std;
 
 	ALL supported triplets must be listed here; the absence of an entry is an error.
  */
-GNUToolchain::GNUToolchain(string arch)
+GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 {
 	/////////////////////////////////////////////////////////////////////////////
 	// X86
@@ -97,6 +97,90 @@ GNUToolchain::GNUToolchain(string arch)
 	{
 		LogWarning("Don't know what flags to use for target %s\n", arch.c_str());
 	}
+
+
+	/////////////////////////////////////////////////////////////////////////////
+	// Find libraries
+
+	//If it's a linker, do nothing
+	if(type == GNU_LD)
+		return;
+
+	//Create a temporary directory to work in
+	char base[] = "/tmp/splash_XXXXXX";
+	string tmpdir = mkdtemp(base);
+	string oout = tmpdir + "/test.o";
+	string fout = tmpdir + "/test";
+
+	//Create a temporary C/C++ file to build
+	string cfn = tmpdir + "/test.c";
+	FILE* fp = fopen(cfn.c_str(), "w");
+	fprintf(fp, "int main(){return 0;}\n");
+	fclose(fp);
+
+	//Figure out file names
+	set<string> sources;
+	sources.emplace(cfn);
+	set<string> objects;
+	objects.emplace(oout);
+
+	set<BuildFlag> flags;
+
+	for(auto it : m_archflags)
+	{
+		string arch = it.first;
+
+		LogDebug("Finding flags for architecture %s, toolchain %s\n", arch.c_str(), exe.c_str());
+		LogIndenter li;
+
+		//Compile and link it
+		map<string, string> unused;
+		string sout;
+		if(!Compile(exe, arch, sources, oout, flags, unused, sout, (type == GNU_CPP)))
+		{
+			LogError("Test compilation failed for toolchain %s\n", exe.c_str());
+			continue;
+		}
+		sout = "";
+		if(!Link(exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP)))
+		{
+			LogError("Test link failed for toolchain %s:\n%s\n", exe.c_str(), sout.c_str());
+			continue;
+		}
+
+		//Run readelf to see what the outputs look like
+		string out;
+		if(0 != ShellCommand(string("readelf -d -W ") + fout, out))
+		{
+			LogError("readelf failed for toolchain %s\n", exe.c_str());
+			continue;
+		}
+		vector<string> outs;
+		ParseLines(out, outs);
+
+		//Parse the output
+		string slp = "[";
+		for(auto line : outs)
+		{
+			auto pos = line.find(slp);
+			if(pos == string::npos)
+				continue;
+
+			string n = line.substr(pos + slp.length());
+			auto e = n.find("]");
+			if(e == string::npos)
+				continue;
+
+			string libname = n.substr(0, e);
+			m_internalLibraries[arch].emplace(libname);
+		}
+	}
+
+	//Clean up
+	unlink(cfn.c_str());
+	unlink(oout.c_str());
+	unlink(fout.c_str());
+	rmdir(tmpdir.c_str());
 }
 
 void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bool cpp, string arch)
@@ -401,7 +485,7 @@ bool GNUToolchain::Compile(
 			return Link(exe, triplet, sources, fname, flags, outputs, output, cpp);
 	}
 
-	LogDebug("Compile for arch %s\n", triplet.c_str());
+	//LogDebug("Compile for arch %s\n", triplet.c_str());
 	LogIndenter li;
 
 	if(!VerifyFlags(triplet))
@@ -427,7 +511,7 @@ bool GNUToolchain::Compile(
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";
-	LogDebug("Compile command line: %s\n", cmdline.c_str());
+	//LogDebug("Compile command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
@@ -458,7 +542,7 @@ bool GNUToolchain::Link(
 	string& output,
 	bool /*cpp*/)
 {
-	LogDebug("Link for arch %s\n", triplet.c_str());
+	//LogDebug("Link for arch %s\n", triplet.c_str());
 	LogIndenter li;
 
 	if(!VerifyFlags(triplet))
@@ -484,7 +568,7 @@ bool GNUToolchain::Link(
 
 	for(auto s : sources)
 		cmdline += s + " ";
-	LogDebug("Command line: %s\n", cmdline.c_str());
+	//LogDebug("Command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))

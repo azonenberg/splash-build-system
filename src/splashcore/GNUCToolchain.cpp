@@ -36,7 +36,7 @@ using namespace std;
 
 GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 	: CToolchain(basepath, TOOLCHAIN_GNU)
-	, GNUToolchain(triplet)
+	, GNUToolchain(triplet, basepath, GNU_C)
 {
 	//Get the full compiler version
 	m_stringVersion = string("GNU C") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");

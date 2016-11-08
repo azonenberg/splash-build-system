@@ -36,7 +36,14 @@
 class GNUToolchain
 {
 public:
-	GNUToolchain(std::string arch);
+	enum GNUType
+	{
+		GNU_C,
+		GNU_CPP,
+		GNU_LD
+	};
+
+	GNUToolchain(std::string arch, std::string exe, GNUType type);
 
 	void FindDefaultIncludePaths(std::vector<std::string>& paths, std::string exe, bool cpp, std::string arch);
 
@@ -88,6 +95,11 @@ protected:
 		@brief Flags we use to target each of our supported architectures
 	 */
 	std::map<std::string, std::string> m_archflags;
+
+	/**
+		@brief Libraries we use when linking (mapped by target arch)
+	 */
+	std::map<std::string, std::set<std::string> > m_internalLibraries;
 };
 
 #endif

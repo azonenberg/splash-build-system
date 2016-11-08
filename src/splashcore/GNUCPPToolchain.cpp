@@ -36,7 +36,7 @@ using namespace std;
 
 GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 	: CPPToolchain(basepath, TOOLCHAIN_GNU)
-	, GNUToolchain(triplet)
+	, GNUToolchain(triplet, basepath, GNU_CPP)
 {
 	//Get the full compiler version
 	m_stringVersion = string("GNU C++") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
