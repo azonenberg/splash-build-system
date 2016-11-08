@@ -277,7 +277,7 @@ void Cache::AddFailedFile(string basename, string id, string log)
 	@param data				The data to write
 	@param log				Standard output of the command that built this file
  */
-void Cache::AddFile(string /*basename*/, string id, string hash, string data, string log)
+void Cache::AddFile(string basename, string id, string hash, string data, string log)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -311,7 +311,7 @@ void Cache::AddFile(string /*basename*/, string id, string hash, string data, st
 	string chash = sha256(data);
 	if(chash != hash)
 	{
-		LogWarning("Adding new cache entry for id %s:\n", id.c_str());
+		LogWarning("Adding new cache entry for id %s (%s):\n", id.c_str(), basename.c_str());
 		LogIndenter li;
 		LogWarning("passed:     %s:\n", hash.c_str());
 		LogWarning("calculated: %s:\n", chash.c_str());
