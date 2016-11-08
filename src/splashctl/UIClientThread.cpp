@@ -211,8 +211,12 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 	//Create a sorted list of output paths of ALL graph nodes, even those which are not targets
 	set<string> paths;
+	//LogDebug("Dumping graph for wc %p\n", wc);
 	for(auto it : *wc)
+	{
+		//LogDebug("%s\n", it.first.c_str());
 		paths.emplace(it.first);
+	}
 
 	//Filter out those not in the build directory (TODO: can we do this faster than O(n)?)
 	//and send the whole list to the client for syncing.
