@@ -100,7 +100,7 @@ void BuildChangeNotificationForDir(BulkFileChanged* msg, string path)
 		return;
 
 	//If the directory has a ".splashignore" file in it, don't do anything
-	if(DoesFileExist(dir  + "/.splashignore"))
+	if(DoesFileExist(path  + "/.splashignore"))
 		return;
 
 	//LogDebug("Sending change notification for %s\n", path.c_str());
