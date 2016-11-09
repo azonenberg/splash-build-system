@@ -192,6 +192,10 @@ public:
 	std::string GetObjectSuffix()
 	{ return m_objSuffix; }
 
+	/**
+		@brief Get the dependencies (on the local filesystem) for outputs built for a given architecture
+	 */
+	virtual std::set<std::string> GetToolchainDependencies(std::string arch) =0;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Actual compilation stuff

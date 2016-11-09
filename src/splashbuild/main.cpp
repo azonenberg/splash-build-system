@@ -161,6 +161,22 @@ int main(int argc, char* argv[])
 		for(auto x : triplets)
 			*madd->add_triplet() = x;
 
+		LogDebug("%s\n", t->GetVersionString().c_str());
+		LogIndenter li;
+		for(auto arch : triplets)
+		{
+			auto deps = t->GetToolchainDependencies(arch);
+			if(deps.empty())
+				continue;
+
+			LogDebug("%s\n", arch.c_str());
+			LogIndenter li;
+			for(auto d : deps)
+			{
+				LogDebug("%s\n", d.c_str());
+			}
+		}
+
 		if(!SendMessage(sock, tadd, ctl_server))
 			return 1;
 	}

@@ -48,6 +48,8 @@ public:
 		std::map<std::string, std::string>& dephashes,
 		std::string& output,
 		std::set<std::string>& missingFiles);
+
+	virtual std::set<std::string> GetToolchainDependencies(std::string arch);
 	
 protected:
 };

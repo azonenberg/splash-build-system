@@ -160,6 +160,7 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 
 		//Parse the output
 		string slp = "[";
+		bool found_libgcc = false;
 		for(auto line : outs)
 		{
 			auto pos = line.find(slp);
@@ -172,7 +173,21 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 				continue;
 
 			string libname = n.substr(0, e);
-			m_internalLibraries[arch].emplace(libname);
+
+			//Look up the absolute path of the library
+			string apath = CanonicalizePath(ShellCommand(exe + " " + it.second + " --print-file-name=" + libname));
+
+			if(apath.find("libgcc") != string::npos)
+				found_libgcc = true;
+
+			m_internalLibraries[arch].emplace(apath);
+		}
+
+		//If we did not find a dynamically linked libgcc, add a static one
+		if(!found_libgcc)
+		{
+			string libgcc_fname = ShellCommand(exe + " " + it.second + " --print-libgcc-file-name");
+			m_internalLibraries[arch].emplace(CanonicalizePath(libgcc_fname));
 		}
 	}
 

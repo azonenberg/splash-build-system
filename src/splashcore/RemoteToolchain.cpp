@@ -67,6 +67,13 @@ RemoteToolchain::~RemoteToolchain()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Placeholders
 
+set<string> RemoteToolchain::GetToolchainDependencies(string /*arch*/)
+{
+	set<string> ret;
+	LogError("RemoteToolchain::GetToolchainDependencies() is not yet implemented\n");
+	return ret;
+}
+
 bool RemoteToolchain::ScanDependencies(
 	string /*arch*/,
 	string /*path*/,
