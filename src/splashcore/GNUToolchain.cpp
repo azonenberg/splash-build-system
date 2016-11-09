@@ -568,7 +568,7 @@ bool GNUToolchain::Link(
 
 	for(auto s : sources)
 		cmdline += s + " ";
-	//LogDebug("Command line: %s\n", cmdline.c_str());
+	//LogDebug("Link command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
