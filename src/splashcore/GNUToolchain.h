@@ -80,6 +80,9 @@ public:
 		std::string& output,
 		bool cpp);
 
+	std::set<std::string> GetLibrariesForArch(std::string arch)
+	{ return m_internalLibraries[arch]; }
+
 protected:
 	std::string FlagToString(BuildFlag flag);
 	bool VerifyFlags(std::string triplet);
