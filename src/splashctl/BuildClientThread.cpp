@@ -139,6 +139,8 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
+			LogDebug("[%7.3f] BuildClientThread got job\n", g_scheduler->GetDT());
+
 			//If the job was canceled by dependencies, we cannot run it (ever)
 			if(djob->IsCanceledByDeps())
 			{
@@ -222,6 +224,8 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
  */
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& ok)
 {
+	LogDebug("[%7.3f] BuildClientThread ProcessScanJob\n", g_scheduler->GetDT());
+
 	//Grab the job settings
 	string chain = job->GetToolchain();
 	string path = job->GetPath();
@@ -240,6 +244,8 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& o
 		reqm->add_flags(f);
 	if(!SendMessage(s, req, hostname))
 		return false;
+
+	LogDebug("[%7.3f] BuildClientThread job pushed out\n", g_scheduler->GetDT());
 
 	//Let the client do its thing
 	while(true)
@@ -286,7 +292,7 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& o
  */
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job, bool& ok)
 {
-	//LogDebug("Got dependency results\n");
+	LogDebug("[%7.3f] BuildClientThread got dependency results\n", g_scheduler->GetDT());
 
 	//If the scan failed, we can't do anything else
 	auto res = msg.dependencyresults();
@@ -311,6 +317,8 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 			continue;
 		}
 
+		//Looks like we need to do bulk file requests here!
+
 		//For each file, see if we have it in the cache already.
 		//If not, ask the client for it.
 		//TODO: do batched requests to cut latency
@@ -327,6 +335,7 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 	}
 
 	//all good
+	LogDebug("[%7.3f] BuildClientThread results done\n", g_scheduler->GetDT());
 	ok = true;
 	return true;
 }

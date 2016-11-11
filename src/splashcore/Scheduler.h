@@ -68,6 +68,9 @@ public:
 	Job* PopJob(clientID id);
 	Job* PopJob(clientID id, Job::Priority prio);
 
+	double GetDT()
+	{ return GetTime() - m_tStart; }
+
 protected:
 
 	/**
@@ -97,6 +100,12 @@ protected:
 		not all jobs can run on any given node and some may be blocking on dependencies
 	 */
 	std::map<Job::Priority, jobqueue> m_runnableJobs;
+
+	/// @brief Time the scheduler was initialized
+	double m_tStart;
+
+	/// @brief True if we've processed at least one job
+	bool m_running;
 };
 
 extern Scheduler* g_scheduler;

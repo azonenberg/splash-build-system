@@ -38,6 +38,8 @@ Scheduler* g_scheduler = NULL;
 
 Scheduler::Scheduler()
 {
+	m_tStart = GetTime();
+	m_running = false;
 }
 
 Scheduler::~Scheduler()
@@ -172,8 +174,15 @@ bool Scheduler::ScanDependencies(
 	set<string>& deps,
 	std::string& errors)
 {
-	LogDebug("Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
-		fname.c_str(), arch.c_str(), toolchain.c_str() );
+	//If this is our first job, reset the timer for clean profiling
+	if(!m_running)
+	{
+		m_tStart = GetTime();
+		m_running = true;
+	}
+
+	LogDebug("[%7.3f] Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
+		GetDT(), fname.c_str(), arch.c_str(), toolchain.c_str() );
 	LogIndenter li;
 
 	//Need mutex locked during scheduling so that if the golden node leaves halfway through
@@ -222,7 +231,7 @@ bool Scheduler::ScanDependencies(
 		//TODO: have some kind of true block vs busy-polling
 		usleep(2 * 1000);
 	}
-	//LogDebug("Job done\n");
+	LogDebug("[%7.3f] Scan done\n", GetDT());
 
 	//If we're done, but with errors, fail
 	if(!job->IsSuccessful())
@@ -243,6 +252,8 @@ bool Scheduler::ScanDependencies(
 
 	//Clean up so we don't leak memory
 	job->Unref();
+
+	LogDebug("[%7.3f] Post-processing done\n", GetDT());
 
 	//Done
 	return true;

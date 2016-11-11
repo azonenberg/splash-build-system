@@ -86,6 +86,11 @@ bool SendMessage(Socket& s, const SplashMsg& msg, std::string hostname);
 bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Performance profiling
+
+double GetTime();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Project includes
 
 #include "Cache.h"
@@ -135,8 +140,6 @@ bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global functions
 
-double GetTime();
-
 void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false);
 std::string MakeStringLowercase(std::string str);
 
@@ -176,6 +179,13 @@ bool ConnectToServer(Socket& sock, ClientHello::ClientType type);
 
 bool GetRemoteFileByHash(Socket& sock, std::string hostname, std::string hash, std::string& content);
 bool ProcessContentRequest(Socket& s, std::string remote, SplashMsg& msg);
+
+bool GetRemoteHashesByPath(
+	Socket& sock,
+	std::string hostname,
+	std::set<std::string> fnames,
+	std::map<std::string,
+	std::string>& hashes);
 
 bool ValidatePath(std::string fname);
 

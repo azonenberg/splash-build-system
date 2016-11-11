@@ -690,6 +690,73 @@ bool GetRemoteFileByHash(Socket& sock, string hostname, string hash, string& con
 }
 
 /**
+	@brief Send a bulk (multi-file) HashRequest
+
+	@param fnames		Input file names
+	@param hashes		Output map of fname -> hash.
+						If a file is not present here, it was not found on the remote end.
+ */
+bool GetRemoteHashesByPath(Socket& sock, string hostname, set<string> fnames, map<string, string>& hashes)
+{
+	//Ask the server for the hashes of these files
+	SplashMsg hreq;
+	auto hreqm = hreq.mutable_bulkhashrequest();
+	for(auto f : fnames)
+		hreqm->add_fnames(f);
+	if(!SendMessage(sock, hreq, hostname))
+		return false;
+
+	//Wait for response
+	SplashMsg hresp;
+	if(!RecvMessage(sock, hresp, hostname))
+		return false;
+	if(hresp.Payload_case() != SplashMsg::kBulkHashResponse)
+	{
+		LogWarning("Bad message (expected BulkHashResponse, got %d instead)\n", hresp.Payload_case());
+		return false;
+	}
+
+	//Process the response
+	auto hres = hresp.bulkhashresponse();
+	for(int i=0; i<hres.files_size(); i++)
+	{
+		auto f = hres.files(i);
+
+		//Complain if we couldn't find the file
+		if(!f.found())
+		{
+			LogWarning("Couldn't find file %s\n", f.fname().c_str());
+			continue;
+		}
+
+		//Make sure the file name is valid
+		string fname = f.fname();
+		if(!ValidatePath(fname))
+		{
+			LogWarning("path %s failed to validate\n", fname.c_str());
+			return false;
+		}
+
+		//Write to the output array
+		hashes[fname] = f.hash();
+	}
+
+	return true;
+}
+
+/**
+	@brief Send a bulk (multi-file) ContentRequest and writes them to our cache.
+
+	The files are not written to the working directory.
+ */
+/*
+bool GetRemoteFilesByHash(Socket& sock, string hostname, vector<string> hashes)
+{
+	return true;
+}
+*/
+
+/**
 	@brief Respond to a ContentRequest message
  */
 bool ProcessContentRequest(Socket& s, string remote, SplashMsg& msg)

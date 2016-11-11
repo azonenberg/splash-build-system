@@ -384,57 +384,22 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 		//If the scan found files we're missing, ask for them!
 		if(!missingFiles.empty())
 		{
-			//Ask the server for the hashes of these files
-			SplashMsg hreq;
-			auto hreqm = hreq.mutable_bulkhashrequest();
-			//LogDebug("Found missing files, asking server for hashes\n");
-			for(auto f : missingFiles)
+			//Look up the hashes
+			map<string, string> hashes;
+			if(!GetRemoteHashesByPath(sock, g_clientSettings->GetServerHostname(), missingFiles, hashes))
 			{
-				LogIndenter li;
-				hreqm->add_fnames(f);
-			}
-			if(!SendMessage(sock, hreq))
-				return;
-
-			LogIndenter li;
-
-			//Wait for response
-			SplashMsg hresp;
-			if(!RecvMessage(sock, hresp))
-				return;
-			if(hresp.Payload_case() != SplashMsg::kBulkHashResponse)
-			{
-				LogWarning("Bad message (expected BulkHashResponse, got %d instead)\n", hresp.Payload_case());
+				replym->set_result(false);
+				replym->set_stdout("Failed to get remote hashes");
+				SendMessage(sock, reply);
 				return;
 			}
 
-			//Process the response
-			auto hres = hresp.bulkhashresponse();
-			for(int i=0; i<hres.files_size(); i++)
+			for(auto it : hashes)
 			{
-				auto f = hres.files(i);
-
-				//Complain if we couldn't find the file
-				if(!f.found())
-				{
-					replym->set_result(false);
-					replym->set_stdout(string("File ") + f.fname() + " was not found on server\n");
-					SendMessage(sock, reply);
-					//LogWarning("Couldn't find file %s\n", f.fname().c_str());
-					return;
-				}
-
-				//Make sure the file name is valid
-				//TODO: return error?
-				string fname = f.fname();
-				if(!ValidatePath(fname))
-				{
-					LogWarning("path %s failed to validate\n", fname.c_str());
-					continue;
-				}
+				auto fname = it.first;
+				auto hash = it.second;
 
 				//Pull file into cache if needed, then write to disk
-				string hash = f.hash();
 				if(!RefreshCachedFile(sock, hash, fname))
 					return;
 				string data = g_cache->ReadCachedFile(hash);
