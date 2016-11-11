@@ -120,6 +120,7 @@ bool RecvMessage(Socket& s, SplashMsg& msg, std::string hostname);
 #include "CPPObjectNode.h"
 #include "CPPExecutableNode.h"
 #include "CPPSharedLibraryNode.h"
+#include "SystemLibraryNode.h"
 
 #include "WorkingCopy.h"
 

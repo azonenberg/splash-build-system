@@ -142,7 +142,7 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 			continue;
 		}
 		sout = "";
-		if(!Link(exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP)))
+		if(!Link(exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP), false))
 		{
 			LogError("Test link failed for toolchain %s:\n%s\n", exe.c_str(), sout.c_str());
 			continue;
@@ -555,7 +555,8 @@ bool GNUToolchain::Link(
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
 	string& output,
-	bool /*cpp*/)
+	bool /*cpp*/,
+	bool nodefaultlib)
 {
 	//LogDebug("Link for arch %s\n", triplet.c_str());
 	LogIndenter li;
@@ -580,6 +581,11 @@ bool GNUToolchain::Link(
 	string soname = basename + ".0";
 	if(is_shared && using_elf)
 		cmdline += string("-Wl,-soname,") + soname + " ";
+
+	//Ignore default libraries if we're not doing a test link
+	//Explicitly pass the particular libraries passed as part of the node being built.
+	if(nodefaultlib)
+		cmdline += "-nodefaultlibs -nostdlib -nostartfiles ";
 
 	for(auto s : sources)
 		cmdline += s + " ";

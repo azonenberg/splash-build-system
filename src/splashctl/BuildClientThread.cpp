@@ -101,6 +101,33 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		for(int j=0; j<madd.triplet_size(); j++)
 			toolchain->AddTriplet(madd.triplet(j));
 
+		//LogDebug("Toolchain %s\n", madd.versionstr().c_str());
+		//LogIndenter li;
+
+		//Core libraries (libc etc)
+		for(int j=0; j<madd.adeps_size(); j++)
+		{
+			auto ad = madd.adeps(j);
+			string arch = ad.arch();
+
+			//LogDebug("arch %s\n", arch.c_str());
+			//LogIndenter li;
+
+			for(int k=0; k<ad.deps_size(); k++)
+			{
+				auto p = ad.deps(k);
+				string fname = p.fname();
+				//LogDebug("file %s\n", fname.c_str());
+
+				//Add it to the cache
+				string hash = p.hash();
+				g_cache->AddFile(GetBasenameOfFile(fname), hash, hash, p.data(), "");
+
+				//Register the hash with the toolchain
+				toolchain->AddLibrary(arch, fname, hash);
+			}
+		}
+
 		//Register the toolchain in the global indexes
 		bool moreToolchains = (i+1 < binfom.numchains());
 		g_nodeManager->AddToolchain(id, toolchain, moreToolchains);

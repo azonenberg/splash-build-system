@@ -108,7 +108,7 @@ message BuildInfo
 message ArchDeps
 {
 				string	arch		= 1;	//The target architecture
-	repeated	Dependency	deps	= 2;	//The dependent files
+	repeated	BuiltFile	deps	= 2;	//The dependent files
 };
 
 //Report compilers installed on the build server

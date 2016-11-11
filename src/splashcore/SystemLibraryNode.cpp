@@ -27,71 +27,20 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef RemoteToolchain_h
-#define RemoteToolchain_h
+#include "splashcore.h"
 
-/**
-	@brief A toolchain present on a remote build server
- */
-class RemoteToolchain : public Toolchain
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+SystemLibraryNode::SystemLibraryNode(BuildGraph* graph, string fname, string hash)
+	: BuildGraphNode(graph, BuildFlag::NO_TIME, fname, hash)
 {
-public:
-	RemoteToolchain(
-		ToolchainType type,
-		std::string hash,
-		std::string sver,
-		int major,
-		int minor,
-		int patch,
-		std::string exeSuffix,
-		std::string shlibSuffix,
-		std::string stlibSuffix,
-		std::string objSuffix,
-		std::string shlibPrefix);
-	virtual ~RemoteToolchain();
 
-	void AddLanguage(Language l)
-	{ m_langs.push_back(l); }
+}
 
-	void AddTriplet(std::string triplet)
-	{ m_triplets.emplace(triplet); }
-
-	virtual bool ScanDependencies(
-		std::string arch,
-		std::string path,
-		std::string root,
-		std::set<BuildFlag> flags,
-		std::set<std::string>& deps,
-		std::map<std::string, std::string>& dephashes,
-		std::string& output,
-		std::set<std::string>& missingFiles);
-
-	virtual bool Build(
-		std::string triplet,
-		std::set<std::string> sources,
-		std::string fname,
-		std::set<BuildFlag> flags,
-		std::map<std::string, std::string>& outputs,
-		std::string& output);
-
-	virtual std::set<std::string> GetToolchainDependencies(std::string arch);
-
-	std::string GetLibraryHash(std::string arch, std::string fname);
-
-	void AddLibrary(std::string arch, std::string rpath, std::string hash);
-
-protected:
-
-	/**
-		@brief Libraries we use when linking (file name to target arch)
-	 */
-	std::map<std::string, std::set<std::string> > m_internalLibraries;
-
-	/**
-		@brief Map of (arch, file name) to hash
-	 */
-	std::map<std::pair<std::string, std::string>, std::string > m_libhashes;
-};
-
-#endif
+SystemLibraryNode::~SystemLibraryNode()
+{
+}
 

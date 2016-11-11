@@ -156,10 +156,37 @@ CPPExecutableNode::CPPExecutableNode(
 	//Collect the linker flags
 	GetFlagsForUseAt(BuildFlag::LINK_TIME, m_flags);
 
-	//TODO: Loop over the linker flags, see if any of them request a specific library, add to dependencies
-
 	//TODO: The toolchain specified for us is the OBJECT FILE generation toolchain.
 	//How do we find the LINKER to use?
+
+	//TODO: Loop over the linker flags, see if any of them request a specific library, add to dependencies
+
+	//Look up the toolchain, fail if not found
+	//TODO: get golden toolchain instead!
+	RemoteToolchain* chain = dynamic_cast<RemoteToolchain*>(g_nodeManager->GetAnyToolchainForName(arch, toolchain));
+	if(chain == NULL)
+	{
+		m_invalidInput = true;
+		return;
+	}
+
+	//Get the list of libraries this toolchain requires for proper functioning (libc, etc)
+	auto rlibs = chain->GetToolchainDependencies(arch);
+	for(auto path : rlibs)
+	{
+		string hash = chain->GetLibraryHash(arch, path);
+
+		//If it wasn't already in the graph, create a node for it
+		if(!m_graph->HasNodeWithHash(hash))
+			m_graph->AddNode(new SystemLibraryNode(graph, path, hash));
+
+		//Add this library to the working copy
+		wc->UpdateFile(path, hash, false, false);
+
+		//and to our dependencies
+		m_sources.emplace(path);
+		m_dependencies.emplace(path);
+	}
 
 	UpdateHash();
 }

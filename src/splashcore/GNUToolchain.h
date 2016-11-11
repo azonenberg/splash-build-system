@@ -78,7 +78,8 @@ public:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& output,
-		bool cpp);
+		bool cpp,
+		bool nodefaultlib = true);
 
 	std::set<std::string> GetLibrariesForArch(std::string arch)
 	{ return m_internalLibraries[arch]; }
