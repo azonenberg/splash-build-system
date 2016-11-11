@@ -184,8 +184,9 @@ bool GetRemoteHashesByPath(
 	Socket& sock,
 	std::string hostname,
 	std::set<std::string> fnames,
-	std::map<std::string,
-	std::string>& hashes);
+	std::map<std::string, std::string>& hashes);
+
+bool RefreshRemoteFilesByHash(Socket& sock, std::string hostname, std::map<std::string, std::string>& hashes);
 
 bool ValidatePath(std::string fname);
 

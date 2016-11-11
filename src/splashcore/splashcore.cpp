@@ -749,12 +749,72 @@ bool GetRemoteHashesByPath(Socket& sock, string hostname, set<string> fnames, ma
 
 	The files are not written to the working directory.
  */
-/*
-bool GetRemoteFilesByHash(Socket& sock, string hostname, vector<string> hashes)
+bool RefreshRemoteFilesByHash(Socket& sock, string hostname, map<string, string>& hashes)
 {
+	//Reshuffle the map so we can iterate over it with integers
+	vector<string> hs;
+	vector<string> fs;
+	for(auto it : hashes)
+	{
+		//detect files that look like garbage
+		auto path = it.first;
+		if(!ValidatePath(path))
+		{
+			LogWarning("path %s failed to validate\n", path.c_str());
+			return false;
+		}
+
+		//skip hashes we already have
+		auto hash = it.second;
+		if(g_cache->IsCached(hash))
+			continue;
+
+		fs.push_back(path);
+		hs.push_back(hash);
+	}
+
+	//Ask the server for the stuff
+	SplashMsg creq;
+	auto creqm = creq.mutable_contentrequestbyhash();
+	for(auto h : hs)
+		creqm->add_hash(h);
+	if(!SendMessage(sock, creq, hostname))
+		return false;
+
+	//Wait for a response
+	SplashMsg dat;
+	if(!RecvMessage(sock, dat, hostname))
+		return false;
+	if(dat.Payload_case() != SplashMsg::kContentResponse)
+	{
+		LogError("Got an unexpected message (should be ContentResponse)\n");
+		return false;
+	}
+	auto res = dat.contentresponse();
+	if(res.data_size() != (int)hs.size())
+	{
+		LogError("Got an unexpected message (should be ContentResponse of size %zu)\n", hashes.size());
+		asm("int3");
+		return false;
+	}
+
+	//Add results to the cache
+	for(int i=0; i<res.data_size(); i++)
+	{
+		auto e = res.data(i);
+		if(e.status() != true)
+		{
+			LogError("File %s was not in cache on server (this is stupid, we were just told it was)\n",
+				fs[i].c_str());
+			return false;
+		}
+
+		auto dat = e.data();
+		g_cache->AddFile(fs[i], hs[i], sha256(dat), dat, "");
+	}
+
 	return true;
 }
-*/
 
 /**
 	@brief Respond to a ContentRequest message

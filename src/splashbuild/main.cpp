@@ -386,7 +386,8 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 		{
 			//Look up the hashes
 			map<string, string> hashes;
-			if(!GetRemoteHashesByPath(sock, g_clientSettings->GetServerHostname(), missingFiles, hashes))
+			auto hostname = g_clientSettings->GetServerHostname();
+			if(!GetRemoteHashesByPath(sock, hostname, missingFiles, hashes))
 			{
 				replym->set_result(false);
 				replym->set_stdout("Failed to get remote hashes");
@@ -394,15 +395,15 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 				return;
 			}
 
+			//Pull the files into the cache
+			if(!RefreshRemoteFilesByHash(sock, hostname, hashes))
+				return;
+
+			//Write out the files
 			for(auto it : hashes)
 			{
 				auto fname = it.first;
-				auto hash = it.second;
-
-				//Pull file into cache if needed, then write to disk
-				if(!RefreshCachedFile(sock, hash, fname))
-					return;
-				string data = g_cache->ReadCachedFile(hash);
+				string data = g_cache->ReadCachedFile(it.second);
 				//LogDebug("Writing source file %s\n", fname.c_str());
 				fname = g_builddir + "/" + fname;
 				MakeDirectoryRecursive(GetDirOfFile(fname), 0700);
