@@ -112,6 +112,8 @@ int main(int argc, char* argv[])
 	//Socket server
 	LogDebug("Listening on TCP port %d...\n", port);
 	Socket server(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	if(!server.DisableNagle())
+		return -1;
 	if(!server.Bind(port))
 		return -1;
 	if(!server.Listen())

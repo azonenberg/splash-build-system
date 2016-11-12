@@ -231,7 +231,7 @@ bool Scheduler::ScanDependencies(
 		//TODO: have some kind of true block vs busy-polling
 		usleep(2 * 1000);
 	}
-	LogDebug("[%7.3f] Scan done\n", GetDT());
+	//LogDebug("[%7.3f] Scan done\n", GetDT());
 
 	//If we're done, but with errors, fail
 	if(!job->IsSuccessful())
@@ -253,7 +253,7 @@ bool Scheduler::ScanDependencies(
 	//Clean up so we don't leak memory
 	job->Unref();
 
-	LogDebug("[%7.3f] Post-processing done\n", GetDT());
+	//LogDebug("[%7.3f] Post-processing done\n", GetDT());
 
 	//Done
 	return true;

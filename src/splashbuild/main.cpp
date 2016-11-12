@@ -452,7 +452,7 @@ bool GrabSourceFile(Socket& sock, string fname, string hash)
  */
 void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 {
-	LogDebug("\n\nBuild request\n");
+	LogDebug("\nBuild request\n");
 	LogIndenter li;
 
 	//Do setup stuff
@@ -542,8 +542,9 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 		bf->set_data(GetFileContents(it.first));
 	}
 
-	//Successful completion of the scan, send the results to the server
-	LogDebug("Build finished (status = %d)\n", replym->success());
+	//Successful completion of the run, send the results to the server
+	if(!replym->success())
+		LogDebug("Build failed\n");
 	SendMessage(sock, reply);
 }
 

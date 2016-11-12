@@ -35,6 +35,8 @@ using namespace std;
 void ClientThread(ZSOCKET sock)
 {
 	Socket s(sock);
+	if(!s.DisableNagle())
+		return;
 
 	string client_hostname = "[no hostname]";
 	//LogDebug("New connection received from %s\n", client_hostname.c_str());

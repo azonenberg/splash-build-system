@@ -139,7 +139,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
-			LogDebug("[%7.3f] BuildClientThread got job\n", g_scheduler->GetDT());
+			//LogDebug("[%7.3f] BuildClientThread got job\n", g_scheduler->GetDT());
 
 			//If the job was canceled by dependencies, we cannot run it (ever)
 			if(djob->IsCanceledByDeps())
@@ -224,7 +224,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
  */
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& ok)
 {
-	LogDebug("[%7.3f] BuildClientThread ProcessScanJob\n", g_scheduler->GetDT());
+	//LogDebug("[%7.3f] BuildClientThread ProcessScanJob\n", g_scheduler->GetDT());
 
 	//Grab the job settings
 	string chain = job->GetToolchain();
@@ -245,7 +245,7 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& o
 	if(!SendMessage(s, req, hostname))
 		return false;
 
-	LogDebug("[%7.3f] BuildClientThread job pushed out\n", g_scheduler->GetDT());
+	//LogDebug("[%7.3f] BuildClientThread job pushed out\n", g_scheduler->GetDT());
 
 	//Let the client do its thing
 	while(true)
@@ -286,13 +286,13 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& o
 /**
 	@brief Crunch data coming out of a DependencyResults packet
 
-	TODO: Bulk download of files from the client as needed?
+	@param ok			Indicates success/failure of this scan
 
 	@return True if we can continue. False only on unrecoverable error.
  */
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job, bool& ok)
 {
-	LogDebug("[%7.3f] BuildClientThread got dependency results\n", g_scheduler->GetDT());
+	//LogDebug("[%7.3f] BuildClientThread got dependency results\n", g_scheduler->GetDT());
 
 	//If the scan failed, we can't do anything else
 	auto res = msg.dependencyresults();
@@ -302,6 +302,9 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		ok = false;
 		return true;
 	}
+
+	//Map of fname -> hash pairs
+	map<string, string> hashes;
 
 	//Crunch the results
 	for(int i=0; i<res.deps_size(); i++)
@@ -314,28 +317,27 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		if(!ValidatePath(f))
 		{
 			LogWarning("path %s failed to validate\n", f.c_str());
+			ok = false;
 			continue;
 		}
 
-		//Looks like we need to do bulk file requests here!
+		//Save the hash now that we know the fname is OK
+		hashes[f] = h;
 
-		//For each file, see if we have it in the cache already.
-		//If not, ask the client for it.
-		//TODO: do batched requests to cut latency
-		if(!g_cache->IsCached(h))
-		{
-			string edat;
-			if(!GetRemoteFileByHash(s, hostname, h, edat))
-				return false;
-			g_cache->AddFile(f, h, sha256(edat), edat, "");
-		}
-
-		//Now that the file is in cache server side, add it to the dependency list
+		//Add dependency even if we don't have the content for the hash yet
+		//since nobody will try de-refering the hash before we report the job as complete
 		job->AddDependency(f, h);
 	}
 
+	//Pull the files into the cache
+	if(!RefreshRemoteFilesByHash(s, hostname, hashes))
+	{
+		ok = false;
+		return false;
+	}
+
 	//all good
-	LogDebug("[%7.3f] BuildClientThread results done\n", g_scheduler->GetDT());
+	//LogDebug("[%7.3f] BuildClientThread results done\n", g_scheduler->GetDT());
 	ok = true;
 	return true;
 }

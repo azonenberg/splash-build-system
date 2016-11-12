@@ -609,6 +609,14 @@ bool ConnectToServer(Socket& sock, ClientHello::ClientType type)
 	string ctl_server = g_clientSettings->GetServerHostname();
 	sock.Connect(ctl_server, g_clientSettings->GetServerPort());
 
+	if(!sock.DisableNagle())
+	{
+		LogWarning("Connection to %s:%d dropped (couldn't disable Nagle)\n",
+			ctl_server.c_str(),
+			g_clientSettings->GetServerPort());
+		return false;
+	}
+
 	//Get the serverHello
 	SplashMsg shi;
 	if(!RecvMessage(sock, shi))
