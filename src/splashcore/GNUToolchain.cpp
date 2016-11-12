@@ -282,9 +282,8 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	//Libraries
 	else if(flag.GetType() == BuildFlag::TYPE_LIBRARY)
 	{
-		//Sub-type doesn't matter, always try linking
-		//TODO: Do some checks to see if the lib was actually found!!
-		return string("-l") + flag.GetArgs();
+		LogWarning("GNUToolchain does not implement library flag %s yet\n", s.c_str());
+		return "";
 	}
 
 	//Warning levels
@@ -320,7 +319,7 @@ bool GNUToolchain::VerifyFlags(string triplet)
 	@brief Scans a source file for dependencies (include files, etc)
  */
 bool GNUToolchain::ScanDependencies(
-	string exe,
+	Toolchain* chain,
 	string triplet,
 	string path,
 	string root,
@@ -330,8 +329,14 @@ bool GNUToolchain::ScanDependencies(
 	map<string, string>& dephashes,
 	string& output,
 	set<string>& missingFiles,
+	set<string>& foundlibNames,
 	bool cpp)
 {
+	//Pull out some properties we need
+	string exe = chain->GetBasePath();
+	string libpre = chain->GetSharedLibraryPrefix();
+	string libsuf = chain->GetSharedLibrarySuffix();
+
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
 		return false;
@@ -339,6 +344,126 @@ bool GNUToolchain::ScanDependencies(
 	//Look up some arch-specific stuff
 	string aflags = m_archflags[triplet];
 	auto apath = m_virtualSystemIncludePath[triplet];
+
+	//Create a temporary directory to work in
+	char base[] = "/tmp/splash_XXXXXX";
+	string tmpdir = mkdtemp(base);
+
+	//Create a temporary C/C++ file to build
+	string cfn = tmpdir + "/test.c";
+	FILE* fp = fopen(cfn.c_str(), "w");
+	fprintf(fp, "int main(){return 0;}\n");
+	fclose(fp);
+
+	//Search for any library flags
+	set<string> foundpaths;
+	set<BuildFlag> libflags;
+	for(auto f : flags)
+	{
+		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
+			continue;
+
+		string libbase = f.GetArgs();
+		libflags.emplace(f);
+
+		//Get library file name
+		//TODO: search static libraries too?
+		string libname = libpre + libbase + libsuf;
+		if(!ValidatePath(libname))
+		{
+			char tmp[1024];
+			snprintf(tmp, sizeof(tmp),
+				"Library path %s was malformed\n",
+				libname.c_str());
+			output += tmp;
+			return false;
+		}
+
+		//Use the compiler to find it
+		string fpath;
+		if(0 != ShellCommand(exe + " " + aflags + " --print-file-name=" + libname, fpath))
+		{
+			char tmp[1024];
+			snprintf(tmp, sizeof(tmp),
+				"Failed to search for library %s\n",
+				libname.c_str());
+			output += tmp;
+			return false;
+		}
+		while(isspace(fpath[fpath.length()-1]))
+			fpath.resize(fpath.length() - 1);
+
+		//See if the file exists. GCC will print a path even if it doesn't!
+		if(!DoesFileExist(fpath))
+			continue;
+
+		//We're good, find the actual path
+		fpath = CanonicalizePath(fpath);
+
+		//At this point we know the library exists, but we don't yet know if it's compatible
+		//with our selected architecture.
+		//Do a test compile to find out
+		string ignored;
+		if(0 != ShellCommand(exe + " " + aflags + " -o /dev/null " + cfn + " " + fpath, ignored))
+			continue;
+
+		//Record our results
+		foundlibNames.emplace(libbase);
+		foundpaths.emplace(fpath);
+	}
+
+	//Remove all library-related flags from the list
+	for(auto f : libflags)
+		flags.erase(f);
+
+	//TODO: Add system libraries here
+
+	//Add the found libraries to our cache if needed, and create dependencry records for them
+	for(auto fpath : foundpaths)
+	{
+		//Calculate virtual path
+		string libpath = string("__syslib__/") + str_replace(" ", "_", chain->GetVersionString()) + "_" + triplet;
+		string f = libpath + "/" + GetBasenameOfFile(fpath);
+
+		//Add file to cache
+		string data = GetFileContents(fpath);
+		string hash = sha256(data);
+		if(!g_cache->IsCached(hash))
+			g_cache->AddFile(f, hash, hash, data, "");
+
+		//Add virtual path to output dep list
+		deps.emplace(f);
+		dephashes[f] = hash;
+	}
+
+	//If we specified library/required, and didn't find the lib, declare an error now
+	//rather than wasting time trying to compile and/or link
+	for(auto f : libflags)
+	{
+		if(f.GetFlag() != "required")
+			continue;
+
+		string lbase = f.GetArgs();
+		if(foundlibNames.find(lbase) == foundlibNames.end())
+		{
+			char tmp[1024];
+			snprintf(tmp, sizeof(tmp),
+				"Required library \"%s\" was not found\n",
+				lbase.c_str());
+			output += tmp;
+			return false;
+		}
+	}
+
+	//TODO: Add HAVE_FOO defines for each library
+	for(auto base : foundlibNames)
+	{
+
+	}
+
+	//Clean up temp files
+	unlink(cfn.c_str());
+	rmdir(base);
 
 	//Make the full scan command line
 	string cmdline = exe + " " + aflags + " -M -MG ";
@@ -476,11 +601,13 @@ bool GNUToolchain::ScanDependencies(
 		dephashes[f] = hash;
 	}
 
-	/*
 	LogDebug("    Project-relative dependency paths:\n");
 	for(auto f : deps)
+	{
+		if(f.find("sysinclude") != string::npos)
+			continue;
 		LogDebug("        %s\n", f.c_str());
-	*/
+	}
 
 	return true;
 }

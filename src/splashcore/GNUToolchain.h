@@ -48,7 +48,7 @@ public:
 	void FindDefaultIncludePaths(std::vector<std::string>& paths, std::string exe, bool cpp, std::string arch);
 
 	bool ScanDependencies(
-		std::string exe,
+		Toolchain* chain,
 		std::string triplet,
 		std::string path,
 		std::string root,
@@ -58,6 +58,7 @@ public:
 		std::map<std::string, std::string>& dephashes,
 		std::string& output,
 		std::set<std::string>& missingFiles,
+		std::set<std::string>& foundlibNames,
 		bool cpp);
 
 	virtual bool Compile(

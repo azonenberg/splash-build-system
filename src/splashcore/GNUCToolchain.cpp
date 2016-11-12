@@ -126,8 +126,9 @@ bool GNUCToolchain::ScanDependencies(
 	string& output,
 	set<string>& missingFiles)
 {
+	set<string> foundlibnames;
 	return GNUToolchain::ScanDependencies(
-		m_basepath,
+		this,
 		arch,
 		path,
 		root,
@@ -137,6 +138,7 @@ bool GNUCToolchain::ScanDependencies(
 		dephashes,
 		output,
 		missingFiles,
+		foundlibnames,
 		false);
 }
 
