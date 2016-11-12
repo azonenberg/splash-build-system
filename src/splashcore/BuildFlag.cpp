@@ -47,11 +47,15 @@ BuildFlag::BuildFlag(string flag)
 	}
 	
 	//Try to get the info out of it
-	char group[32];
-	char name[32];
-	if(2 != sscanf(flag.c_str(), "%31[^/]/%31s", group, name))
+	char group[32] = "";
+	char name[64] = "";
+	char arg[64] = "";
+	if(3 == sscanf(flag.c_str(), "%31[^/]/%31[^/]/%63s", group, name, arg))
+		m_arg = arg;
+	else if(2 != sscanf(flag.c_str(), "%31[^/]/%63s", group, name))
 	{
-		LogParseError("Flag \"%s\" is malformed (expected \"category/flag\" form)\n", flag.c_str());
+		LogParseError(
+			"Flag \"%s\" is malformed (expected \"category/flag\" or \"category/flag/arg\" form)\n", flag.c_str());
 		return;
 	}
 
@@ -74,6 +78,8 @@ BuildFlag::BuildFlag(string flag)
 		LoadDialectFlag();
 	else if(sgroup == "output")
 		LoadOutputFlag();
+	else if(sgroup == "library")
+		LoadLibraryFlag();
 	else
 		LogParseError("Unknown flag group \"%s\"\n", group);
 }
@@ -161,6 +167,25 @@ void BuildFlag::LoadDialectFlag()
 
 	else
 		LogParseError("Flag \"dialect/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadLibraryFlag()
+{
+	m_type = TYPE_LIBRARY;
+	m_usage = LINK_TIME;
+
+	//library/optional: link to this library but OK if not found
+	//Compile time so we can do -DHAVE_FOO
+	if(m_flag == "optional")
+		m_usage = LINK_TIME | COMPILE_TIME;
+
+	//library/required: link to this library, fail if not found
+	//Compile time so we can do -DHAVE_FOO
+	else if(m_flag == "required")
+		m_usage = LINK_TIME | COMPILE_TIME;
+
+	else
+		LogParseError("Flag \"library/%s\" is unknown\n", m_flag.c_str());
 }
 
 void BuildFlag::LoadOutputFlag()

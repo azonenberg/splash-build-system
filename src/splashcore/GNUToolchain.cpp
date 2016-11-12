@@ -279,6 +279,14 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	else if(s == "output/reloc")
 		return "-fPIC";
 
+	//Libraries
+	else if(flag.GetType() == BuildFlag::TYPE_LIBRARY)
+	{
+		//Sub-type doesn't matter, always try linking
+		//TODO: Do some checks to see if the lib was actually found!!
+		return string("-l") + flag.GetArgs();
+	}
+
 	//Warning levels
 	else if(s == "warning/max")
 		return "-Wall -Wextra -Wcast-align -Winit-self -Wmissing-declarations -Wswitch -Wwrite-strings";

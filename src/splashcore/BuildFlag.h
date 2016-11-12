@@ -70,6 +70,7 @@ public:
 		TYPE_ANALYSIS	= 6,		//enable/disable profiling, tracing, etc
 		TYPE_DIALECT	= 7,		//control which dialect of a language is being used
 		TYPE_OUTPUT		= 8,		//control the output file (extension, soname, etc)
+		TYPE_LIBRARY	= 9,		//control linking of libraries, IP cores, etc
 		
 		TYPE_INVALID	= 0			//placeholder
 	};
@@ -79,6 +80,15 @@ public:
 	 */
 	operator std::string() const
 	{ return m_rawflag; }
+
+	FlagType GetType()
+	{ return m_type; }
+
+	std::string GetFlag() const
+	{ return m_flag; }
+
+	std::string GetArgs() const
+	{ return m_arg; }
 
 	bool IsUsedAt(FlagUsage t);
 	
@@ -92,6 +102,7 @@ protected:
 	void LoadAnalysisFlag();
 	void LoadDialectFlag();
 	void LoadOutputFlag();
+	void LoadLibraryFlag();
 	
 	/**
 		@brief Usage flags (bitmask of FlagUsage)
@@ -114,6 +125,11 @@ protected:
 		@brief Raw text of this flag (used for hash comparisons etc)
 	 */
 	std::string	m_rawflag;
+
+	/**
+		@brief Argument of this flag (for things like libraries)
+	 */
+	std::string m_arg;
 };
 
 /**
