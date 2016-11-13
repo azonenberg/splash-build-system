@@ -71,6 +71,7 @@ public:
 		TYPE_DIALECT	= 7,		//control which dialect of a language is being used
 		TYPE_OUTPUT		= 8,		//control the output file (extension, soname, etc)
 		TYPE_LIBRARY	= 9,		//control linking of libraries, IP cores, etc
+		TYPE_DEFINE		= 10,		//define macros
 		
 		TYPE_INVALID	= 0			//placeholder
 	};
@@ -103,6 +104,7 @@ protected:
 	void LoadDialectFlag();
 	void LoadOutputFlag();
 	void LoadLibraryFlag();
+	void LoadDefineFlag();
 	
 	/**
 		@brief Usage flags (bitmask of FlagUsage)

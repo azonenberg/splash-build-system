@@ -366,7 +366,17 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 		map<string, string> hashes;
 		string output;
 		set<string> missingFiles;
-		if(!chain->ScanDependencies(rxm.arch(), aname, g_builddir, flags, deps, hashes, output, missingFiles))
+		set<BuildFlag> libFlags;
+		if(!chain->ScanDependencies(
+			rxm.arch(),
+			aname,
+			g_builddir,
+			flags,
+			deps,
+			hashes,
+			output,
+			missingFiles,
+			libFlags))
 		{
 			//trim off trailing newlines
 			while(isspace(output[output.length() - 1]))
@@ -415,11 +425,20 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 			continue;
 		}
 
+		//If we found libraries, report them
+		for(auto lib : libFlags)
+		{
+			LogDebug("Lib flag %s (for %s)\n", static_cast<string>(lib).c_str(), rxm.arch().c_str());
+		}
+
 		//Successful completion of the scan, crunch the results
 		LogDebug("Scan completed (%zu dependencies)\n", deps.size());
 		replym->set_result(true);
 		for(auto d : deps)
 		{
+			if( (d.find(".so") != string::npos) || (d.find(".a") != string::npos) )
+				LogDebug("Dep %s\n", d.c_str());
+
 			auto rd = replym->add_deps();
 			rd->set_fname(d);
 			rd->set_hash(hashes[d]);

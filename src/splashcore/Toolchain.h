@@ -202,6 +202,9 @@ public:
 
 public:
 
+	/**
+		@brief Find dependencies for the given file
+	 */
 	virtual bool ScanDependencies(
 		std::string triplet,
 		std::string path,
@@ -210,7 +213,8 @@ public:
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes,
 		std::string& output,
-		std::set<std::string>& missingFiles) =0;
+		std::set<std::string>& missingFiles,
+		std::set<BuildFlag>& libFlags) =0;
 
 	virtual bool Build(
 		std::string triplet,

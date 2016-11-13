@@ -64,7 +64,8 @@ public:
 		std::set<std::string>& deps,
 		std::map<std::string, std::string>& dephashes,
 		std::string& output,
-		std::set<std::string>& missingFiles);
+		std::set<std::string>& missingFiles,
+		std::set<BuildFlag>& libFlags);
 
 	virtual bool Build(
 		std::string triplet,

@@ -80,6 +80,8 @@ BuildFlag::BuildFlag(string flag)
 		LoadOutputFlag();
 	else if(sgroup == "library")
 		LoadLibraryFlag();
+	else if(sgroup == "define")
+		LoadDefineFlag();
 	else
 		LogParseError("Unknown flag group \"%s\"\n", group);
 }
@@ -202,4 +204,13 @@ void BuildFlag::LoadOutputFlag()
 
 	else
 		LogParseError("Flag \"output/%s\" is unknown\n", m_flag.c_str());
+}
+
+void BuildFlag::LoadDefineFlag()
+{
+	m_type = TYPE_DEFINE;
+
+	//define/foo or define/foo/value
+	if(m_arg == "")
+		m_arg = "1";
 }

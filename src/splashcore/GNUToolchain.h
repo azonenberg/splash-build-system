@@ -58,7 +58,7 @@ public:
 		std::map<std::string, std::string>& dephashes,
 		std::string& output,
 		std::set<std::string>& missingFiles,
-		std::set<std::string>& foundlibNames,
+		std::set<BuildFlag>& libFlags,
 		bool cpp);
 
 	virtual bool Compile(

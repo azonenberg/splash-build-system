@@ -286,6 +286,12 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 		return "";
 	}
 
+	//Macro definitions
+	else if(flag.GetType() == BuildFlag::TYPE_DEFINE)
+	{
+		return string("-D") + flag.GetFlag() + "=" + flag.GetArgs();
+	}
+
 	//Warning levels
 	else if(s == "warning/max")
 		return "-Wall -Wextra -Wcast-align -Winit-self -Wmissing-declarations -Wswitch -Wwrite-strings";
@@ -329,7 +335,7 @@ bool GNUToolchain::ScanDependencies(
 	map<string, string>& dephashes,
 	string& output,
 	set<string>& missingFiles,
-	set<string>& foundlibNames,
+	set<BuildFlag>& libFlags,
 	bool cpp)
 {
 	//Pull out some properties we need
@@ -357,6 +363,7 @@ bool GNUToolchain::ScanDependencies(
 
 	//Search for any library flags
 	set<string> foundpaths;
+	set<string> foundlibNames;
 	set<BuildFlag> libflags;
 	for(auto f : flags)
 	{
@@ -416,7 +423,9 @@ bool GNUToolchain::ScanDependencies(
 	for(auto f : libflags)
 		flags.erase(f);
 
-	//TODO: Add system libraries here
+	//Add system libraries (but don't make -D's for them as they're implicit)
+	for(auto lib : m_internalLibraries[triplet])
+		foundpaths.emplace(lib);
 
 	//Add the found libraries to our cache if needed, and create dependencry records for them
 	for(auto fpath : foundpaths)
@@ -455,10 +464,21 @@ bool GNUToolchain::ScanDependencies(
 		}
 	}
 
-	//TODO: Add HAVE_FOO defines for each library
+	//Add HAVE_FOO defines for each library
 	for(auto base : foundlibNames)
 	{
+		string mname = base;
+		for(size_t i=0; i<mname.length(); i++)
+		{
+			if(!isalnum(mname[i]))
+				mname[i] = '_';
+			else
+				mname[i] = toupper(mname[i]);
+		}
 
+		string flagname = string("define/HAVE_") + mname;
+		flags.emplace(BuildFlag(flagname));
+		libFlags.emplace(BuildFlag(flagname));
 	}
 
 	//Clean up temp files
@@ -601,6 +621,7 @@ bool GNUToolchain::ScanDependencies(
 		dephashes[f] = hash;
 	}
 
+	/*
 	LogDebug("    Project-relative dependency paths:\n");
 	for(auto f : deps)
 	{
@@ -608,6 +629,7 @@ bool GNUToolchain::ScanDependencies(
 			continue;
 		LogDebug("        %s\n", f.c_str());
 	}
+	*/
 
 	return true;
 }

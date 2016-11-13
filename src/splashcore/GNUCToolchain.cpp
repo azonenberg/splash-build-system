@@ -124,9 +124,9 @@ bool GNUCToolchain::ScanDependencies(
 	set<string>& deps,
 	map<string, string>& dephashes,
 	string& output,
-	set<string>& missingFiles)
+	set<string>& missingFiles,
+	set<BuildFlag>& libFlags)
 {
-	set<string> foundlibnames;
 	return GNUToolchain::ScanDependencies(
 		this,
 		arch,
@@ -138,7 +138,7 @@ bool GNUCToolchain::ScanDependencies(
 		dephashes,
 		output,
 		missingFiles,
-		foundlibnames,
+		libFlags,
 		false);
 }
 

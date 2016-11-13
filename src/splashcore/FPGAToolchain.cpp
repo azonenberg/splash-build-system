@@ -56,7 +56,8 @@ bool FPGAToolchain::ScanDependencies(
 	set<string>& /*deps*/,
 	map<string, string>& /*dephashes*/,
 	string& /*output*/,
-	set<string>& /*missingFiles*/)
+	set<string>& /*missingFiles*/,
+	set<BuildFlag>& /*libFlags*/)
 {
 	LogError("FPGAToolchain::DoScanDependencies() is not yet implemented\n");
 	return false;
