@@ -65,26 +65,7 @@ RemoteToolchain::~RemoteToolchain()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Initialization
-
-void RemoteToolchain::AddLibrary(string arch, string rpath, string hash)
-{
-	m_internalLibraries[arch].emplace(rpath);
-	m_libhashes[pair<string, string>(arch, rpath)] = hash;
-}
-
-string RemoteToolchain::GetLibraryHash(string arch, string fname)
-{
-	return m_libhashes[pair<string, string>(arch, fname)];
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Placeholders
-
-set<string> RemoteToolchain::GetToolchainDependencies(string arch)
-{
-	return m_internalLibraries[arch];
-}
 
 bool RemoteToolchain::ScanDependencies(
 	string /*arch*/,

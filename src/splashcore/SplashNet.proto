@@ -104,13 +104,6 @@ message BuildInfo
 	uint32	numchains	= 5;	//Number of toolchains on the node
 };
 
-//Information about generic dependencies for an executable built on a given toolchain
-message ArchDeps
-{
-				string	arch		= 1;	//The target architecture
-	repeated	BuiltFile	deps	= 2;	//The dependent files
-};
-
 //Report compilers installed on the build server
 message AddCompiler
 {
@@ -130,8 +123,6 @@ message AddCompiler
 				string	stlibSuffix = 9;	//Static library suffix, including the dot if required (.lib, .a, etc)
 				string	objSuffix	= 10;	//Object file suffix, including the dot if requied (.obj, .o, etc)
 				string	shlibPrefix	= 11;	//Shared library prefix ("lib" etc)
-
-	repeated	ArchDeps adeps		= 12;	//Library dependencies for each supported triplet
 };
 
 //Request that a build server perform a dependency scan on a specific source file

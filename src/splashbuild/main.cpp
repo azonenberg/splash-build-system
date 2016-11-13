@@ -161,38 +161,6 @@ int main(int argc, char* argv[])
 		for(auto x : triplets)
 			*madd->add_triplet() = x;
 
-		//Send the list of required libraries
-		//LogDebug("%s\n", t->GetVersionString().c_str());
-		//LogIndenter li;
-		for(auto arch : triplets)
-		{
-			//Virtual library path
-			string libpath = string("__syslib__/") + str_replace(" ", "_", t->GetVersionString()) + "_" + arch;
-
-			auto deps = t->GetToolchainDependencies(arch);
-			if(deps.empty())
-				continue;
-
-			auto adeps = madd->add_adeps();
-			adeps->set_arch(arch);
-
-			//LogDebug("%s\n", arch.c_str());
-			//LogIndenter li;
-			for(auto d : deps)
-			{
-				//Compute the logical filename
-				string fname = libpath + "/" + GetBasenameOfFile(d);
-				//LogDebug("%s\n", fname.c_str());
-
-				//Append it to the message
-				string data = GetFileContents(d);
-				auto p = adeps->add_deps();
-				p->set_fname(fname);
-				p->set_hash(sha256(data));
-				p->set_data(data);
-			}
-		}
-
 		if(!SendMessage(sock, tadd, ctl_server))
 			return 1;
 	}

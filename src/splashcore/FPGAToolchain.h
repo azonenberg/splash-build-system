@@ -50,8 +50,6 @@ public:
 		std::set<std::string>& missingFiles,
 		std::set<BuildFlag>& libFlags);
 
-	virtual std::set<std::string> GetToolchainDependencies(std::string arch);
-	
 protected:
 };
 

@@ -62,10 +62,3 @@ bool FPGAToolchain::ScanDependencies(
 	LogError("FPGAToolchain::DoScanDependencies() is not yet implemented\n");
 	return false;
 }
-
-set<string> FPGAToolchain::GetToolchainDependencies(string /*arch*/)
-{
-	set<string> ret;
-	//LogError("FPGAToolchain::GetToolchainDependencies() is not yet implemented\n");
-	return ret;
-}

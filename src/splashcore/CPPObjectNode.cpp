@@ -41,7 +41,9 @@ CPPObjectNode::CPPObjectNode(
 	string path,
 	string toolchain,
 	string script,
-	set<BuildFlag> flags)
+	set<BuildFlag> flags,
+	set<string>& libdeps,
+	set<BuildFlag>& libflags)
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, fname, path, flags)
 {
 	m_script = script;
@@ -107,6 +109,7 @@ CPPObjectNode::CPPObjectNode(
 			//Search for any file with a basename containing the lib name
 			bool found = false;
 			string base = libpre + f.GetArgs();
+			string libpath;
 			for(auto d : deps)
 			{
 				auto search = GetBasenameOfFile(d);
@@ -114,7 +117,8 @@ CPPObjectNode::CPPObjectNode(
 					continue;
 				if( (search.find(shlibsuf) != string::npos) || (search.find(statsuf) != string::npos) )
 				{
-					LogDebug("%s is a hit for %s\n", d.c_str(), static_cast<string>(f).c_str());
+					libpath = d;
+					//LogDebug("%s is a hit for %s\n", d.c_str(), static_cast<string>(f).c_str());
 					found = true;
 					break;
 				}
@@ -125,6 +129,21 @@ CPPObjectNode::CPPObjectNode(
 			{
 				//LogDebug("Did not find a hit for %s, removing\n", static_cast<string>(f).c_str());
 				m_flags.erase(f);
+			}
+
+			//If we DID find it, add it as a dependency for the executable
+			else
+			{
+				libdeps.emplace(libpath);
+				libflags.emplace(f);
+
+				//REMOVE the library from OUR dependencies though, no point in pulling it down when compiling
+				deps.erase(libpath);
+
+				//If it wasn't already in the graph, create a node for it
+				string hash = wc->GetFileHash(libpath);
+				if(!m_graph->HasNodeWithHash(hash))
+					m_graph->AddNode(new SystemLibraryNode(graph, libpath, hash));
 			}
 		}
 
@@ -141,14 +160,15 @@ CPPObjectNode::CPPObjectNode(
 
 			//Either way, we have the node now. Add it to our list of inputs.
 			m_dependencies.emplace(d);
+			//LogDebug("Adding %s as dependency to %s\n", d.c_str(), GetFilePath().c_str());
 		}
 
-		//Dump the output
 		/*
+		//Dump the output
 		for(auto d : m_dependencies)
 		{
 			auto h = wc->GetFileHash(d);
-			LogDebug("            dependency %s (%s)\n",
+			LogDebug("dependency %s (%s)\n",
 				d.c_str(),
 				h.c_str());
 		}

@@ -60,8 +60,6 @@ public:
 		std::map<std::string, std::string>& outputs,
 		std::string& output);
 
-	virtual std::set<std::string> GetToolchainDependencies(std::string arch);
-
 protected:
 };
 

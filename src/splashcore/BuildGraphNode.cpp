@@ -275,6 +275,13 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 		}
 		auto n = m_graph->GetNodeWithHash(h);
 
+		if(n == this)
+		{
+			LogError("BuildGraphNode %s depends on itself!\n",
+				d.c_str());
+			continue;
+		}
+
 		//If the node has already been built, no action required
 		auto state = n->GetOutputState();
 		if(state == NodeInfo::READY)

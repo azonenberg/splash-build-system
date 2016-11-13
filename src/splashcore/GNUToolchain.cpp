@@ -282,7 +282,8 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	//Libraries
 	else if(flag.GetType() == BuildFlag::TYPE_LIBRARY)
 	{
-		LogWarning("GNUToolchain does not implement library flag %s yet\n", s.c_str());
+		//The library is specified by absolute path on the link command line as a source file,
+		//so there's no extra flags required here
 		return "";
 	}
 

@@ -110,6 +110,8 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 
 	//We have source nodes. Create the object nodes.
+	set<string> libdeps;
+	set<BuildFlag> libflags;
 	for(auto s : sources)
 	{
 		//Get the output file name
@@ -131,7 +133,9 @@ CPPExecutableNode::CPPExecutableNode(
 			fname,
 			toolchain,
 			scriptpath,
-			compileFlags);
+			compileFlags,
+			libdeps,
+			libflags);
 
 		//If we have a node for this hash already, delete it and use the existing one
 		string h = obj->GetHash();
@@ -154,38 +158,45 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 
 	//Collect the linker flags
-	GetFlagsForUseAt(BuildFlag::LINK_TIME, m_flags);
+	set<BuildFlag> linkflags;
+	GetFlagsForUseAt(BuildFlag::LINK_TIME, linkflags);
 
 	//TODO: The toolchain specified for us is the OBJECT FILE generation toolchain.
 	//How do we find the LINKER to use?
 
-	//TODO: Loop over the linker flags, see if any of them request a specific library, add to dependencies
-
-	//Look up the toolchain, fail if not found
-	//TODO: get golden toolchain instead!
-	RemoteToolchain* chain = dynamic_cast<RemoteToolchain*>(g_nodeManager->GetAnyToolchainForName(arch, toolchain));
-	if(chain == NULL)
+	//Add all linker flags OTHER than those linking to a library
+	m_flags.clear();
+	for(auto f : linkflags)
 	{
-		m_invalidInput = true;
-		return;
+		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
+			m_flags.emplace(f);
 	}
 
-	//Get the list of libraries this toolchain requires for proper functioning (libc, etc)
-	auto rlibs = chain->GetToolchainDependencies(arch);
-	for(auto path : rlibs)
+	//Add our link-time dependencies.
+	//These are found by the OBJECT FILE dependency scan, since we need to know which libs exist at
+	//source file scan time in order to set the right -DHAVE_xxx flags
+	for(auto d : libdeps)
 	{
-		string hash = chain->GetLibraryHash(arch, path);
+		//LogDebug("[CPPExecutableNode] Found library %s\n", d.c_str());
+
+		/*
+		string hash = chain->GetLibraryHash(arch, d);
 
 		//If it wasn't already in the graph, create a node for it
 		if(!m_graph->HasNodeWithHash(hash))
-			m_graph->AddNode(new SystemLibraryNode(graph, path, hash));
+			m_graph->AddNode(new SystemLibraryNode(graph, d, hash));
 
 		//Add this library to the working copy
-		wc->UpdateFile(path, hash, false, false);
-
+		wc->UpdateFile(d, hash, false, false);
+		*/
 		//and to our dependencies
-		m_sources.emplace(path);
-		m_dependencies.emplace(path);
+		m_sources.emplace(d);
+		m_dependencies.emplace(d);
+	}
+	for(auto f : libflags)
+	{
+		//LogDebug("[CPPExecutableNode] Found library flag %s\n", static_cast<string>(f).c_str());
+		m_flags.emplace(f);
 	}
 
 	UpdateHash();

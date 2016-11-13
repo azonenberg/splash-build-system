@@ -74,24 +74,6 @@ public:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& output);
-
-	virtual std::set<std::string> GetToolchainDependencies(std::string arch);
-
-	std::string GetLibraryHash(std::string arch, std::string fname);
-
-	void AddLibrary(std::string arch, std::string rpath, std::string hash);
-
-protected:
-
-	/**
-		@brief Libraries we use when linking (file name to target arch)
-	 */
-	std::map<std::string, std::set<std::string> > m_internalLibraries;
-
-	/**
-		@brief Map of (arch, file name) to hash
-	 */
-	std::map<std::pair<std::string, std::string>, std::string > m_libhashes;
 };
 
 #endif

@@ -43,7 +43,9 @@ public:
 		std::string path,
 		std::string toolchain,
 		std::string script,
-		std::set<BuildFlag> flags
+		std::set<BuildFlag> flags,
+		std::set<std::string>& libdeps,
+		std::set<BuildFlag>& libflags
 	);
 	virtual ~CPPObjectNode();
 
