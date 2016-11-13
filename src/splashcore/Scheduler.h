@@ -54,6 +54,7 @@ public:
 		std::set<BuildFlag> flags,
 		WorkingCopy* wc,
 		std::set<std::string>& deps,
+		std::set<BuildFlag>& foundflags,
 		std::string& errors);
 
 	//Node creation/deletion

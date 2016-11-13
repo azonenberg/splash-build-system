@@ -59,6 +59,12 @@ public:
 	const std::set<BuildFlag>& GetFlags()
 	{ return m_flags; }
 
+	const std::set<BuildFlag>& GetFoundFlags()
+	{ return m_foundFlags; }
+
+	void AddFoundFlag(BuildFlag flag)
+	{ m_foundFlags.emplace(flag); }
+
 	std::string GetArch()
 	{ return m_arch; }
 
@@ -105,6 +111,11 @@ protected:
 		@brief Errors from the scan
 	 */
 	std::string m_errors;
+
+	/**
+		@brief Additional flags produced by the scan
+	 */
+	std::set<BuildFlag> m_foundFlags;
 };
 
 #endif

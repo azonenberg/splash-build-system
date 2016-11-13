@@ -177,9 +177,10 @@ message Dependency
 //The result of a dependencyScan job
 message DependencyResults
 {
-	repeated	Dependency	deps	= 1;	//list of results
-				bool		result	= 2;	//true if successful, false if syntax error etc
-				string		stdout	= 3;	//stdout of the dependency scanner
+	repeated	Dependency	deps		= 1;	//list of results
+				bool		result		= 2;	//true if successful, false if syntax error etc
+				string		stdout		= 3;	//stdout of the dependency scanner
+	repeated	string		libflags	= 4;	//define flags from libraries we found
 };
 
 //Client request for various kinds of data

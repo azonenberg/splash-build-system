@@ -63,17 +63,77 @@ CPPObjectNode::CPPObjectNode(
 	//TODO: handle generated headers, etc
 	//If the scan fails, declare us un-buildable
 	set<string> deps;
+	set<BuildFlag> foundflags;
 	string errors;
-	if(!g_scheduler->ScanDependencies(fname, arch, toolchain, flags, graph->GetWorkingCopy(), deps, errors))
+	if(!g_scheduler->ScanDependencies(
+		fname,
+		arch,
+		toolchain,
+		flags,
+		graph->GetWorkingCopy(),
+		deps,
+		foundflags,
+		errors))
+	{
 		m_invalidInput = true;
+	}
 
 	//Dependencies scanned OK, update our stuff
 	else
 	{
+		//Update our flags with the HAVE_xx macros from the libraries we located
+		for(auto f : foundflags)
+			m_flags.emplace(f);
+
+		//Get the library extensions
+		string libpre;
+		string shlibsuf;
+		string statsuf;
+		{
+			lock_guard<NodeManager> lock(*g_nodeManager);
+			auto chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
+			libpre = chain->GetSharedLibraryPrefix();
+			shlibsuf = chain->GetSharedLibrarySuffix();
+			statsuf = chain->GetStaticLibrarySuffix();
+		}
+
+		//Go over the list of libraries we asked for and remove any optional ones we don't have
+		//TODO: export library set to caller for link stage?
+		for(auto f : flags)
+		{
+			if(f.GetType() != BuildFlag::TYPE_LIBRARY)
+				continue;
+
+			//Search for any file with a basename containing the lib name
+			bool found = false;
+			string base = libpre + f.GetArgs();
+			for(auto d : deps)
+			{
+				auto search = GetBasenameOfFile(d);
+				if(search.find(base) != 0)
+					continue;
+				if( (search.find(shlibsuf) != string::npos) || (search.find(statsuf) != string::npos) )
+				{
+					LogDebug("%s is a hit for %s\n", d.c_str(), static_cast<string>(f).c_str());
+					found = true;
+					break;
+				}
+			}
+
+			//If we did NOT find the library, remove from the list of libraries to link
+			if(!found)
+			{
+				//LogDebug("Did not find a hit for %s, removing\n", static_cast<string>(f).c_str());
+				m_flags.erase(f);
+			}
+		}
+
 		//Add source nodes if we don't have them already
 		for(auto d : deps)
 		{
 			auto h = wc->GetFileHash(d);
+
+			//See what type of file we got as a dependency.
 
 			//Create a new node if needed
 			if(!graph->HasNodeWithHash(h))

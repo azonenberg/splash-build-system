@@ -329,12 +329,18 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		job->AddDependency(f, h);
 	}
 
+	//Add the flags we found
+	for(int i=0; i<res.libflags_size(); i++)
+		job->AddFoundFlag(BuildFlag(res.libflags(i)));
+
 	//Pull the files into the cache
 	if(!RefreshRemoteFilesByHash(s, hostname, hashes))
 	{
 		ok = false;
 		return false;
 	}
+
+	//Save the updated flags
 
 	//all good
 	//LogDebug("[%7.3f] BuildClientThread results done\n", g_scheduler->GetDT());

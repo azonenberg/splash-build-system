@@ -427,17 +427,15 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 
 		//If we found libraries, report them
 		for(auto lib : libFlags)
-		{
-			LogDebug("Lib flag %s (for %s)\n", static_cast<string>(lib).c_str(), rxm.arch().c_str());
-		}
+			replym->add_libflags(lib);
 
 		//Successful completion of the scan, crunch the results
 		LogDebug("Scan completed (%zu dependencies)\n", deps.size());
 		replym->set_result(true);
 		for(auto d : deps)
 		{
-			if( (d.find(".so") != string::npos) || (d.find(".a") != string::npos) )
-				LogDebug("Dep %s\n", d.c_str());
+			//if( (d.find(".so") != string::npos) || (d.find(".a") != string::npos) )
+			//	LogDebug("Dep %s\n", d.c_str());
 
 			auto rd = replym->add_deps();
 			rd->set_fname(d);

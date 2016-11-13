@@ -471,7 +471,7 @@ bool GNUToolchain::ScanDependencies(
 		for(size_t i=0; i<mname.length(); i++)
 		{
 			if(!isalnum(mname[i]))
-				mname[i] = '_';
+				mname[i] = 'x';
 			else
 				mname[i] = toupper(mname[i]);
 		}

@@ -172,7 +172,8 @@ bool Scheduler::ScanDependencies(
 	set<BuildFlag> flags,
 	WorkingCopy* wc,
 	set<string>& deps,
-	std::string& errors)
+	set<BuildFlag>& foundflags,
+	string& errors)
 {
 	//If this is our first job, reset the timer for clean profiling
 	if(!m_running)
@@ -249,6 +250,11 @@ bool Scheduler::ScanDependencies(
 	//Return the list of dependencies
 	for(auto it : output)
 		deps.emplace(it.first);
+
+	//Save the set of flags
+	auto ffg = job->GetFoundFlags();
+	for(auto flag : ffg)
+		foundflags.emplace(flag);
 
 	//Clean up so we don't leak memory
 	job->Unref();
