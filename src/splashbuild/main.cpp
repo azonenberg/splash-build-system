@@ -483,7 +483,11 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	//Look up the list of flags
 	set<BuildFlag> flags;
 	for(int i=0; i<rxm.flags_size(); i++)
-		flags.emplace(BuildFlag(rxm.flags(i)));
+	{
+		string flag = rxm.flags(i);
+		//LogDebug("Flag: %s\n", flag.c_str());
+		flags.emplace(BuildFlag(flag));
+	}
 
 	//Format the return message
 	SplashMsg reply;

@@ -175,13 +175,17 @@ CPPObjectNode::CPPObjectNode(
 		*/
 	}
 
+	//DEBUG: Dump flag
+	//for(auto f : m_flags)
+	//	LogDebug("Flag: %s\n", static_cast<string>(f).c_str());
+
 	//Calculate our hash.
 	//Dependencies and flags are obvious
 	//NOTE: This needs to happen *even if our dependency scan failed* so that we can identify the scan errors
 	string hashin;
 	for(auto d : m_dependencies)
 		hashin += wc->GetFileHash(d);
-	for(auto f : flags)
+	for(auto f : m_flags)
 		hashin += sha256(f);
 
 	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets

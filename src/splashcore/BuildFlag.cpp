@@ -209,6 +209,7 @@ void BuildFlag::LoadOutputFlag()
 void BuildFlag::LoadDefineFlag()
 {
 	m_type = TYPE_DEFINE;
+	m_usage = COMPILE_TIME;
 
 	//define/foo or define/foo/value
 	if(m_arg == "")

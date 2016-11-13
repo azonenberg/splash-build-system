@@ -659,7 +659,7 @@ bool GNUToolchain::Compile(
 	}
 
 	//LogDebug("Compile for arch %s\n", triplet.c_str());
-	LogIndenter li;
+	//LogIndenter li;
 
 	if(!VerifyFlags(triplet))
 		return false;
