@@ -105,6 +105,11 @@ protected:
 		@brief Libraries we use when linking (mapped by target arch)
 	 */
 	std::map<std::string, std::set<std::string> > m_internalLibraries;
+
+	/**
+		@brief Map of (architecture, lib name) -> path tuples
+	 */
+	std::map<std::pair<std::string, std::string>, std::string> m_libpaths;
 };
 
 #endif

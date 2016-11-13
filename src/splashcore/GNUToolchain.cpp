@@ -374,50 +374,76 @@ bool GNUToolchain::ScanDependencies(
 		string libbase = f.GetArgs();
 		libflags.emplace(f);
 
-		//Get library file name
-		//TODO: search static libraries too?
-		string libname = libpre + libbase + libsuf;
-		if(!ValidatePath(libname))
+		//If we have a cached result from this library, don't scan for it again
+		pair<string, string> index(triplet, libbase);
+		if(m_libpaths.find(index) != m_libpaths.end())
 		{
-			char tmp[1024];
-			snprintf(tmp, sizeof(tmp),
-				"Library path %s was malformed\n",
-				libname.c_str());
-			output += tmp;
-			return false;
+			string path = m_libpaths[index];
+
+			//If the cache says "not found", nothing to do
+			if(path == "")
+				continue;
+
+			//We found it, record the results
+			foundlibNames.emplace(libbase);
+			foundpaths.emplace(path);
 		}
 
-		//Use the compiler to find it
-		string fpath;
-		if(0 != ShellCommand(exe + " " + aflags + " --print-file-name=" + libname, fpath))
+		//Not in cache, have to search
+		else
 		{
-			char tmp[1024];
-			snprintf(tmp, sizeof(tmp),
-				"Failed to search for library %s\n",
-				libname.c_str());
-			output += tmp;
-			return false;
+			//Get library file name
+			//TODO: search static libraries too?
+			string libname = libpre + libbase + libsuf;
+			if(!ValidatePath(libname))
+			{
+				char tmp[1024];
+				snprintf(tmp, sizeof(tmp),
+					"Library path %s was malformed\n",
+					libname.c_str());
+				output += tmp;
+				return false;
+			}
+
+			//Use the compiler to find it
+			string fpath;
+			if(0 != ShellCommand(exe + " " + aflags + " --print-file-name=" + libname, fpath))
+			{
+				char tmp[1024];
+				snprintf(tmp, sizeof(tmp),
+					"Failed to search for library %s\n",
+					libname.c_str());
+				output += tmp;
+				return false;
+			}
+			while(isspace(fpath[fpath.length()-1]))
+				fpath.resize(fpath.length() - 1);
+
+			//See if the file exists. GCC will print a path even if it doesn't!
+			if(!DoesFileExist(fpath))
+			{
+				m_libpaths[index] = "";
+				continue;
+			}
+
+			//We're good, find the actual path
+			fpath = CanonicalizePath(fpath);
+
+			//At this point we know the library exists, but we don't yet know if it's compatible
+			//with our selected architecture.
+			//Do a test compile to find out
+			string ignored;
+			if(0 != ShellCommand(exe + " " + aflags + " -o /dev/null " + cfn + " " + fpath, ignored))
+			{
+				m_libpaths[index] = "";
+				continue;
+			}
+
+			//Record our results
+			m_libpaths[index] = fpath;
+			foundlibNames.emplace(libbase);
+			foundpaths.emplace(fpath);
 		}
-		while(isspace(fpath[fpath.length()-1]))
-			fpath.resize(fpath.length() - 1);
-
-		//See if the file exists. GCC will print a path even if it doesn't!
-		if(!DoesFileExist(fpath))
-			continue;
-
-		//We're good, find the actual path
-		fpath = CanonicalizePath(fpath);
-
-		//At this point we know the library exists, but we don't yet know if it's compatible
-		//with our selected architecture.
-		//Do a test compile to find out
-		string ignored;
-		if(0 != ShellCommand(exe + " " + aflags + " -o /dev/null " + cfn + " " + fpath, ignored))
-			continue;
-
-		//Record our results
-		foundlibNames.emplace(libbase);
-		foundpaths.emplace(fpath);
 	}
 
 	//Remove all library-related flags from the list
