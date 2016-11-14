@@ -68,6 +68,8 @@ public:
 
 	virtual ~BuildGraphNode();
 
+	void Finalize();
+
 	/**
 		@brief Get the graph that the node is attached to
 
@@ -180,6 +182,7 @@ public:
 	bool IsReferenced();
 
 protected:
+	virtual void DoFinalize() =0;
 
 	//Our mutex (need to be able to lock when already locked)
 	std::recursive_mutex m_mutex;
@@ -196,7 +199,13 @@ protected:
 	/// @brief The hash of the toolchain we're using (must be set in constructor; immutable)
 	std::string m_toolchainHash;
 
-	/// @brief The hash of this node (must be set in constructor; immutable)
+	/**
+		@brief The hash of this node.
+
+		Must be set to something, even a temporary value, in the constructor.
+		Once Finalize() is called, this value is immutable; further changes are not allowed.
+		Changing during DoFinalize() is legal.
+	 */
 	std::string m_hash;
 
 	/// @brief Architecture of this node, or "generic" if independent (source file etc)
@@ -247,6 +256,9 @@ protected:
 
 	/// @brief The job we currently have pending to build us
 	Job* m_job;
+
+	/// @brief Indicates that this node has been finalized.
+	bool m_finalized;
 };
 
 #endif

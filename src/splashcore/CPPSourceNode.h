@@ -40,6 +40,9 @@ class CPPSourceNode : public BuildGraphNode
 public:
 	CPPSourceNode(BuildGraph* graph, std::string fname, std::string hash);
 	virtual ~CPPSourceNode();
+
+protected:
+	virtual void DoFinalize();
 };
 
 #endif

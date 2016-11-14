@@ -50,6 +50,9 @@ public:
 	virtual ~CPPObjectNode();
 
 protected:
+	virtual void DoFinalize();
+
+	std::string m_errors;
 };
 
 #endif

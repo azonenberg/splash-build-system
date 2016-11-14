@@ -121,8 +121,6 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 
 	//We have source nodes. Create the object nodes.
-	set<string> libdeps;
-	set<BuildFlag> libflags;
 	for(auto s : sources)
 	{
 		//Get the output file name
@@ -145,8 +143,8 @@ CPPExecutableNode::CPPExecutableNode(
 			toolchain,
 			scriptpath,
 			compileFlags,
-			libdeps,
-			libflags);
+			m_libdeps,
+			m_libflags);
 
 		//If we have a node for this hash already, delete it and use the existing one
 		string h = obj->GetHash();
@@ -167,6 +165,17 @@ CPPExecutableNode::CPPExecutableNode(
 		//Add the object file to our working copy
 		wc->UpdateFile(fname, h, false, false);
 	}
+
+	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "%p", this);
+	m_hash = sha256(tmp);
+}
+
+void CPPExecutableNode::DoFinalize()
+{
+	LogDebug("DoFinalize for %s\n", GetFilePath().c_str());
+	LogIndenter li;
 
 	//Collect the linker flags
 	set<BuildFlag> linkflags;
@@ -192,10 +201,9 @@ CPPExecutableNode::CPPExecutableNode(
 		if(f.GetFlag() != "target")
 			continue;
 
-		/*
 		//Look up the target
 		set<BuildGraphNode*> nodes;
-		graph->GetTargets(nodes, f.GetArgs(), arch, config);
+		m_graph->GetTargets(nodes, f.GetArgs(), m_arch, m_config);
 		if(nodes.empty())
 		{
 			LogParseError(
@@ -210,24 +218,35 @@ CPPExecutableNode::CPPExecutableNode(
 		BuildGraphNode* node = *nodes.begin();
 		string path = node->GetFilePath();
 		LogDebug("Linking to target lib %s\n", path.c_str());
-		*/
 	}
 
 	//Add our link-time dependencies.
 	//These are found by the OBJECT FILE dependency scan, since we need to know which libs exist at
 	//source file scan time in order to set the right -DHAVE_xxx flags
-	for(auto d : libdeps)
+	for(auto d : m_libdeps)
 	{
 		//LogDebug("[CPPExecutableNode] Found library %s\n", d.c_str());
-
 		//and to our dependencies
 		m_sources.emplace(d);
 		m_dependencies.emplace(d);
 	}
-	for(auto f : libflags)
+	for(auto f : m_libflags)
 	{
 		//LogDebug("[CPPExecutableNode] Found library flag %s\n", static_cast<string>(f).c_str());
 		m_flags.emplace(f);
+	}
+
+	//Finalize all of our dependencies
+	for(auto d : m_dependencies)
+	{
+		auto n = m_graph->GetNodeWithPath(d);
+		if(n)
+		{
+			LogDebug("Finalizing %s (%s)\n", d.c_str(), n->GetFilePath().c_str());
+			n->Finalize();
+		}
+		else
+			LogError("NULL node for path %s (in %s)\n", d.c_str(), GetFilePath().c_str());
 	}
 
 	UpdateHash();
@@ -238,7 +257,7 @@ CPPExecutableNode::~CPPExecutableNode()
 }
 
 /**
-	@brief Calculate our hash. Must only be called from the constructor.
+	@brief Calculate our hash. Must only be called from DoFinalize().
  */
 void CPPExecutableNode::UpdateHash()
 {

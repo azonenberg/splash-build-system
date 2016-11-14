@@ -40,6 +40,9 @@ class SystemLibraryNode : public BuildGraphNode
 public:
 	SystemLibraryNode(BuildGraph* graph, std::string fname, std::string hash);
 	virtual ~SystemLibraryNode();
+
+protected:
+	virtual void DoFinalize();
 };
 
 #endif

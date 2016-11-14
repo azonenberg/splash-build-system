@@ -44,3 +44,7 @@ CPPSourceNode::~CPPSourceNode()
 {
 }
 
+void CPPSourceNode::DoFinalize()
+{
+	//nothing to do
+}

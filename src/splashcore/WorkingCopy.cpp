@@ -97,7 +97,12 @@ string WorkingCopy::GetFileHash(string path)
 
 	if(m_fileMap.find(path) != m_fileMap.end())
 		return m_fileMap[path];
-	return "";
+
+	else
+	{
+		LogWarning("WorkingCopy: asked for nonexistent file %s\n", path.c_str());
+		return "";
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

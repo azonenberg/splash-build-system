@@ -66,7 +66,6 @@ CPPObjectNode::CPPObjectNode(
 	//If the scan fails, declare us un-buildable
 	set<string> deps;
 	set<BuildFlag> foundflags;
-	string errors;
 	if(!g_scheduler->ScanDependencies(
 		fname,
 		arch,
@@ -75,7 +74,7 @@ CPPObjectNode::CPPObjectNode(
 		graph->GetWorkingCopy(),
 		deps,
 		foundflags,
-		errors))
+		m_errors))
 	{
 		m_invalidInput = true;
 	}
@@ -145,7 +144,11 @@ CPPObjectNode::CPPObjectNode(
 				//If it wasn't already in the graph, create a node for it
 				string hash = wc->GetFileHash(libpath);
 				if(!m_graph->HasNodeWithHash(hash))
+				{
+					//LogDebug("[1] Creating SystemLibraryNode %s\n  with hash %s, graph %p\n",
+					//	libpath.c_str(), hash.c_str(), graph);
 					m_graph->AddNode(new SystemLibraryNode(graph, libpath, hash));
+				}
 			}
 		}
 
@@ -166,7 +169,11 @@ CPPObjectNode::CPPObjectNode(
 			//If it wasn't already in the graph, create a node for it
 			string hash = wc->GetFileHash(d);
 			if(!m_graph->HasNodeWithHash(hash))
+			{
+				//LogDebug("[2] Creating SystemLibraryNode %s\n  with hash %s, graph %p\n",
+				//	d.c_str(), hash.c_str(), graph);
 				m_graph->AddNode(new SystemLibraryNode(graph, d, hash));
+			}
 		}
 
 		//Add source nodes if we don't have them already
@@ -201,6 +208,20 @@ CPPObjectNode::CPPObjectNode(
 	//for(auto f : m_flags)
 	//	LogDebug("Flag: %s\n", static_cast<string>(f).c_str());
 
+	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "%p", this);
+	m_hash = sha256(tmp);
+}
+
+CPPObjectNode::~CPPObjectNode()
+{
+}
+
+void CPPObjectNode::DoFinalize()
+{
+	auto wc = m_graph->GetWorkingCopy();
+
 	//Calculate our hash.
 	//Dependencies and flags are obvious
 	//NOTE: This needs to happen *even if our dependency scan failed* so that we can identify the scan errors
@@ -211,8 +232,8 @@ CPPObjectNode::CPPObjectNode(
 		hashin += sha256(f);
 
 	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
-	hashin += g_nodeManager->GetToolchainHash(arch, toolchain);
-	hashin += sha256(arch);
+	hashin += g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
+	hashin += sha256(m_arch);
 
 	//Do not hash the output file name.
 	//Having multiple files with identical inputs merged into a single node is *desirable*.
@@ -223,9 +244,5 @@ CPPObjectNode::CPPObjectNode(
 	//If the dependency scan failed, add a dummy cached file with the proper ID and stdout
 	//so we can query the result in the cache later on.
 	if(m_invalidInput)
-		g_cache->AddFailedFile(GetFilePath(), m_hash, errors);
-}
-
-CPPObjectNode::~CPPObjectNode()
-{
+		g_cache->AddFailedFile(GetFilePath(), m_hash, m_errors);
 }

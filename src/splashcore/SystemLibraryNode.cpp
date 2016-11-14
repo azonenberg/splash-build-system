@@ -44,3 +44,6 @@ SystemLibraryNode::~SystemLibraryNode()
 {
 }
 
+void SystemLibraryNode::DoFinalize()
+{
+}

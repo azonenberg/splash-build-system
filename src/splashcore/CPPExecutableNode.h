@@ -48,7 +48,13 @@ public:
 	virtual ~CPPExecutableNode();
 
 protected:
+	virtual void DoFinalize();
+
 	void UpdateHash();
+
+	//Internal dependency scanning stuff (used by ctor and DoFinalize only)
+	std::set<std::string> m_libdeps;
+	std::set<BuildFlag> m_libflags;
 };
 
 #endif

@@ -40,9 +40,10 @@ using namespace std;
 	TODO: how do we use this? Disallow?
  */
 BuildGraphNode::BuildGraphNode()
+	: m_ref(false)
+	, m_job(NULL)
+	, m_finalized(false)
 {
-	m_ref = false;
-	m_job = NULL;
 }
 
 /**
@@ -56,6 +57,7 @@ BuildGraphNode::BuildGraphNode(
 	: m_ref(false)
 	, m_graph(graph)
 	, m_toolchain("")
+	, m_toolchainHash("")
 	, m_hash(hash)
 	, m_arch("generic")
 	, m_config("generic")
@@ -65,9 +67,8 @@ BuildGraphNode::BuildGraphNode(
 	, m_invalidInput(false)
 	, m_usage(usage)
 	, m_job(NULL)
+	, m_finalized(false)
 {
-	//No toolchain
-	m_toolchainHash = "";
 }
 
 /**
@@ -93,6 +94,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_invalidInput(false)
 	, m_usage(usage)
 	, m_job(NULL)
+	, m_finalized(false)
 {
 	//Look up the hash of our toolchain
 	m_toolchainHash = g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
@@ -121,6 +123,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_path(path)
 	, m_usage(usage)
 	, m_job(NULL)
+	, m_finalized(false)
 {
 	//Ignore the toolchain and arches sections, they're already taken care of
 
@@ -158,6 +161,24 @@ BuildGraphNode::~BuildGraphNode()
 		m_job->Unref();
 		m_job = NULL;
 	}
+}
+
+/**
+	@brief Finalize this node
+
+	This involves running all dependency scans, etc. as well as computing the node's hash.
+ */
+void BuildGraphNode::Finalize()
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(!m_finalized)
+		DoFinalize();
+
+	m_finalized = true;
+
+	//Update the records for us in the working copy
+	m_graph->GetWorkingCopy()->UpdateFile(GetFilePath(), m_hash, false, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

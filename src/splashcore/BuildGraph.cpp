@@ -226,6 +226,18 @@ BuildGraphNode* BuildGraph::GetNodeWithPath(std::string fname)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 	auto hash = m_workingCopy->GetFileHash(fname);
+	if(hash == "")
+	{
+		LogWarning("BuildGraph: path %s has no hash\n", fname.c_str());
+		return NULL;
+	}
+
+	if(m_nodesByHash.find(hash) == m_nodesByHash.end())
+	{
+		LogWarning("BuildGraph: hash %s is not in graph\n", hash.c_str());
+		return NULL;
+	}
+
 	return m_nodesByHash[hash];
 }
 
@@ -238,7 +250,8 @@ void BuildGraph::CollectGarbage()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	//LogDebug("Collecting garbage\n");
+	LogDebug("Collecting garbage\n");
+	LogIndenter li;
 
 	//First pass: Mark all nodes unreferenced
 	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodesByHash.size());
@@ -376,9 +389,6 @@ void BuildGraph::InternalRemove(string path)
 		m_targetReverseOrigins.erase(target);
 	}
 	m_targetOrigins.erase(path);
-
-	//GC unused nodes
-	CollectGarbage();
 
 	//TODO: delete tests
 
@@ -683,13 +693,40 @@ void BuildGraph::GetFlags(string toolchain, string config, string path, set<Buil
 
 	We need to be able to do incremental rebuilds of the graph to avoid redoing everything when a single build script
 	changes (like the monstrosity that was Splash v0.1 did).
-
-	Basic rebuild flow is as follows:
-	TODO
  */
 void BuildGraph::Rebuild()
 {
 	LogDebug("Rebuilding graph\n");
+	LogIndenter li;
+
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//Make a set of all of our nodes
+	LogDebug("Building node set\n");
+	set<BuildGraphNode*> nodes;
+	for(auto it : m_nodesByHash)
+		nodes.emplace(it.second);
+
+	//Finalize each node in the graph
+	LogDebug("Finalizing nodes\n");
+	for(auto n : nodes)
+		n->Finalize();
+
+	//Clear the original hash table.
+	//Need to do this after finalizing so we can still find ndoes during finalization process
+	LogDebug("Clearing node set\n");
+	m_nodesByHash.clear();
+
+	//Re-add to hash table and working copy
+	LogDebug("Re-creating node set\n");
+	for(auto n : nodes)
+	{
+		m_nodesByHash[n->GetHash()] = n;
+		m_workingCopy->UpdateFile(n->GetFilePath(), n->GetHash(), false, false);
+	}
+
+	//Collect any garbage we generated
+	CollectGarbage();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
