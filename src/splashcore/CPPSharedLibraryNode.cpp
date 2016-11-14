@@ -45,10 +45,6 @@ CPPSharedLibraryNode::CPPSharedLibraryNode(
 	YAML::Node& node)
 	: CPPExecutableNode(graph, arch, config, name, scriptpath, path, toolchain, node)
 {
-	//Add the "shared library" flag
-	m_flags.emplace(BuildFlag("output/shared"));
-
-	UpdateHash();
 }
 
 CPPSharedLibraryNode::~CPPSharedLibraryNode()

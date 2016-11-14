@@ -49,6 +49,17 @@ CPPExecutableNode::CPPExecutableNode(
 		toolchain.c_str(), path.c_str());
 	LogIndenter li;
 
+	//Look up the type of executable we are
+	string type;
+	if(node["type"])
+		type = node["type"].as<std::string>();
+
+	if(type == "shlib")
+	{
+		//Add the "shared library" flag
+		m_flags.emplace(BuildFlag("output/shared"));
+	}
+
 	//Sanity check: we must have some source files!
 	if(!node["sources"])
 	{
@@ -172,6 +183,18 @@ CPPExecutableNode::CPPExecutableNode(
 			m_flags.emplace(f);
 	}
 
+	//Go over the set of link flags and see if any of them specify linking to a TARGET.
+	//If so, look up that target
+	for(auto f : linkflags)
+	{
+		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
+			continue;
+		if(f.GetFlag() != "target")
+			continue;
+
+		LogDebug("Linking to target %s\n", static_cast<string>(f).c_str());
+	}
+
 	//Add our link-time dependencies.
 	//These are found by the OBJECT FILE dependency scan, since we need to know which libs exist at
 	//source file scan time in order to set the right -DHAVE_xxx flags
@@ -179,16 +202,6 @@ CPPExecutableNode::CPPExecutableNode(
 	{
 		//LogDebug("[CPPExecutableNode] Found library %s\n", d.c_str());
 
-		/*
-		string hash = chain->GetLibraryHash(arch, d);
-
-		//If it wasn't already in the graph, create a node for it
-		if(!m_graph->HasNodeWithHash(hash))
-			m_graph->AddNode(new SystemLibraryNode(graph, d, hash));
-
-		//Add this library to the working copy
-		wc->UpdateFile(d, hash, false, false);
-		*/
 		//and to our dependencies
 		m_sources.emplace(d);
 		m_dependencies.emplace(d);

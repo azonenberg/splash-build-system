@@ -91,12 +91,14 @@ CPPObjectNode::CPPObjectNode(
 		string libpre;
 		string shlibsuf;
 		string statsuf;
+		string osuf;
 		{
 			lock_guard<NodeManager> lock(*g_nodeManager);
 			auto chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
 			libpre = chain->GetSharedLibraryPrefix();
 			shlibsuf = chain->GetSharedLibrarySuffix();
 			statsuf = chain->GetStaticLibrarySuffix();
+			osuf = chain->GetObjectSuffix();
 		}
 
 		//Go over the list of libraries we asked for and remove any optional ones we don't have
@@ -145,6 +147,26 @@ CPPObjectNode::CPPObjectNode(
 				if(!m_graph->HasNodeWithHash(hash))
 					m_graph->AddNode(new SystemLibraryNode(graph, libpath, hash));
 			}
+		}
+
+		//Make a note of any object or library files we have in the dependency list that were not specified by flags
+		//example: libc crt1.o or even libc itself
+		for(auto d : deps)
+		{
+			if( (d.find(osuf) == string::npos) &&
+				(d.find(shlibsuf) == string::npos) &&
+				(d.find(statsuf) == string::npos) )
+			{
+				continue;
+			}
+
+			libdeps.emplace(d);
+			LogDebug("found object/library dep %s\n", d.c_str());
+
+			//If it wasn't already in the graph, create a node for it
+			string hash = wc->GetFileHash(d);
+			if(!m_graph->HasNodeWithHash(hash))
+				m_graph->AddNode(new SystemLibraryNode(graph, d, hash));
 		}
 
 		//Add source nodes if we don't have them already

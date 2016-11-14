@@ -186,6 +186,11 @@ void BuildFlag::LoadLibraryFlag()
 	else if(m_flag == "required")
 		m_usage = LINK_TIME | COMPILE_TIME;
 
+	//library/target: link to this library (which is a target)
+	//Link time only, we always have the library in the dependency list
+	else if(m_flag == "target")
+		m_usage = LINK_TIME;
+
 	else
 		LogParseError("Flag \"library/%s\" is unknown\n", m_flag.c_str());
 }
