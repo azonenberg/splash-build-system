@@ -161,7 +161,7 @@ CPPObjectNode::CPPObjectNode(
 			}
 
 			libdeps.emplace(d);
-			LogDebug("found object/library dep %s\n", d.c_str());
+			//LogDebug("found object/library dep %s\n", d.c_str());
 
 			//If it wasn't already in the graph, create a node for it
 			string hash = wc->GetFileHash(d);
