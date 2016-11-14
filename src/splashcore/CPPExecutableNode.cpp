@@ -192,7 +192,25 @@ CPPExecutableNode::CPPExecutableNode(
 		if(f.GetFlag() != "target")
 			continue;
 
-		LogDebug("Linking to target %s\n", static_cast<string>(f).c_str());
+		/*
+		//Look up the target
+		set<BuildGraphNode*> nodes;
+		graph->GetTargets(nodes, f.GetArgs(), arch, config);
+		if(nodes.empty())
+		{
+			LogParseError(
+				"CPPExecutableNode: Could not link to target %s because it doesn't exist\n",
+				f.GetArgs().c_str());
+			m_invalidInput = true;
+			return;
+		}
+		//TODO: verify only one?
+
+		//We found the target
+		BuildGraphNode* node = *nodes.begin();
+		string path = node->GetFilePath();
+		LogDebug("Linking to target lib %s\n", path.c_str());
+		*/
 	}
 
 	//Add our link-time dependencies.

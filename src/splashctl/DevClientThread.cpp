@@ -129,6 +129,8 @@ bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, 
 	SplashMsg ack;
 	auto ackm = ack.mutable_bulkfileack();
 
+	//Ask for anything we're missing
+	bool missingFiles = false;
 	for(int i=0; i<msg.files_size(); i++)
 	{
 		auto mfc = msg.files(i);
@@ -141,36 +143,49 @@ bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, 
 		//As a result, the object ID is just the sha256sum of the file itself
 		bool hit = g_cache->IsCached(hash);
 
-		//Debug print
-		/*
-		if(hit)
-		{
-			LogVerbose("File %s on node %s changed (new version already in cache)\n",
-				fname.c_str(),
-				hostname.c_str());
-		}
-		else
-		{
-			LogVerbose("File %s on node %s changed (fetching content from client)\n",
-				fname.c_str(),
-				hostname.c_str());
-		}
-		*/
-
 		//Report status to the client
 		auto fack = ackm->add_acks();
 		fack->set_fname(fname);
 		fack->set_filecached(hit);
 
-		//If it's in the cache, update the status now
-		//(if not, wait until the file data comes in)
-		if(hit)
-			g_nodeManager->GetWorkingCopy(id)->UpdateFile(fname, hash, mfc.body(), mfc.config());
+		if(!hit)
+			missingFiles = true;
 	}
 
-	//Send it to the client
+	//Send the acknowledgement to the client
 	if(!SendMessage(s, ack, hostname))
 		return false;
+
+	//If we were missing any files, wait for their contents
+	if(missingFiles)
+	{
+		SplashMsg msg;
+		if(!RecvMessage(s, msg, hostname))
+			return false;
+		if(msg.Payload_case() != SplashMsg::kBulkFileData)
+		{
+			LogWarning("Connection to %s dropped (bad message type in event header)\n", hostname.c_str());
+			return false;
+		}
+		auto data = msg.bulkfiledata();
+
+		//Do limited processing (just push content into cache)
+		for(int i=0; i<data.data_size(); i++)
+		{
+			auto d = data.data(i);
+			g_cache->AddFile(GetBasenameOfFile(d.fname()), d.id(), d.hash(), d.filedata(), "");
+		}
+	}
+
+	//Finally, process the files in the order the client asked us to
+	for(int i=0; i<msg.files_size(); i++)
+	{
+		auto mfc = msg.files(i);
+		g_nodeManager->GetWorkingCopy(id)->UpdateFile(mfc.fname(), mfc.hash(), mfc.body(), mfc.config());
+	}
+
+	//and rebuild the dependency graph
+	g_nodeManager->GetWorkingCopy(id)->GetGraph().Rebuild();
 
 	return true;
 }

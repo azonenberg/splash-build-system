@@ -98,8 +98,10 @@ public:
 	std::string GetBuildArtifactPath()
 	{ return m_buildArtifactPath; }
 
-protected:
+	//Update dependencies of everything
 	void Rebuild();
+
+protected:
 	void InternalRemove(std::string path);
 	void InternalUpdateScript(std::string path, std::string hash, bool body, bool config);
 	

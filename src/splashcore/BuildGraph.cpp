@@ -294,14 +294,13 @@ void BuildGraph::UpdateScript(string path, string hash, bool body, bool config)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
+	LogDebug("Updating build script %s (body=%d, config=%d)\n", path.c_str(), body, config);
+
 	//This is now a known script, keep track of it
 	m_buildScriptPaths[path] = hash;
 
 	//Reload the build script (and its dependencies)
 	InternalUpdateScript(path, hash, body, config);
-
-	//Rebuild the graph to fix up dependencies and delete orphaned nodes
-	Rebuild();
 }
 
 /**
@@ -322,16 +321,20 @@ void BuildGraph::InternalUpdateScript(string path, string hash, bool body, bool 
 	//TODO: can we patch the configs in at run time somehow rather than re-running it?
 	if(config)
 	{
+		LogIndenter li;
+
 		string dir = GetDirOfFile(path);
 		for(auto it : m_buildScriptPaths)
 		{
 			//Path must have our path as a substring, but not be the same script
 			string s = it.first;
-			if( (s.find(dir) != 0) || (s == path) )
+			size_t pos = s.find(dir);
+			if( (pos != 0) || (s == path) )
 				continue;
 
-			LogDebug("    Build script %s needs to be re-run to reflect changed recursive configurations\n",
+			LogDebug("Build script %s needs to be re-run to reflect changed recursive configurations\n",
 				s.c_str());
+			LogDebug("pos=%zu dir=%s path=%s\n", pos, dir.c_str(), path.c_str());
 
 			InternalUpdateScript(s, m_buildScriptPaths[s], body, config);
 		}
@@ -352,9 +355,6 @@ void BuildGraph::RemoveScript(string path)
 
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
-
-	//Rebuild the graph to fix up dependencies and delete orphaned nodes
-	Rebuild();
 }
 
 /**
@@ -689,6 +689,7 @@ void BuildGraph::GetFlags(string toolchain, string config, string path, set<Buil
  */
 void BuildGraph::Rebuild()
 {
+	LogDebug("Rebuilding graph\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

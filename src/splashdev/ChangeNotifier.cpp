@@ -113,8 +113,8 @@ void BuildChangeNotificationForDir(BulkFileChanged* msg, string path)
 	//If so, pre-send its config section (since it may contain config inherited by our children)
 	string scriptpath = path + "/build.yml";
 	bool hasScript = DoesFileExist(scriptpath);
-	//if(hasScript)
-	//	BuildChangeNotificationForFile(msg, scriptpath, false, true);
+	if(hasScript)
+		BuildChangeNotificationForFile(msg, scriptpath, false, true);
 
 	//Send change notices for our subdirectories
 	vector<string> children;
@@ -137,8 +137,8 @@ void BuildChangeNotificationForDir(BulkFileChanged* msg, string path)
 	//(but not the config, since that would require re-parsing our children)
 	if(hasScript)
 	{
-		//	BuildChangeNotificationForFile(msg, scriptpath, true, false);
-		BuildChangeNotificationForFile(msg, scriptpath, true, true);
+		BuildChangeNotificationForFile(msg, scriptpath, true, false);
+		//BuildChangeNotificationForFile(msg, scriptpath, true, true);
 	}
 }
 
