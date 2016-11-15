@@ -51,7 +51,7 @@ bool DoScanDependencies(
 	string arch,
 	string aname,
 	string& output,
-	set<BuildFlag> libFlags,
+	set<BuildFlag>& libFlags,
 	DependencyResults* replym);
 
 bool GrabMissingDependencies(
@@ -367,7 +367,7 @@ bool DoScanDependencies(
 	string arch,
 	string aname,
 	string& output,
-	set<BuildFlag> libFlags,
+	set<BuildFlag>& libFlags,
 	DependencyResults* replym)
 {
 	//Run the scanner proper
@@ -504,7 +504,7 @@ bool GrabSourceFile(Socket& sock, string fname, string hash)
  */
 void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 {
-	LogDebug("\nBuild request\n");
+	LogDebug("Build request\n");
 	LogIndenter li;
 
 	//Do setup stuff
