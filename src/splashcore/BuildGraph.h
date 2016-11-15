@@ -38,7 +38,7 @@ class WorkingCopy;
 
 /**
 	@brief A DAG of buildable objects
-	
+
 	TODO: eventually consider having some of the graph nodes (source files etc) be shared across working copies
 	to reduce memory usage in large projects
  */
@@ -101,13 +101,16 @@ public:
 	//Update dependencies of everything
 	void Rebuild();
 
+	//Update the location of a node during rebuilding
+	void FinalizeCallback(BuildGraphNode* node, std::string old_hash);
+
 protected:
 	void InternalRemove(std::string path);
 	void InternalUpdateScript(std::string path, std::string hash, bool body, bool config);
-	
+
 	void ParseScript(const std::string& script, std::string path, bool body, bool config);
 	void LoadYAMLDoc(YAML::Node& doc, std::string path, bool body, bool config);
-	
+
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
 
@@ -117,7 +120,7 @@ protected:
 		std::string toolchain,
 		std::string path,
 		std::set<std::string>& configs);
-	
+
 	void GetDefaultArchitecturesForToolchain(
 		std::string toolchain,
 		std::string path,
@@ -128,7 +131,7 @@ protected:
 
 	//The working copy of the repository we're attached to (so we can access file content etc)
 	WorkingCopy* m_workingCopy;
-		
+
 	//Build scripts that we know about
 	//Map from path to hash
 	std::map<std::string, std::string> m_buildScriptPaths;

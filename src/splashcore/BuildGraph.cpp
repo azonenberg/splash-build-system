@@ -234,7 +234,8 @@ BuildGraphNode* BuildGraph::GetNodeWithPath(std::string fname)
 
 	if(m_nodesByHash.find(hash) == m_nodesByHash.end())
 	{
-		LogWarning("BuildGraph: hash %s is not in graph\n", hash.c_str());
+		LogWarning("BuildGraph: hash %s (filename %s) is not in graph\n", hash.c_str(), fname.c_str());
+		asm("int3");
 		return NULL;
 	}
 
@@ -250,7 +251,7 @@ void BuildGraph::CollectGarbage()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	LogDebug("Collecting garbage\n");
+	//LogDebug("Collecting garbage\n");
 	//LogIndenter li;
 
 	//First pass: Mark all nodes unreferenced
@@ -696,7 +697,7 @@ void BuildGraph::GetFlags(string toolchain, string config, string path, set<Buil
  */
 void BuildGraph::Rebuild()
 {
-	LogDebug("Rebuilding graph\n");
+	//LogDebug("Rebuilding graph\n");
 	LogIndenter li;
 
 	lock_guard<recursive_mutex> lock(m_mutex);
@@ -712,21 +713,18 @@ void BuildGraph::Rebuild()
 	for(auto n : nodes)
 		n->Finalize();
 
-	//Clear the original hash table.
-	//Need to do this after finalizing so we can still find ndoes during finalization process
-	//LogDebug("Clearing node set\n");
-	m_nodesByHash.clear();
-
-	//Re-add to hash table and working copy
-	//LogDebug("Re-creating node set\n");
-	for(auto n : nodes)
-	{
-		m_nodesByHash[n->GetHash()] = n;
-		m_workingCopy->UpdateFile(n->GetFilePath(), n->GetHash(), false, false);
-	}
-
 	//Collect any garbage we generated
 	CollectGarbage();
+}
+
+void BuildGraph::FinalizeCallback(BuildGraphNode* node, string old_hash)
+{
+	string new_hash = node->GetHash();
+	if(old_hash != new_hash)
+	{
+		m_nodesByHash.erase(old_hash);
+		m_nodesByHash[new_hash] = node;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

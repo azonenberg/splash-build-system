@@ -173,9 +173,18 @@ void BuildGraphNode::Finalize()
 	lock_guard<recursive_mutex> lock(m_mutex);
 
 	if(!m_finalized)
+	{
+		//LogDebug("Finalizing %s\n", GetFilePath().c_str());
+		string old_hash = GetHash();
+
 		DoFinalize();
 
+		m_graph->FinalizeCallback(this, old_hash);
+	}
+
 	m_finalized = true;
+
+	//Update our records in the hash table
 
 	//Update the records for us in the working copy
 	m_graph->GetWorkingCopy()->UpdateFile(GetFilePath(), m_hash, false, false);

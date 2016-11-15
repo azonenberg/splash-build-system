@@ -182,6 +182,9 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		}
 	}
 
+	//Go to the project root dir since everything is ref'd to that
+	chdir(g_clientSettings->GetProjectRoot().c_str());
+
 	//Format the command
 	SplashMsg cmd;
 	auto cmdm = cmd.mutable_buildrequest();
@@ -246,6 +249,7 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 			//Make the directory if needed, then write the file
 			string path = GetDirOfFile(f);
 			MakeDirectoryRecursive(path, 0700);
+			//LogDebug("Downloading file %s\n", f.c_str());
 			if(!PutFileContents(f, edat))
 			{
 				LogError("Failed to write file \"%s\"", f.c_str());

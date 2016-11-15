@@ -695,7 +695,7 @@ bool GNUToolchain::ScanDependencies(
 				}
 
 				//LogDebug("Unable to resolve include %s\n", f.c_str());
-				LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
+				//LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
 				missingFiles.emplace(fname);
 				continue;
 			}
