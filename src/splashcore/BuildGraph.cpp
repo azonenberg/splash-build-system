@@ -250,7 +250,7 @@ void BuildGraph::CollectGarbage()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	//LogDebug("Collecting garbage\n");
+	LogDebug("Collecting garbage\n");
 	//LogIndenter li;
 
 	//First pass: Mark all nodes unreferenced
