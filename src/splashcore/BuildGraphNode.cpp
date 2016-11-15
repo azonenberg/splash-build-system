@@ -206,7 +206,12 @@ void BuildGraphNode::SetRef()
 		if(m_graph->HasNodeWithHash(h))
 			m_graph->GetNodeWithHash(h)->SetRef();
 		else
-			LogError("Node with hash %s is a dependency of us, but not in graph\n", h.c_str());
+			LogError(
+				"Node %s (with hash %s) is a dependency of us\n"
+				"(%s), but not in graph\n",
+				x.c_str(),
+				h.c_str(),
+				GetFilePath().c_str());
 	}
 }
 

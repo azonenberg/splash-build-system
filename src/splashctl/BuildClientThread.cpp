@@ -353,9 +353,10 @@ bool ProcessBulkHashRequest(Socket& s, string& hostname, SplashMsg& msg, Depende
 		rp->set_fname(f);
 
 		//Look it up
-		string h = wc->GetFileHash(f);
-		rp->set_hash(h);
-		rp->set_found(h != "");
+		bool found = wc->HasFile(f);
+		if(found)
+			rp->set_hash(wc->GetFileHash(f));
+		rp->set_found(found);
 	}
 
 	//Send it

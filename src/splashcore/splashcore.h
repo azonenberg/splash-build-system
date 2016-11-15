@@ -140,7 +140,7 @@ double GetTime();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global functions
 
-void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false);
+void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false, char delim = '\n');
 std::string MakeStringLowercase(std::string str);
 
 std::string ShellCommand(std::string cmd, bool trimNewline = true);
@@ -151,6 +151,7 @@ std::string str_replace(const std::string& search, const std::string& replace, s
 void ParseSearchPath(std::vector<std::string>& dirs);
 
 std::string CanonicalizePath(std::string fname);
+bool CanonicalizePathThatMightNotExist(std::string& fname);
 bool DoesDirectoryExist(std::string fname);
 bool DoesFileExist(std::string fname);
 std::string GetDirOfFile(std::string fname);

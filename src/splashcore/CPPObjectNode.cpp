@@ -208,20 +208,6 @@ CPPObjectNode::CPPObjectNode(
 	//for(auto f : m_flags)
 	//	LogDebug("Flag: %s\n", static_cast<string>(f).c_str());
 
-	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
-	char tmp[128];
-	snprintf(tmp, sizeof(tmp), "%p", this);
-	m_hash = sha256(tmp);
-}
-
-CPPObjectNode::~CPPObjectNode()
-{
-}
-
-void CPPObjectNode::DoFinalize()
-{
-	auto wc = m_graph->GetWorkingCopy();
-
 	//Calculate our hash.
 	//Dependencies and flags are obvious
 	//NOTE: This needs to happen *even if our dependency scan failed* so that we can identify the scan errors
@@ -245,4 +231,13 @@ void CPPObjectNode::DoFinalize()
 	//so we can query the result in the cache later on.
 	if(m_invalidInput)
 		g_cache->AddFailedFile(GetFilePath(), m_hash, m_errors);
+}
+
+CPPObjectNode::~CPPObjectNode()
+{
+}
+
+void CPPObjectNode::DoFinalize()
+{
+
 }

@@ -44,6 +44,21 @@ Toolchain* PrepBuild(string toolhash);
 bool RefreshCachedFile(Socket& sock, string hash, string fname);
 bool GrabSourceFile(Socket& sock, string fname, string hash);
 
+bool DoScanDependencies(
+	Socket& sock,
+	Toolchain* chain,
+	const set<BuildFlag>& flags,
+	string arch,
+	string aname,
+	string& output,
+	set<BuildFlag> libFlags,
+	DependencyResults* replym);
+
+bool GrabMissingDependencies(
+	Socket& sock,
+	set<string> missingFiles,
+	string& errors);
+
 //Temporary directory we work in
 string g_tmpdir;
 
@@ -327,16 +342,42 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	SplashMsg reply;
 	auto replym = reply.mutable_dependencyresults();
 
+	//Do the actual scan (recursively scanning headers etc)
+	string output;
+	set<BuildFlag> libFlags;
+	bool ok = DoScanDependencies(sock, chain, flags, rxm.arch(), aname, output, libFlags, replym);
+
+	//Process the results
+	for(auto lib : libFlags)
+		replym->add_libflags(lib);
+	replym->set_result(ok);
+	replym->set_stdout(output);
+
+	//Done, one way or another. Send it.
+	SendMessage(sock, reply);
+}
+
+/**
+	@brief Run a dependency scan on a file (after parsing the message etc)
+ */
+bool DoScanDependencies(
+	Socket& sock,
+	Toolchain* chain,
+	const set<BuildFlag>& flags,
+	string arch,
+	string aname,
+	string& output,
+	set<BuildFlag> libFlags,
+	DependencyResults* replym)
+{
 	//Run the scanner proper
 	while(true)
 	{
 		set<string> deps;
 		map<string, string> hashes;
-		string output;
 		set<string> missingFiles;
-		set<BuildFlag> libFlags;
 		if(!chain->ScanDependencies(
-			rxm.arch(),
+			arch,
 			aname,
 			g_builddir,
 			flags,
@@ -349,57 +390,39 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 			//trim off trailing newlines
 			while(isspace(output[output.length() - 1]))
 				output.resize(output.length() - 1);
-
-			//LogDebug("Scan failed\n");
-			replym->set_result(false);
-			replym->set_stdout(output);
-			SendMessage(sock, reply);
-
-			//we failed anyway, no point in checking SendMessage return value
-			return;
+			return false;
 		}
 
 		//If the scan found files we're missing, ask for them!
 		if(!missingFiles.empty())
 		{
-			//Look up the hashes
-			map<string, string> hashes;
-			auto hostname = g_clientSettings->GetServerHostname();
-			if(!GetRemoteHashesByPath(sock, hostname, missingFiles, hashes))
+			//Get the files
+			if(!GrabMissingDependencies(sock, missingFiles, output))
+				return false;
+
+			//Scan each of the files we downloaded to see if they pulled in more stuff
+			for(auto f : missingFiles)
 			{
-				replym->set_result(false);
-				replym->set_stdout("Failed to get remote hashes");
-				SendMessage(sock, reply);
-				return;
+				if(!DoScanDependencies(
+					sock,
+					chain,
+					flags,
+					arch,
+					g_builddir + "/" + f,
+					output,
+					libFlags,
+					replym))
+				{
+					return false;
+				}
 			}
 
-			//Pull the files into the cache
-			if(!RefreshRemoteFilesByHash(sock, hostname, hashes))
-				return;
-
-			//Write out the files
-			for(auto it : hashes)
-			{
-				auto fname = it.first;
-				string data = g_cache->ReadCachedFile(it.second);
-				//LogDebug("Writing source file %s\n", fname.c_str());
-				fname = g_builddir + "/" + fname;
-				MakeDirectoryRecursive(GetDirOfFile(fname), 0700);
-				if(!PutFileContents(fname, data))
-					return;
-			}
-
-			//Got the files, try it again
+			//Go back and scan this file again
 			continue;
 		}
 
-		//If we found libraries, report them
-		for(auto lib : libFlags)
-			replym->add_libflags(lib);
-
 		//Successful completion of the scan, crunch the results
-		LogDebug("Scan completed (%zu dependencies)\n", deps.size());
-		replym->set_result(true);
+		LogDebug("Scan of %s completed (%zu dependencies)\n", aname.c_str(), deps.size());
 		for(auto d : deps)
 		{
 			//if( (d.find(".so") != string::npos) || (d.find(".a") != string::npos) )
@@ -409,9 +432,53 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 			rd->set_fname(d);
 			rd->set_hash(hashes[d]);
 		}
-		SendMessage(sock, reply);
-		return;
+
+		//All good by this point
+		return true;
 	}
+}
+
+bool GrabMissingDependencies(
+	Socket& sock,
+	set<string> missingFiles,
+	string& errors)
+{
+	//Look up the hashes
+	map<string, string> hashes;
+	auto hostname = g_clientSettings->GetServerHostname();
+	if(!GetRemoteHashesByPath(sock, hostname, missingFiles, hashes))
+	{
+		errors = "Failed to get remote hashes";
+		return false;
+	}
+
+	//If any of the files weren't found on the far side, fail the scan right now
+	for(auto m : missingFiles)
+	{
+		if(hashes.find(m) == hashes.end())
+		{
+			errors = string("ERROR: Failed to find include file ") + m + "\n";
+			return false;
+		}
+	}
+
+	//Pull the files into the cache
+	if(!RefreshRemoteFilesByHash(sock, hostname, hashes))
+		return false;
+
+	//Write out the files
+	for(auto it : hashes)
+	{
+		auto fname = it.first;
+		string data = g_cache->ReadCachedFile(it.second);
+		LogDebug("Writing source file %s\n", fname.c_str());
+		fname = g_builddir + "/" + fname;
+		MakeDirectoryRecursive(GetDirOfFile(fname), 0700);
+		if(!PutFileContents(fname, data))
+			return false;
+	}
+
+	return true;
 }
 
 bool GrabSourceFile(Socket& sock, string fname, string hash)

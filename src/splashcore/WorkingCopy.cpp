@@ -119,6 +119,8 @@ string WorkingCopy::GetFileHash(string path)
  */
 void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 {
+	LogDebug("WorkingCopy::UpdateFile %s\n", path.c_str());
+
 	string buildscript = GetDirOfFile(path) + "/build.yml";
 	bool has_script = HasFile(buildscript);
 

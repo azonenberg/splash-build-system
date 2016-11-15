@@ -420,14 +420,14 @@ bool GNUToolchain::ScanDependencies(
 	//Search for any library flags
 	set<string> foundpaths;
 	set<string> foundlibNames;
-	set<BuildFlag> libflags;
+	set<BuildFlag> libflags_in;
 	for(auto f : flags)
 	{
 		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
 			continue;
 
 		string libbase = f.GetArgs();
-		libflags.emplace(f);
+		libflags_in.emplace(f);
 
 		//If we have a cached result from this library, don't scan for it again
 		pair<string, string> index(triplet, libbase);
@@ -502,7 +502,7 @@ bool GNUToolchain::ScanDependencies(
 	}
 
 	//Remove all library-related flags from the list
-	for(auto f : libflags)
+	for(auto f : libflags_in)
 		flags.erase(f);
 
 	//Add system libraries (but don't make -D's for them as they're implicit)
@@ -537,7 +537,7 @@ bool GNUToolchain::ScanDependencies(
 
 	//If we specified library/required, and didn't find the lib, declare an error now
 	//rather than wasting time trying to compile and/or link
-	for(auto f : libflags)
+	for(auto f : libflags_in)
 	{
 		if(f.GetFlag() != "required")
 			continue;
@@ -635,7 +635,7 @@ bool GNUToolchain::ScanDependencies(
 	//First entry is always the source file itself, so we can skip that
 	//Loop over the other entries and convert them to system/project relative paths
 	//LogDebug("Absolute paths:\n");
-	LogIndenter li;
+	//LogIndenter li;
 	for(size_t i=1; i<files.size(); i++)
 	{
 		string f = files[i];
@@ -679,21 +679,24 @@ bool GNUToolchain::ScanDependencies(
 			//Including random headers by absolute path is not portable!
 			else if(f[0] == '/')
 			{
-				char tmp[1024];
-				snprintf(tmp, sizeof(tmp),
-					"Absolute path %s could not be resolved to a system include directory\n",
-					f.c_str());
-				output += tmp;
+				output += string("Absolute path ") + f + " could not be resolved to a system include directory\n";
 				return false;
 			}
 
 			//Relative path - we don't have it locally
 			//Ask the server for it (by best-guess filename)
-			//TODO: Canonicalize this?
 			else if(longest_prefix == "")
 			{
+				string fname = str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f;
+				if(!CanonicalizePathThatMightNotExist(fname))
+				{
+					LogError("Couldn't canonicalize path %s\n", fname.c_str());
+					return false;
+				}
+
 				//LogDebug("Unable to resolve include %s\n", f.c_str());
-				missingFiles.emplace(str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f);
+				LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
+				missingFiles.emplace(fname);
 				continue;
 			}
 		}

@@ -250,8 +250,8 @@ void BuildGraph::CollectGarbage()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	LogDebug("Collecting garbage\n");
-	LogIndenter li;
+	//LogDebug("Collecting garbage\n");
+	//LogIndenter li;
 
 	//First pass: Mark all nodes unreferenced
 	//LogDebug("    Marking %zu nodes as unreferenced\n", m_nodesByHash.size());
@@ -702,23 +702,23 @@ void BuildGraph::Rebuild()
 	lock_guard<recursive_mutex> lock(m_mutex);
 
 	//Make a set of all of our nodes
-	LogDebug("Building node set\n");
+	//LogDebug("Building node set\n");
 	set<BuildGraphNode*> nodes;
 	for(auto it : m_nodesByHash)
 		nodes.emplace(it.second);
 
 	//Finalize each node in the graph
-	LogDebug("Finalizing nodes\n");
+	//LogDebug("Finalizing nodes\n");
 	for(auto n : nodes)
 		n->Finalize();
 
 	//Clear the original hash table.
 	//Need to do this after finalizing so we can still find ndoes during finalization process
-	LogDebug("Clearing node set\n");
+	//LogDebug("Clearing node set\n");
 	m_nodesByHash.clear();
 
 	//Re-add to hash table and working copy
-	LogDebug("Re-creating node set\n");
+	//LogDebug("Re-creating node set\n");
 	for(auto n : nodes)
 	{
 		m_nodesByHash[n->GetHash()] = n;

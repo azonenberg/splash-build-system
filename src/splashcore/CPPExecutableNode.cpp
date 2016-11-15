@@ -44,6 +44,7 @@ CPPExecutableNode::CPPExecutableNode(
 	string toolchain,
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
+	, m_scriptpath(scriptpath)
 {
 	LogDebug("Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
 		toolchain.c_str(), path.c_str());
@@ -76,12 +77,7 @@ CPPExecutableNode::CPPExecutableNode(
 	//Look up the working copy we're part of
 	WorkingCopy* wc = m_graph->GetWorkingCopy();
 
-	//Collect the compiler flags
-	set<BuildFlag> compileFlags;
-	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
-
 	//Look up the source files and see if we have source nodes for them yet
-	vector<BuildGraphNode*> sources;
 	string dir = GetDirOfFile(scriptpath);
 	for(auto it : snode)
 	{
@@ -110,25 +106,43 @@ CPPExecutableNode::CPPExecutableNode(
 		if(m_graph->HasNodeWithHash(hash))
 		{
 			//LogDebug("Already have source node for %s\n", fname.c_str());
-			sources.push_back(m_graph->GetNodeWithHash(hash));
+			m_sourcenodes.emplace(m_graph->GetNodeWithHash(hash));
 			continue;
 		}
 
 		//Nope, need to create one
 		auto src = new CPPSourceNode(m_graph, fname, hash);
 		graph->AddNode(src);
-		sources.push_back(src);
+		m_sourcenodes.emplace(src);
 	}
 
+	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "%p", this);
+	m_hash = sha256(tmp);
+}
+
+void CPPExecutableNode::DoFinalize()
+{
+	//LogDebug("DoFinalize for %s\n", GetFilePath().c_str());
+	//LogIndenter li;
+
+	//Look up the working copy we're part of
+	WorkingCopy* wc = m_graph->GetWorkingCopy();
+
+	//Collect the compiler flags
+	set<BuildFlag> compileFlags;
+	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
+
 	//We have source nodes. Create the object nodes.
-	for(auto s : sources)
+	for(auto s : m_sourcenodes)
 	{
 		//Get the output file name
 		auto src = s->GetFilePath();
 		string fname = m_graph->GetIntermediateFilePath(
-			toolchain,
-			config,
-			arch,
+			m_toolchain,
+			m_config,
+			m_arch,
 			"object",
 			src);
 
@@ -136,12 +150,12 @@ CPPExecutableNode::CPPExecutableNode(
 		//If another node with that hash already exists, delete it and use the old node instead.
 		//TODO: more efficient way of doing this? cache dependencies and do simpler parse or something?
 		BuildGraphNode* obj = new CPPObjectNode(
-			graph,
-			arch,
+			m_graph,
+			m_arch,
 			src,
 			fname,
-			toolchain,
-			scriptpath,
+			m_toolchain,
+			m_scriptpath,
 			compileFlags,
 			m_libdeps,
 			m_libflags);
@@ -156,7 +170,7 @@ CPPExecutableNode::CPPExecutableNode(
 
 		//It's new, keep it and add to the graph
 		else
-			graph->AddNode(obj);
+			m_graph->AddNode(obj);
 
 		//Either way we have the node now. Add to our list of sources.
 		m_sources.emplace(fname);
@@ -165,17 +179,6 @@ CPPExecutableNode::CPPExecutableNode(
 		//Add the object file to our working copy
 		wc->UpdateFile(fname, h, false, false);
 	}
-
-	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
-	char tmp[128];
-	snprintf(tmp, sizeof(tmp), "%p", this);
-	m_hash = sha256(tmp);
-}
-
-void CPPExecutableNode::DoFinalize()
-{
-	LogDebug("DoFinalize for %s\n", GetFilePath().c_str());
-	LogIndenter li;
 
 	//Collect the linker flags
 	set<BuildFlag> linkflags;
@@ -214,10 +217,12 @@ void CPPExecutableNode::DoFinalize()
 		}
 		//TODO: verify only one?
 
-		//We found the target
+		//We found the target, use it
 		BuildGraphNode* node = *nodes.begin();
 		string path = node->GetFilePath();
-		LogDebug("Linking to target lib %s\n", path.c_str());
+		//LogDebug("Linking to target lib %s\n", path.c_str());
+		m_sources.emplace(path);
+		m_dependencies.emplace(path);
 	}
 
 	//Add our link-time dependencies.
@@ -242,7 +247,7 @@ void CPPExecutableNode::DoFinalize()
 		auto n = m_graph->GetNodeWithPath(d);
 		if(n)
 		{
-			LogDebug("Finalizing %s (%s)\n", d.c_str(), n->GetFilePath().c_str());
+			//LogDebug("Finalizing %s (%s)\n", d.c_str(), n->GetFilePath().c_str());
 			n->Finalize();
 		}
 		else

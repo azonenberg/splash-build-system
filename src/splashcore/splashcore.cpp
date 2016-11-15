@@ -221,7 +221,7 @@ string MakeStringLowercase(string str)
 /**
 	@brief Split a large string into an array of lines
  */
-void ParseLines(string str, vector<string>& lines, bool clearVector)
+void ParseLines(string str, vector<string>& lines, bool clearVector, char delim)
 {
 	if(clearVector)
 		lines.clear();
@@ -231,7 +231,7 @@ void ParseLines(string str, vector<string>& lines, bool clearVector)
 	for(size_t i=0; i<len; i++)
 	{
 		char c = str[i];
-		if(c == '\n')
+		if(c == delim)
 		{
 			lines.push_back(s);
 			s = "";
@@ -294,6 +294,46 @@ string CanonicalizePath(string fname)
 	string str(cpath);
 	free(cpath);
 	return str;
+}
+
+/**
+	@brief Canonicalizes a path name using pure string manipulation
+
+	(important if the file in question may not exist, but needs to be referenced elsewhere anyway)
+ */
+bool CanonicalizePathThatMightNotExist(string& fname)
+{
+	//Tokenize at / characters
+	vector<string> segments;
+	ParseLines(fname, segments, true, '/');
+
+	//Canonicalize the path segments
+	//Can't use realpath() as the file doesn't actually exist in the local filesystem
+	vector<string> outsegs;
+	for(auto s : segments)
+	{
+		if(s == "..")
+		{
+			//Don't canonicalize off the beginning of the array
+			//We don't want another MS08-067 ;)
+			if(outsegs.empty())
+				return false;
+
+			else
+				outsegs.erase(outsegs.end() - 1);
+		}
+
+		else
+			outsegs.push_back(s);
+	}
+
+	//Combine the segments for the final output fname
+	fname = "";
+	for(auto s : outsegs)
+		fname += s + "/";
+	fname.resize(fname.length() - 1);
+
+	return true;
 }
 
 /**
@@ -861,14 +901,16 @@ bool ProcessContentRequest(Socket& s, string remote, SplashMsg& msg)
 
 /**
 	@brief Makes sure a filename is a safe relative path and safe to put in a command-line arg
-
-	TODO: Allow ..s as long as they don't go above the relative root?
  */
 bool ValidatePath(string fname)
 {
+	//Absolute paths are a biiiig no-go
 	if(fname[0] == '/')
 		return false;
-	if(fname.find("..") != string::npos)
+
+	//Complain if there's too many ..'s
+	string t = fname;
+	if(!CanonicalizePathThatMightNotExist(fname))
 		return false;
 
 	//TODO: Separate function for escaping fnames passed as shell args
