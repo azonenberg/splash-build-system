@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 void WatchDirRecursively(int hnotify, string dir)
 {
 	//Do not watch the build directory for obvious reasons
-	if(dir == "build")
+	if(dir == g_clientSettings->GetProjectRoot() + "/build")
 		return;
 
 	//If the directory has a ".splashignore" file in it, don't do anything
