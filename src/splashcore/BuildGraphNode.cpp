@@ -172,19 +172,21 @@ void BuildGraphNode::Finalize()
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
+	//See if we are in the working copy.
+	//If we're not pointed to by the WC then we're an old version and should NOT be updated
+	//(since we're probably about to get GC'd)
+	if(m_hash != m_graph->GetWorkingCopy()->GetFileHash(GetFilePath()))
+		return;
+
+	string old_hash = m_hash;
+
 	if(!m_finalized)
 	{
-		//LogDebug("Finalizing %s\n", GetFilePath().c_str());
-		string old_hash = GetHash();
-
 		DoFinalize();
-
 		m_graph->FinalizeCallback(this, old_hash);
 	}
 
 	m_finalized = true;
-
-	//Update our records in the hash table
 
 	//Update the records for us in the working copy
 	m_graph->GetWorkingCopy()->UpdateFile(GetFilePath(), m_hash, false, false);
@@ -215,12 +217,14 @@ void BuildGraphNode::SetRef()
 		if(m_graph->HasNodeWithHash(h))
 			m_graph->GetNodeWithHash(h)->SetRef();
 		else
+		{
 			LogError(
 				"Node %s (with hash %s) is a dependency of us\n"
 				"(%s), but not in graph\n",
 				x.c_str(),
 				h.c_str(),
 				GetFilePath().c_str());
+		}
 	}
 }
 
