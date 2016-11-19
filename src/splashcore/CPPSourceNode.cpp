@@ -37,7 +37,6 @@ using namespace std;
 CPPSourceNode::CPPSourceNode(BuildGraph* graph, string fname, string hash)
 	: BuildGraphNode(graph, BuildFlag::NO_TIME, fname, hash)
 {
-
 }
 
 CPPSourceNode::~CPPSourceNode()

@@ -153,7 +153,6 @@ CPPObjectNode::CPPObjectNode(
 		}
 
 		//Make a note of any object or library files we have in the dependency list that were not specified by flags
-		//example: libc crt1.o or even libc itself
 		for(auto d : deps)
 		{
 			if( (d.find(osuf) == string::npos) &&

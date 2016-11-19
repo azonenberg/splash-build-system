@@ -244,6 +244,7 @@ void CPPExecutableNode::DoFinalize()
 	//Finalize all of our dependencies
 	for(auto d : m_dependencies)
 	{
+		LogIndenter li;
 		auto n = m_graph->GetNodeWithPath(d);
 		if(n)
 		{

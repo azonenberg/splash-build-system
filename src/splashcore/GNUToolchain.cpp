@@ -373,7 +373,6 @@ bool GNUToolchain::ScanDependencies(
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
 		return false;
-	bool is_shared = flags.find(BuildFlag("output/shared")) != flags.end();
 
 	//Look up some arch-specific stuff
 	string aflags = m_archflags[triplet];
@@ -796,7 +795,7 @@ bool GNUToolchain::Link(
 	//Add the object/library files to be linked
 	for(auto s : sources)
 		cmdline += s + " ";
-	LogDebug("Link command line: %s\n", cmdline.c_str());
+	//LogDebug("Link command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
