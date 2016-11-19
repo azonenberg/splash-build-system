@@ -79,8 +79,7 @@ public:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& output,
-		bool cpp,
-		bool nodefaultlib = true);
+		bool cpp);
 
 protected:
 	std::string FlagToString(BuildFlag flag);
@@ -99,24 +98,14 @@ protected:
 	std::map<std::string, std::string> m_archflags;
 
 	/**
-		@brief Libraries we use when linking (mapped by target arch)
-	 */
-	std::map<std::string, std::set<std::string> > m_internalLibraries;
-
-	/**
-		@brief Libraries we use when linking a shared library (mapped by target arch)
-	 */
-	std::map<std::string, std::set<std::string> > m_internalLibrariesForShared;
-
-	/**
 		@brief Map of (architecture, lib name) -> path tuples
 	 */
 	std::map<std::pair<std::string, std::string>, std::string> m_libpaths;
 
 	/**
-		@brief Path to dynamic linker for each arch
+		@brief Hashes for a bunch of libc stuff
 	 */
-	std::map<std::string, std::string> m_dlPaths;
+	std::string m_internalLibs;
 };
 
 #endif

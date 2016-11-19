@@ -531,6 +531,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(auto it : sources)
 	{
 		string fname = it.first;
+		LogDebug("source %s\n", fname.c_str());
 		if(!GrabSourceFile(sock, fname, it.second))
 			return;
 		fnames.emplace(g_builddir + "/" + fname);

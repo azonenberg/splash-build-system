@@ -230,7 +230,7 @@ void CPPExecutableNode::DoFinalize()
 	//source file scan time in order to set the right -DHAVE_xxx flags
 	for(auto d : m_libdeps)
 	{
-		//LogDebug("[CPPExecutableNode] Found library %s\n", d.c_str());
+		//LogDebug("[CPPExecutableNode] Found library %s for %s\n", d.c_str(), GetFilePath().c_str());
 		//and to our dependencies
 		m_sources.emplace(d);
 		m_dependencies.emplace(d);

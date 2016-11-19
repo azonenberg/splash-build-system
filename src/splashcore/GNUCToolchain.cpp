@@ -97,8 +97,7 @@ GNUCToolchain::GNUCToolchain(string basepath, string triplet)
 	}
 
 	//Generate the hash
-	//TODO: Anything else to add here?
-	m_hash = sha256(m_stringVersion + triplet);
+	m_hash = sha256(m_stringVersion + triplet + m_internalLibs);
 }
 
 GNUCToolchain::~GNUCToolchain()

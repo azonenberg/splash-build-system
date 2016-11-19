@@ -100,7 +100,7 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 
 
 	/////////////////////////////////////////////////////////////////////////////
-	// Find libraries
+	// Find and hash libc (TODO: support non-GNU libc's?)
 
 	//If it's a linker, do nothing
 	if(type == GNU_LD)
@@ -142,7 +142,7 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 			continue;
 		}
 		sout = "";
-		if(!Link(exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP), false))
+		if(!Link(exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP)))
 		{
 			LogError("Test link failed for toolchain %s:\n%s\n", exe.c_str(), sout.c_str());
 			continue;
@@ -180,69 +180,41 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 			if(apath.find("libgcc") != string::npos)
 				found_libgcc = true;
 
-			m_internalLibraries[arch].emplace(apath);
-			m_internalLibrariesForShared[arch].emplace(apath);
+			m_internalLibs += sha256_file(apath);
 		}
 
 		//If we did not find a dynamically linked libgcc, add a static one
 		if(!found_libgcc)
 		{
 			string libgcc_fname = ShellCommand(exe + " " + it.second + " --print-libgcc-file-name");
-			m_internalLibraries[arch].emplace(CanonicalizePath(libgcc_fname));
-			m_internalLibrariesForShared[arch].emplace(CanonicalizePath(libgcc_fname));
+			m_internalLibs += sha256_file(libgcc_fname);
 		}
 
 		//Look for the glibc startup routines
 		string crt1_fname = ShellCommand(exe + " " + it.second + " --print-file-name=crt1.o");
-		m_internalLibraries[arch].emplace(CanonicalizePath(crt1_fname));
+		if(DoesFileExist(crt1_fname))
+			m_internalLibs += sha256_file(crt1_fname);
 		string crti_fname = ShellCommand(exe + " " + it.second + " --print-file-name=crti.o");
-		m_internalLibraries[arch].emplace(CanonicalizePath(crti_fname));
-		m_internalLibrariesForShared[arch].emplace(CanonicalizePath(crti_fname));
+		if(DoesFileExist(crti_fname))
+			m_internalLibs += sha256_file(crti_fname);
 		string crtbegin_fname = ShellCommand(exe + " " + it.second + " --print-file-name=crtbegin.o");
-		m_internalLibraries[arch].emplace(CanonicalizePath(crtbegin_fname));
+		if(DoesFileExist(crtbegin_fname))
+			m_internalLibs += sha256_file(crtbegin_fname);
 		string crtbeginS_fname = ShellCommand(exe + " " + it.second + " --print-file-name=crtbeginS.o");
-		m_internalLibrariesForShared[arch].emplace(CanonicalizePath(crtbeginS_fname));
+		if(DoesFileExist(crtbeginS_fname))
+			m_internalLibs += sha256_file(crtbeginS_fname);
 		string crtend_fname = ShellCommand(exe + " " + it.second + " --print-file-name=crtend.o");
-		m_internalLibraries[arch].emplace(CanonicalizePath(crtend_fname));
+		if(DoesFileExist(crtend_fname))
+			m_internalLibs += sha256_file(crtend_fname);
 		string crtendS_fname = ShellCommand(exe + " " + it.second + " --print-file-name=crtendS.o");
-		m_internalLibrariesForShared[arch].emplace(CanonicalizePath(crtendS_fname));
+		if(DoesFileExist(crtendS_fname))
+			m_internalLibs += sha256_file(crtendS_fname);
 		string crtn_fname = ShellCommand(exe + " " + it.second + " --print-file-name=crtn.o");
-		m_internalLibraries[arch].emplace(CanonicalizePath(crtn_fname));
-		m_internalLibrariesForShared[arch].emplace(CanonicalizePath(crtn_fname));
+		if(DoesFileExist(crtn_fname))
+			m_internalLibs += sha256_file(crtn_fname);
 		string libcns_fname = ShellCommand(exe + " " + it.second + " --print-file-name=libc_nonshared.a");
-		m_internalLibraries[arch].emplace(CanonicalizePath(libcns_fname));
-		m_internalLibrariesForShared[arch].emplace(CanonicalizePath(libcns_fname));
-
-		//Find paths to the dynamic linker.
-		//This does not get put in the dependency graph since it's a runtime dependency,
-		//but must be explicitly specified if we do nodefaultlib
-		if(0 != ShellCommand(string("readelf -l ") + fout, out))
-		{
-			LogError("readelf failed for toolchain %s\n", exe.c_str());
-			continue;
-		}
-		outs.clear();
-		ParseLines(out, outs);
-		out = "";
-		for(auto line : outs)
-		{
-			if(line.find("program interpreter") != string::npos)
-			{
-				out = line;
-				break;
-			}
-		}
-		size_t pos = out.find(":");
-		if(pos == string::npos)
-			continue;
-		out = out.substr(pos + 2);
-		pos = out.find("]");
-		if(pos == string::npos)
-			continue;
-		out = out.substr(0, pos);
-		if(!DoesFileExist(out))
-			continue;
-		m_dlPaths[arch] = CanonicalizePath(out);
+		if(DoesFileExist(libcns_fname))
+			m_internalLibs += sha256_file(libcns_fname);
 	}
 
 	//Clean up
@@ -504,18 +476,6 @@ bool GNUToolchain::ScanDependencies(
 	//Remove all library-related flags from the list
 	for(auto f : libflags_in)
 		flags.erase(f);
-
-	//Add system libraries (but don't make -D's for them as they're implicit)
-	if(is_shared)
-	{
-		for(auto lib : m_internalLibrariesForShared[triplet])
-			foundpaths.emplace(lib);
-	}
-	else
-	{
-		for(auto lib : m_internalLibraries[triplet])
-			foundpaths.emplace(lib);
-	}
 
 	//Add the found libraries to our cache if needed, and create dependencry records for them
 	for(auto fpath : foundpaths)
@@ -806,8 +766,7 @@ bool GNUToolchain::Link(
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
 	string& output,
-	bool /*cpp*/,
-	bool nodefaultlib)
+	bool /*cpp*/)
 {
 	//LogDebug("Link for arch %s\n", triplet.c_str());
 	LogIndenter li;
@@ -822,13 +781,6 @@ bool GNUToolchain::Link(
 	bool is_shared = flags.find(BuildFlag("output/shared")) != flags.end();
 	bool using_elf = (triplet.find("linux") != string::npos) || (triplet.find("elf") != string::npos);
 
-	//Pull in the dynamic linker
-	if(nodefaultlib)
-	{
-		if(m_dlPaths.find(triplet) != m_dlPaths.end())
-			aflags += " -dynamic-linker " + m_dlPaths[triplet] + " ";
-	}
-
 	//Make the full compile command line
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
 	for(auto f : flags)
@@ -841,29 +793,10 @@ bool GNUToolchain::Link(
 	if(is_shared && using_elf)
 		cmdline += string("-Wl,-soname,") + soname + " ";
 
-	//Do NOT link libc startup code if we're not building an executable
-	//TODO: file name is glibc specific, handle other libc's?
-	string startpath;
-	for(auto s : sources)
-	{
-		if(s.find("crt1.o") != string::npos)
-		{
-			startpath = s;
-			break;
-		}
-	}
-	if(is_shared)
-		sources.erase(startpath);
-
-	//Ignore default libraries if we're not doing a test link
-	//Explicitly pass the particular libraries passed as part of the node being built.
-	if(nodefaultlib)
-		cmdline += "-nodefaultlibs -nostdlib -nostartfiles ";
-
 	//Add the object/library files to be linked
 	for(auto s : sources)
 		cmdline += s + " ";
-	//LogDebug("Link command line: %s\n", cmdline.c_str());
+	LogDebug("Link command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
