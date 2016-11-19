@@ -235,7 +235,7 @@ BuildGraphNode* BuildGraph::GetNodeWithPath(std::string fname)
 	if(m_nodesByHash.find(hash) == m_nodesByHash.end())
 	{
 		LogWarning("BuildGraph: hash %s (filename %s) is not in graph\n", hash.c_str(), fname.c_str());
-		asm("int3");
+		//asm("int3");
 		return NULL;
 	}
 

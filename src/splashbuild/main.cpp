@@ -329,7 +329,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	string data = g_cache->ReadCachedFile(hash);
 
 	//Write the source file
-	LogDebug("Writing source file %s\n", aname.c_str());
+	//LogDebug("Writing source file %s\n", aname.c_str());
 	if(!PutFileContents(aname, data))
 		return;
 
@@ -422,7 +422,7 @@ bool DoScanDependencies(
 		}
 
 		//Successful completion of the scan, crunch the results
-		LogDebug("Scan of %s completed (%zu dependencies)\n", aname.c_str(), deps.size());
+		//LogDebug("Scan of %s completed (%zu dependencies)\n", aname.c_str(), deps.size());
 		for(auto d : deps)
 		{
 			//if( (d.find(".so") != string::npos) || (d.find(".a") != string::npos) )
@@ -471,7 +471,7 @@ bool GrabMissingDependencies(
 	{
 		auto fname = it.first;
 		string data = g_cache->ReadCachedFile(it.second);
-		LogDebug("Writing source file %s\n", fname.c_str());
+		//LogDebug("Writing source file %s\n", fname.c_str());
 		fname = g_builddir + "/" + fname;
 		MakeDirectoryRecursive(GetDirOfFile(fname), 0700);
 		if(!PutFileContents(fname, data))
