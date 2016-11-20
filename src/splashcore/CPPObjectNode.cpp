@@ -56,7 +56,7 @@ CPPObjectNode::CPPObjectNode(
 	auto wc = graph->GetWorkingCopy();
 	auto h = wc->GetFileHash(fname);
 	if(!graph->HasNodeWithHash(h))
-		graph->AddNode(new CPPSourceNode(graph, fname, h));
+		graph->AddNode(new SourceFileNode(graph, fname, h));
 	m_sources.emplace(fname);
 	m_dependencies.emplace(fname);
 
@@ -184,7 +184,7 @@ CPPObjectNode::CPPObjectNode(
 
 			//Create a new node if needed
 			if(!graph->HasNodeWithHash(h))
-				graph->AddNode(new CPPSourceNode(graph, d, h));
+				graph->AddNode(new SourceFileNode(graph, d, h));
 
 			//Either way, we have the node now. Add it to our list of inputs.
 			m_dependencies.emplace(d);

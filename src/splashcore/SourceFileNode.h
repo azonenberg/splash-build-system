@@ -27,23 +27,23 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashcore.h"
+#ifndef SourceFileNode_h
+#define SourceFileNode_h
 
-using namespace std;
+/**
+	@brief A single source file (may be any language)
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Construction / destruction
-
-CPPSourceNode::CPPSourceNode(BuildGraph* graph, string fname, string hash)
-	: BuildGraphNode(graph, BuildFlag::NO_TIME, fname, hash)
+	Object hash is simply that of the source file.
+ */
+class SourceFileNode : public BuildGraphNode
 {
-}
+public:
+	SourceFileNode(BuildGraph* graph, std::string fname, std::string hash);
+	virtual ~SourceFileNode();
 
-CPPSourceNode::~CPPSourceNode()
-{
-}
+protected:
+	virtual void DoFinalize();
+};
 
-void CPPSourceNode::DoFinalize()
-{
-	//nothing to do
-}
+#endif
+

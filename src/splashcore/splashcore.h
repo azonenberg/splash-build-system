@@ -121,11 +121,13 @@ double GetTime();
 
 #include "BuildGraph.h"
 #include "BuildGraphNode.h"
-#include "CPPSourceNode.h"
+
+#include "SourceFileNode.h"
+#include "SystemLibraryNode.h"
+
 #include "CPPObjectNode.h"
 #include "CPPExecutableNode.h"
 #include "CPPSharedLibraryNode.h"
-#include "SystemLibraryNode.h"
 
 #include "WorkingCopy.h"
 

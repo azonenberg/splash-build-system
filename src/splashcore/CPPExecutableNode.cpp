@@ -111,7 +111,7 @@ CPPExecutableNode::CPPExecutableNode(
 		}
 
 		//Nope, need to create one
-		auto src = new CPPSourceNode(m_graph, fname, hash);
+		auto src = new SourceFileNode(m_graph, fname, hash);
 		graph->AddNode(src);
 		m_sourcenodes.emplace(src);
 	}

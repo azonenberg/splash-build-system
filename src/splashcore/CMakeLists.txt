@@ -45,7 +45,7 @@ add_library(splashcore SHARED
 	CPPExecutableNode.cpp
 	CPPSharedLibraryNode.cpp
 	CPPObjectNode.cpp
-	CPPSourceNode.cpp
+	SourceFileNode.cpp
 	SystemLibraryNode.cpp
 
 	BuildJob.cpp
