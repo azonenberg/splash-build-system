@@ -648,24 +648,79 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 }
 
 /**
+	@brief Loads a "constants" declaration in a build script
+
 	@param node		The "constants" node
-	@param path		Path to the build script we wer ein (used for resolving relative paths)s
+	@param path		Path to the build script we were in (used for resolving relative paths)s
  */
-void BuildGraph::ProcessConstantTables(const YAML::Node& node, string path)
+bool BuildGraph::ProcessConstantTables(const YAML::Node& node, string path)
 {
+	lock_guard<recursive_mutex> lock(m_mutex);
+
 	for(auto n : node)
 	{
-		string fname = n.first.as<std::string>();
-		LogDebug("Found constant table %s\n", fname.c_str());
-
+		string script_fname = n.first.as<std::string>();
 		for(auto g : n.second)
 		{
-			LogIndenter li;
-			string gen = g.as<std::string>();
-			LogDebug("Found generator %s\n", gen.c_str());
-			LogWarning("Not doing anything because constant tables aren't fully implemented\n");
+			if(!ProcessConstantTable(path, script_fname, g.as<std::string>()))
+				return false;
 		}
 	}
+
+	return true;
+}
+
+/**
+	@brief Loads a single table of constants
+
+	@param scriptpath	Path to the build script we were in (used for resolving relative paths)s
+	@param tablepath	Path to the constant table
+	@param generator	Name of the generator to use
+ */
+bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, string generator)
+{
+	LogDebug("[BuildGraph] Creating constant table for table %s (generator %s)\n",
+		GetBasenameOfFile(tablepath).c_str(), generator.c_str());
+	LogIndenter li;
+
+	//Create project-relative path for the table
+	string rtpath = GetDirOfFile(scriptpath) + "/" + tablepath;
+	if(!CanonicalizePathThatMightNotExist(rtpath))
+	{
+		LogError("Couldn't canonicalize constant table (bad path?)\n");
+		return false;
+	}
+	LogDebug("Logical table path %s\n", rtpath.c_str());
+
+	//Create source file node for the table if it didn't already exist
+	if(!m_workingCopy->HasFile(rtpath))
+	{
+		LogError("Couldn't find constant table %s (nonexistent table filename?)\n", rtpath.c_str());
+		return false;
+	}
+	string hash = m_workingCopy->GetFileHash(rtpath);
+	if(!HasNodeWithHash(hash))
+		AddNode(new SourceFileNode(this, rtpath, hash));
+	LogDebug("Table has hash %s\n", hash.c_str());
+
+	//Look up the content of the file so we can crunch it
+	string table_yaml = g_cache->ReadCachedFile(hash);
+
+	//Read the root node
+	vector<YAML::Node> nodes = YAML::LoadAll(table_yaml);
+	for(auto doc : nodes)
+	{
+		for(auto it : doc)
+		{
+			string name = it.first.as<std::string>();
+			LogDebug("Enum %s\n", name.c_str());
+
+			//todo: do stuff with it.second
+			//string tpath = ConstantTableNode::GetOutputBasename(GetBasenameOfFileWithoutExt(script_fname), gen);
+		}
+	}
+
+	return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

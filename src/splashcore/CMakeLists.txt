@@ -42,6 +42,7 @@ add_library(splashcore SHARED
 
 	BuildGraph.cpp
 	BuildGraphNode.cpp
+	ConstantTableNode.cpp
 	CPPExecutableNode.cpp
 	CPPSharedLibraryNode.cpp
 	CPPObjectNode.cpp

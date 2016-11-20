@@ -125,6 +125,7 @@ double GetTime();
 #include "SourceFileNode.h"
 #include "SystemLibraryNode.h"
 
+#include "ConstantTableNode.h"
 #include "CPPObjectNode.h"
 #include "CPPExecutableNode.h"
 #include "CPPSharedLibraryNode.h"
