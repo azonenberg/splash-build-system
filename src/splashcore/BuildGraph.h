@@ -114,6 +114,8 @@ protected:
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
 
+	void ProcessConstantTables(const YAML::Node& node, std::string path);
+
 	void CollectGarbage();
 
 	void GetConfigNames(

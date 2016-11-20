@@ -515,7 +515,11 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			name.c_str(), path.c_str());
 		return;
 	}
-	string toolchain = node["toolchain"].as<std::string>();\
+	string toolchain = node["toolchain"].as<std::string>();
+
+	//If we asked for constant tables, generate them
+	if(node["constants"])
+		ProcessConstantTables(node["constants"], path);
 
 	//Get the toolchain type
 	string chaintype;
@@ -641,6 +645,27 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	//Record that we were declared in this file
 	m_targetOrigins[path].emplace(name);
 	m_targetReverseOrigins[name] = path;
+}
+
+/**
+	@param node		The "constants" node
+	@param path		Path to the build script we wer ein (used for resolving relative paths)s
+ */
+void BuildGraph::ProcessConstantTables(const YAML::Node& node, string path)
+{
+	for(auto n : node)
+	{
+		string fname = n.first.as<std::string>();
+		LogDebug("Found constant table %s\n", fname.c_str());
+
+		for(auto g : n.second)
+		{
+			LogIndenter li;
+			string gen = g.as<std::string>();
+			LogDebug("Found generator %s\n", gen.c_str());
+			LogWarning("Not doing anything because constant tables aren't fully implemented\n");
+		}
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
