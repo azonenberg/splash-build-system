@@ -733,6 +733,7 @@ bool GNUToolchain::Compile(
 
 	//Finish it up
 	cmdline += string("-I") + apath + "/ ";		//include the virtual system path
+	//TODO: include other dirs like $PROJECT etc
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";

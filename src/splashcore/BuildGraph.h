@@ -41,6 +41,9 @@ class WorkingCopy;
 
 	TODO: eventually consider having some of the graph nodes (source files etc) be shared across working copies
 	to reduce memory usage in large projects
+
+	Magic architecture "generic" = arch independent
+	Magic configuration "all" = config independent
  */
 class BuildGraph
 {

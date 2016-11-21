@@ -39,15 +39,28 @@ public:
 	ConstantTableNode(
 		BuildGraph* graph,
 		std::string fname,
-		std::string tablefname,
+		std::string name,
+		const YAML::Node& node,
+		std::string table_fname,
 		std::string generator,
-		std::string scriptpath);
+		std::string yaml_hash);
 	virtual ~ConstantTableNode();
 
 	static std::string GetOutputBasename(std::string basename, std::string generator);
 
 protected:
 	virtual void DoFinalize();
+
+	void GenerateConstants(
+		std::string fname,
+		std::string name,
+		std::map<std::string, uint64_t>& table,
+		std::string generator,
+		int width);
+	std::string GenerateConstantsCDefine(std::string name, std::map<std::string, uint64_t>& table, int width);
+	std::string GenerateConstantsCEnum(std::string name, std::map<std::string, uint64_t>& table, int width);
+	std::string GenerateConstantsVerilogDefine(std::string name, std::map<std::string, uint64_t>& table, int width);
+	std::string GenerateConstantsVerilogLocalparam(std::string name, std::map<std::string, uint64_t>& table, int width);
 };
 
 #endif

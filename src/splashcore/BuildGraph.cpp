@@ -673,16 +673,14 @@ bool BuildGraph::ProcessConstantTables(const YAML::Node& node, string path)
 /**
 	@brief Loads a single table of constants
 
+	The generated file will be in the same directory as the build script which asked for it.
+
 	@param scriptpath	Path to the build script we were in (used for resolving relative paths)s
 	@param tablepath	Path to the constant table
 	@param generator	Name of the generator to use
  */
 bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, string generator)
 {
-	LogDebug("[BuildGraph] Creating constant table for table %s (generator %s)\n",
-		GetBasenameOfFile(tablepath).c_str(), generator.c_str());
-	LogIndenter li;
-
 	//Create project-relative path for the table
 	string rtpath = GetDirOfFile(scriptpath) + "/" + tablepath;
 	if(!CanonicalizePathThatMightNotExist(rtpath))
@@ -690,7 +688,7 @@ bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, strin
 		LogError("Couldn't canonicalize constant table (bad path?)\n");
 		return false;
 	}
-	LogDebug("Logical table path %s\n", rtpath.c_str());
+	//LogDebug("Logical table path %s\n", rtpath.c_str());
 
 	//Create source file node for the table if it didn't already exist
 	if(!m_workingCopy->HasFile(rtpath))
@@ -701,7 +699,7 @@ bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, strin
 	string hash = m_workingCopy->GetFileHash(rtpath);
 	if(!HasNodeWithHash(hash))
 		AddNode(new SourceFileNode(this, rtpath, hash));
-	LogDebug("Table has hash %s\n", hash.c_str());
+	//LogDebug("Table has hash %s\n", hash.c_str());
 
 	//Look up the content of the file so we can crunch it
 	string table_yaml = g_cache->ReadCachedFile(hash);
@@ -712,11 +710,15 @@ bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, strin
 	{
 		for(auto it : doc)
 		{
+			//Figure out the output filename
 			string name = it.first.as<std::string>();
-			LogDebug("Enum %s\n", name.c_str());
+			string opath = GetDirOfFile(scriptpath) + "/" + ConstantTableNode::GetOutputBasename(name, generator);
+			//LogDebug("Enum %s is at %s\n", name.c_str(), opath.c_str());
 
-			//todo: do stuff with it.second
-			//string tpath = ConstantTableNode::GetOutputBasename(GetBasenameOfFileWithoutExt(script_fname), gen);
+			//Create and add the node
+			auto n = new ConstantTableNode(this, opath, name, it.second, rtpath, generator, sha256(table_yaml));
+			AddNode(n);
+			m_workingCopy->UpdateFile(opath, n->GetHash(), false, false);
 		}
 	}
 

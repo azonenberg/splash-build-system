@@ -37,17 +37,52 @@ using namespace std;
 ConstantTableNode::ConstantTableNode(
 	BuildGraph* graph,
 	string fname,
-	string tablefname,
+	string name,
+	const YAML::Node& node,
+	string table_fname,
 	string generator,
-	string scriptpath)
+	string yaml_hash)
 	: BuildGraphNode(graph, BuildFlag::NO_TIME, fname, "")
 {
-	//TODO
-	LogDebug("Creating constant table %s (from table %s, generator %s, script %s)\n",
-		fname.c_str(),
-		tablefname.c_str(),
-		generator.c_str(),
-		scriptpath.c_str());
+	//Add dependency for the source file
+	m_dependencies.emplace(table_fname);
+
+	//Read the base and enum width
+	int base = 10;
+	if(node["base"])
+	{
+		string b = node["base"].as<string>();
+		if(b == "hex")
+			base = 16;
+		else if(b == "dec")
+			base = 10;
+		else if(b == "bin")
+			base = 2;
+		else
+		{
+			LogError("Invalid constant table");
+			return;
+		}
+	}
+	int width = 32;
+	if(node["width"])
+		width = node["width"].as<int>();
+
+	//Read the values
+	if(!node["values"])
+	{
+		LogError("Enum \"%s\" has no values", fname.c_str());
+		return;
+	}
+	map<string, uint64_t> values;
+	for(auto it : node["values"])
+		values[it.first.as<string>()] = strtoul(it.second.as<string>().c_str(), NULL, base);
+
+	//Calculate our hash
+	m_hash = sha256(yaml_hash + "!" + generator + "!" + fname);
+
+	//Actually make the table
+	GenerateConstants(fname, name, values, generator, width);
 }
 
 void ConstantTableNode::DoFinalize()
@@ -61,6 +96,115 @@ ConstantTableNode::~ConstantTableNode()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Table generation
+
+void ConstantTableNode::GenerateConstants(
+	string fname,
+	string name,
+	map<string, uint64_t>& table,
+	string generator,
+	int width)
+{
+	string code;
+
+	//Create the contents of the file
+	if(generator == "c/enum")
+		code = GenerateConstantsCEnum(name, table, width);
+	else if(generator == "c/define")
+		code = GenerateConstantsCDefine(name, table, width);
+	else if(generator == "verilog/define")
+		code = GenerateConstantsVerilogDefine(name, table, width);
+	else if(generator == "verilog/localparam")
+		code = GenerateConstantsVerilogLocalparam(name, table, width);
+	else
+	{
+		LogError("Invalid generator %s\n", generator.c_str());
+		return;
+	}
+
+	//LogDebug("CONSTANT TABLE\n%s\n", code.c_str());
+
+	//Add it to the working copy
+	g_cache->AddFile(GetBasenameOfFile(fname), m_hash, sha256(code), code, "");
+	m_graph->GetWorkingCopy()->UpdateFile(fname, m_hash, false, false);
+}
+
+string ConstantTableNode::GenerateConstantsCDefine(string name, map<string, uint64_t>& table, int /*width*/)
+{
+	//Body
+	string retval;
+	char val[32];
+	for(auto it : table)
+	{
+		snprintf(val, sizeof(val), "%lx", it.second);
+		retval += string("    #define ") + it.first + " 0x" + val + "\n";
+	}
+
+	//Count
+	snprintf(val, sizeof(val), "%zx", table.size());
+	retval += string("    #define ") + name + "_count 0x" + val + "\n";
+
+	return retval;
+}
+
+string ConstantTableNode::GenerateConstantsCEnum(string name, map<string, uint64_t>& table, int /*width*/)
+{
+	//Top
+	string retval = string("enum ") + name + "\n";
+	retval += "{\n";
+
+	//Body
+	char val[32];
+	for(auto it : table)
+	{
+		snprintf(val, sizeof(val), "%lx", it.second);
+		retval += string("    ") + it.first + " = 0x" + val + ",\n";
+	}
+
+	//Count
+	snprintf(val, sizeof(val), "%zx", table.size());
+	retval += string("    ") + name + "_count = 0x" + val + "\n";
+
+	//Bottom
+	retval += "};\n";
+
+	return retval;
+}
+
+string ConstantTableNode::GenerateConstantsVerilogDefine(string name, map<string, uint64_t>& table, int width)
+{
+	//Body
+	string retval;
+	char val[32];
+	for(auto it : table)
+	{
+		snprintf(val, sizeof(val), "%d'h%lx", width, it.second);
+		retval += string("    `define ") + it.first + " " + val + "\n";
+	}
+
+	//Count
+	snprintf(val, sizeof(val), "%d'h%zx", width, table.size());
+	retval += string("    `define ") + name + "_count " + val + "\n";
+
+	return retval;
+}
+
+string ConstantTableNode::GenerateConstantsVerilogLocalparam(string name, map<string, uint64_t>& table, int width)
+{
+	//Body
+	string retval;
+	char val[32];
+	for(auto it : table)
+	{
+		snprintf(val, sizeof(val), "%d'h%lx", width, it.second);
+		retval += string("    localparam ") + it.first + " = " + val + ";\n";
+	}
+
+	//Count
+	snprintf(val, sizeof(val), "%d'h%zx", width, table.size());
+	retval += string("    localparam ") + name + "_count = " + val + ";\n";
+
+	return retval;
+}
 
 string ConstantTableNode::GetOutputBasename(string basename, string generator)
 {
