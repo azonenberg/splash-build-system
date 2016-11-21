@@ -238,9 +238,15 @@ string Cache::ReadCachedLog(string id)
 /**
 	@brief Adds a new file's metadata to the cache, reporting that we couldn't actually make it
  */
-void Cache::AddFailedFile(string /*basename*/, string id, string log)
+void Cache::AddFailedFile(string basename, string id, string log)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(id == "")
+	{
+		LogError("Tried to add file \"%s\" to cache with empty ID hash\n", basename.c_str());
+		return;
+	}
 
 	//If the content is already in the cache, skip it
 	if(IsCached(id) || IsFailed(id))
@@ -280,6 +286,12 @@ void Cache::AddFailedFile(string /*basename*/, string id, string log)
 void Cache::AddFile(string basename, string id, string hash, string data, string log)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(id == "")
+	{
+		LogError("Tried to add file \"%s\" to cache with empty ID hash\n", basename.c_str());
+		return;
+	}
 
 	//If the content is already in the cache, skip it
 	if(IsCached(id) || IsFailed(id))
