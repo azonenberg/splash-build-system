@@ -401,6 +401,8 @@ bool DoScanDependencies(
 				return false;
 
 			//Scan each of the files we downloaded to see if they pulled in more stuff
+			//This is not an 100% accurate scan (since we aren't using any #define's provided by the parent file
+			//but lets us pre-fetch some stuff quickly.
 			for(auto f : missingFiles)
 			{
 				if(!DoScanDependencies(
