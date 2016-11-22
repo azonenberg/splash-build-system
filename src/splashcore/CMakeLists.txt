@@ -27,6 +27,8 @@ add_library(splashcore SHARED
 	BuildSettings.cpp
 	ToolchainSettings.cpp
 
+	DependencyCache.cpp
+
 	CPPToolchain.cpp
 	CToolchain.cpp
 	FPGAToolchain.cpp

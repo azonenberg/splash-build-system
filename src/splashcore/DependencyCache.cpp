@@ -27,30 +27,42 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef FPGAToolchain_h
-#define FPGAToolchain_h
+#include "splashcore.h"
+
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+DependencyCache::DependencyCache()
+{
+
+}
+
+DependencyCache::~DependencyCache()
+{
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Cache lookups
 
 /**
-	@brief A toolchain for compiling FPGA source code.
+	@brief
  */
-class FPGAToolchain : public Toolchain
+void DependencyCache::AddEntry(string hash, CachedDependencies& deps)
 {
-public:
-	FPGAToolchain(std::string basepath, ToolchainType type);
-	virtual ~FPGAToolchain();
+	m_cache[hash] = deps;
+}
 
-protected:
-	bool ScanDependenciesUncached(
-		std::string triplet,
-		std::string path,
-		std::string root,
-		std::set<BuildFlag> flags,
-		std::set<std::string>& deps,
-		std::map<std::string, std::string>& dephashes,
-		std::string& output,
-		std::set<std::string>& missingFiles,
-		std::set<BuildFlag>& libFlags);
-};
-
-#endif
-
+/**
+	@brief Get the hash for a given input configuration
+ */
+string DependencyCache::GetHash(string fname, string triplet, const set<BuildFlag>& flags)
+{
+	string hashin = sha256_file(fname);
+	hashin += sha256(triplet);
+	for(auto f : flags)
+		hashin += sha256(f);
+	return sha256(hashin);
+}

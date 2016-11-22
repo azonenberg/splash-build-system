@@ -48,7 +48,7 @@ FPGAToolchain::~FPGAToolchain()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actual operations
 
-bool FPGAToolchain::ScanDependencies(
+bool FPGAToolchain::ScanDependenciesUncached(
 	string /*triplet*/,
 	string /*path*/,
 	string /*root*/,
@@ -59,6 +59,6 @@ bool FPGAToolchain::ScanDependencies(
 	set<string>& /*missingFiles*/,
 	set<BuildFlag>& /*libFlags*/)
 {
-	LogError("FPGAToolchain::DoScanDependencies() is not yet implemented\n");
+	LogError("FPGAToolchain::DoScanDependenciesUncached() is not yet implemented\n");
 	return false;
 }

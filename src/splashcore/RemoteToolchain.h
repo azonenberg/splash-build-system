@@ -56,7 +56,16 @@ public:
 	void AddTriplet(std::string triplet)
 	{ m_triplets.emplace(triplet); }
 
-	virtual bool ScanDependencies(
+	virtual bool Build(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& output);
+
+protected:
+	virtual bool ScanDependenciesUncached(
 		std::string arch,
 		std::string path,
 		std::string root,
@@ -66,14 +75,6 @@ public:
 		std::string& output,
 		std::set<std::string>& missingFiles,
 		std::set<BuildFlag>& libFlags);
-
-	virtual bool Build(
-		std::string triplet,
-		std::set<std::string> sources,
-		std::string fname,
-		std::set<BuildFlag> flags,
-		std::map<std::string, std::string>& outputs,
-		std::string& output);
 };
 
 #endif

@@ -107,7 +107,7 @@ GNUCToolchain::~GNUCToolchain()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actual operations
 
-bool GNUCToolchain::ScanDependencies(
+bool GNUCToolchain::ScanDependenciesUncached(
 	string arch,
 	string path,
 	string root,

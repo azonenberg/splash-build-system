@@ -27,29 +27,56 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef FPGAToolchain_h
-#define FPGAToolchain_h
+#ifndef DependencyCache_h
+#define DependencyCache_h
 
-/**
-	@brief A toolchain for compiling FPGA source code.
- */
-class FPGAToolchain : public Toolchain
+class CachedDependencies
 {
 public:
-	FPGAToolchain(std::string basepath, ToolchainType type);
-	virtual ~FPGAToolchain();
+
+	//True if the scan is successful
+	bool m_ok;
+
+	//stdout of the scan
+	std::string m_stdout;
+
+	//The dependencies
+	std::set<std::string> m_deps;
+
+	//Map of (fname, hash) tuples
+	std::map<std::string, std::string>	m_filedeps;
+
+	//Flags related to libraries that we discovered
+	std::set<BuildFlag> m_libflags;
+};
+
+/**
+	@brief A cache of dependency-scan results
+ */
+class DependencyCache
+{
+public:
+	DependencyCache();
+	virtual ~DependencyCache();
+
+	std::string GetHash(std::string fname, std::string triplet, const std::set<BuildFlag>& flags);
+
+	void AddEntry(std::string hash, CachedDependencies& deps);
+
+	/**
+		@brief Check if a given object is in the cache
+	 */
+	bool IsCached(std::string hash)
+	{ return m_cache.find(hash) != m_cache.end(); }
+
+	/**
+		@brief Get the cache results for a given hash index
+	 */
+	const CachedDependencies& GetCachedDependencies(std::string hash)
+	{ return m_cache[hash]; }
 
 protected:
-	bool ScanDependenciesUncached(
-		std::string triplet,
-		std::string path,
-		std::string root,
-		std::set<BuildFlag> flags,
-		std::set<std::string>& deps,
-		std::map<std::string, std::string>& dephashes,
-		std::string& output,
-		std::set<std::string>& missingFiles,
-		std::set<BuildFlag>& libFlags);
+	std::map<std::string, CachedDependencies> m_cache;
 };
 
 #endif

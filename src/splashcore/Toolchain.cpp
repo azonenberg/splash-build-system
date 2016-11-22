@@ -71,6 +71,56 @@ void Toolchain::DebugPrint()
 		LogVerbose("%s\n", x.c_str());
 }
 
+bool Toolchain::ScanDependencies(
+	string triplet,
+	string path,
+	string root,
+	set<BuildFlag> flags,
+	set<string>& deps,
+	map<string, string>& dephashes,
+	string& output,
+	set<string>& missingFiles,
+	set<BuildFlag>& libFlags)
+{
+	//Check if we already ran this exact scan before
+	string scanhash = m_depCache.GetHash(path, triplet, flags);
+	if(m_depCache.IsCached(scanhash))
+	{
+		//LogDebug("[Toolchain::ScanDependencies] Results for %s were cached\n", path.c_str());
+		auto& results = m_depCache.GetCachedDependencies(scanhash);
+
+		//Copy the outputs
+		output = results.m_stdout;
+		deps = results.m_deps;
+		dephashes = results.m_filedeps;
+		libFlags = results.m_libflags;
+
+		//never any missing files in the cache
+		missingFiles.clear();
+
+		//Done
+		return results.m_ok;
+	}
+
+	bool ok = ScanDependenciesUncached(triplet, path, root, flags, deps, dephashes, output, missingFiles, libFlags);
+
+	//Put it in the cache, regardless of success status.
+	//Do NOT cache results if we have missing files since the scan is incomplete.
+	if(missingFiles.empty())
+	{
+		CachedDependencies cdeps;
+		cdeps.m_ok = ok;
+		cdeps.m_stdout = output;
+		cdeps.m_deps = deps;
+		cdeps.m_filedeps = dephashes;
+		cdeps.m_libflags = libFlags;
+		m_depCache.AddEntry(scanhash, cdeps);
+	}
+
+	//and we're done
+	return ok;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Accessors
 

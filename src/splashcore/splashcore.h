@@ -99,6 +99,7 @@ double GetTime();
 #include "BuildConfiguration.h"
 #include "BuildSettings.h"
 
+#include "DependencyCache.h"
 #include "Toolchain.h"
 
 #include "GNUToolchain.h"
@@ -106,7 +107,6 @@ double GetTime();
 #include "ToolchainSettings.h"
 
 #include "CToolchain.h"
-
 #include "CPPToolchain.h"
 #include "FPGAToolchain.h"
 #include "GNUCToolchain.h"

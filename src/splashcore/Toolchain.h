@@ -200,7 +200,27 @@ public:
 	/**
 		@brief Find dependencies for the given file
 	 */
-	virtual bool ScanDependencies(
+	bool ScanDependencies(
+		std::string triplet,
+		std::string path,
+		std::string root,
+		std::set<BuildFlag> flags,
+		std::set<std::string>& deps,
+		std::map<std::string, std::string>& dephashes,
+		std::string& output,
+		std::set<std::string>& missingFiles,
+		std::set<BuildFlag>& libFlags);
+
+	virtual bool Build(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& output) =0;
+
+protected:
+	virtual bool ScanDependenciesUncached(
 		std::string triplet,
 		std::string path,
 		std::string root,
@@ -210,14 +230,6 @@ public:
 		std::string& output,
 		std::set<std::string>& missingFiles,
 		std::set<BuildFlag>& libFlags) =0;
-
-	virtual bool Build(
-		std::string triplet,
-		std::set<std::string> sources,
-		std::string fname,
-		std::set<BuildFlag> flags,
-		std::map<std::string, std::string>& outputs,
-		std::string& output) =0;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Internal state
@@ -312,6 +324,11 @@ protected:
 		Must be set in the constructor.
 	 */
 	std::string m_shlibPrefix;
+
+	/**
+		Cache of dependency-scan results
+	 */
+	DependencyCache m_depCache;
 };
 
 #endif

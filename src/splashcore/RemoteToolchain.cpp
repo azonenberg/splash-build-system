@@ -67,7 +67,7 @@ RemoteToolchain::~RemoteToolchain()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Placeholders
 
-bool RemoteToolchain::ScanDependencies(
+bool RemoteToolchain::ScanDependenciesUncached(
 	string /*arch*/,
 	string /*path*/,
 	string /*root*/,
@@ -78,7 +78,7 @@ bool RemoteToolchain::ScanDependencies(
 	set<string>& /*missingFiles*/,
 	set<BuildFlag>& /*libFlags*/)
 {
-	LogError("RemoteToolchain::ScanDependencies() cannot be used (must invoke scheduler to do a remote scan job)\n");
+	LogError("RemoteToolchain::ScanDependenciesUncached() cannot be used (must invoke scheduler to do a remote scan job)\n");
 	return false;
 }
 

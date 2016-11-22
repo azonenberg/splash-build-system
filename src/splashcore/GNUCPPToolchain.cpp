@@ -107,7 +107,7 @@ GNUCPPToolchain::~GNUCPPToolchain()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actual operations
 
-bool GNUCPPToolchain::ScanDependencies(
+bool GNUCPPToolchain::ScanDependenciesUncached(
 	string arch,
 	string path,
 	string root,

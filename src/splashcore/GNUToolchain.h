@@ -106,6 +106,11 @@ protected:
 		@brief Hashes for a bunch of libc stuff
 	 */
 	std::string m_internalLibs;
+
+	/**
+		@brief Profiling instrumentation
+	 */
+	std::map<std::string, int> m_timesScanned;
 };
 
 #endif

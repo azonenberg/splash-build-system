@@ -365,6 +365,9 @@ bool GNUToolchain::ScanDependencies(
 	set<BuildFlag>& libFlags,
 	bool cpp)
 {
+	//Bump profiling count
+	m_timesScanned[path] ++;
+
 	//Pull out some properties we need
 	string exe = chain->GetBasePath();
 	string libpre = chain->GetSharedLibraryPrefix();
@@ -682,6 +685,14 @@ bool GNUToolchain::ScanDependencies(
 
 		LogDebug("        %s\n", f.c_str());
 	}
+	*/
+
+	//Debug profiling: Dump total # of times each thing was scanned
+	/*
+	LogDebug("Total scan count:\n");
+	LogIndenter li;
+	for(auto it : m_timesScanned)
+		LogDebug("%-80s: %d\n", it.first.c_str(), it.second);
 	*/
 
 	return true;

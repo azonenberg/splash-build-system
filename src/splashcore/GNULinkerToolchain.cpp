@@ -81,7 +81,7 @@ GNULinkerToolchain::~GNULinkerToolchain()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actual operations
 
-bool GNULinkerToolchain::ScanDependencies(
+bool GNULinkerToolchain::ScanDependenciesUncached(
 	string /*triplet*/,
 	string /*path*/,
 	string /*root*/,
@@ -92,7 +92,7 @@ bool GNULinkerToolchain::ScanDependencies(
 	set<string>& /*missingFiles*/,
 	set<BuildFlag>& /*libFlags*/)
 {
-	LogError("GNULinkerToolchain::ScanDependencies() is not yet implemented\n");
+	LogError("GNULinkerToolchain::ScanDependenciesUncached() is not yet implemented\n");
 	return false;
 }
 
