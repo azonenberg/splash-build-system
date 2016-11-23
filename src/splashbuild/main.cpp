@@ -377,14 +377,14 @@ bool DoScanDependencies(
 	set<BuildFlag>& libFlags,
 	DependencyResults* replym)
 {
-	LogDebug("DoScanDependencies for %s\n", aname.c_str());
-	LogIndenter li;
+	//LogDebug("DoScanDependencies for %s\n", aname.c_str());
+	//LogIndenter li;
 
 	//Run the scanner proper
 	while(true)
 	{
-		LogDebug("Iteration start\n");
-		LogIndenter li;
+		//LogDebug("Iteration start\n");
+		//LogIndenter li;
 
 		set<string> deps;
 		map<string, string> hashes;
@@ -427,7 +427,7 @@ bool DoScanDependencies(
 		//If the scan found files we're missing, ask for them!
 		if(!missingFiles.empty())
 		{
-			LogDebug("Finding missing files for %s\n", aname.c_str());
+			//LogDebug("Finding missing files for %s\n", aname.c_str());
 
 			//Get the files
 			if(!GrabMissingDependencies(sock, missingFiles, output))
