@@ -72,9 +72,9 @@ int main(int argc, char* argv[])
 {
 	Severity console_verbosity = Severity::NOTICE;
 
-	//TODO: argument for this?
 	string ctl_server;
 	int port = 49000;
+	int nodenum = 0;
 
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
@@ -97,6 +97,9 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
+		else if( (s == "--nodenum") && (i+1 < argc) )
+			nodenum = atoi(argv[++i]);
+
 		//Last arg without switch is control server.
 		//TODO: mandatory arguments to introduce these?
 		else
@@ -104,8 +107,11 @@ int main(int argc, char* argv[])
 
 	}
 
-	//Set up temporary directory (TODO: argument for this?)
-	g_tmpdir = "/tmp/splashbuild-tmp";
+	char sworker[64];
+	snprintf(sworker, sizeof(sworker), "splashbuild-%d", nodenum);
+
+	//Set up temporary directory
+	g_tmpdir = string("/tmp/") + sworker;
 	MakeDirectoryRecursive(g_tmpdir, 0700);
 	g_builddir = g_tmpdir + "/workdir";
 	MakeDirectoryRecursive(g_builddir, 0700);
@@ -120,12 +126,17 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 
+	//Initialize the cache
+	//Use separate caches for each instance if we multithread for now.
+	//TODO: figure out how to share?
+	g_cache = new Cache(sworker);
+
 	//Set up the config object from our arguments
 	g_clientSettings = new ClientSettings(ctl_server, port);
 
 	//Connect to the server
 	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	if(!ConnectToServer(sock, ClientHello::CLIENT_BUILD))
+	if(!ConnectToServer(sock, ClientHello::CLIENT_BUILD, string("-") + sworker))
 		return 1;
 
 	//Look for compilers
@@ -179,10 +190,6 @@ int main(int argc, char* argv[])
 		if(!SendMessage(sock, tadd, ctl_server))
 			return 1;
 	}
-
-	//Initialize the cache
-	//TODO: Separate caches for each instance if we multithread? Or one + sharing?
-	g_cache = new Cache("splashbuild");
 
 	//Sit around and wait for stuff to come in
 	LogVerbose("\nReady\n\n");
@@ -280,7 +287,7 @@ bool RefreshCachedFile(Socket& sock, string hash, string fname)
 	if(!g_cache->IsCached(hash))
 	{
 		//Ask for the file
-		LogDebug("Source file %s (%s) is not in cache yet\n", fname.c_str(), hash.c_str());
+		//LogDebug("Source file %s (%s) is not in cache yet\n", fname.c_str(), hash.c_str());
 		string edat;
 		if(!GetRemoteFileByHash(sock, g_clientSettings->GetServerHostname(), hash, edat))
 			return false;
@@ -370,9 +377,15 @@ bool DoScanDependencies(
 	set<BuildFlag>& libFlags,
 	DependencyResults* replym)
 {
+	LogDebug("DoScanDependencies for %s\n", aname.c_str());
+	LogIndenter li;
+
 	//Run the scanner proper
 	while(true)
 	{
+		LogDebug("Iteration start\n");
+		LogIndenter li;
+
 		set<string> deps;
 		map<string, string> hashes;
 		set<string> missingFiles;
@@ -393,27 +406,51 @@ bool DoScanDependencies(
 			return false;
 		}
 
+		//Make sure every dependency we asked for is actually on disk!
+		//If the scan results were cached, some of them may not be.
+		//Note that magic system paths don't exist clientside, so skip them as false positives
+		set<string> missingDeps;
+		for(auto d : deps)
+		{
+			string dc = d;
+			if(!CanonicalizePathThatMightNotExist(dc))
+			{
+				LogError("Couldn't canonicalize %s\n", d.c_str());
+				return false;
+			}
+			if( !DoesFileExist(dc) && (dc.find("__sys") == string::npos) )
+				missingDeps.emplace(dc);
+		}
+		if(!GrabMissingDependencies(sock, missingDeps, output))
+			return false;
+
 		//If the scan found files we're missing, ask for them!
 		if(!missingFiles.empty())
 		{
+			LogDebug("Finding missing files for %s\n", aname.c_str());
+
 			//Get the files
 			if(!GrabMissingDependencies(sock, missingFiles, output))
 				return false;
 
 			//Scan each of the files we downloaded to see if they pulled in more stuff
-			//This is not an 100% accurate scan (since we aren't using any #define's provided by the parent file
+			//This is not an 100% accurate scan (since we aren't using any #define's provided by the parent file)
 			//but lets us pre-fetch some stuff quickly.
 			for(auto f : missingFiles)
 			{
+				//Run the scan
+				DependencyResults ignored;
+				set<BuildFlag> ignoredLibFlags;
+				string ignoredOutput;
 				if(!DoScanDependencies(
 					sock,
 					chain,
 					flags,
 					arch,
 					g_builddir + "/" + f,
-					output,
-					libFlags,
-					replym))
+					ignoredOutput,
+					ignoredLibFlags,
+					&ignored))
 				{
 					return false;
 				}
@@ -533,7 +570,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(auto it : sources)
 	{
 		string fname = it.first;
-		LogDebug("source %s\n", fname.c_str());
+		//LogDebug("source %s\n", fname.c_str());
 		if(!GrabSourceFile(sock, fname, it.second))
 			return;
 		fnames.emplace(g_builddir + "/" + fname);
