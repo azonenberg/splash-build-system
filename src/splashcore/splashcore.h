@@ -179,7 +179,7 @@ bool PutFileContents(std::string path, std::string data);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Helpers for commonly used network transactions
 
-bool ConnectToServer(Socket& sock, ClientHello::ClientType type);
+bool ConnectToServer(Socket& sock, ClientHello::ClientType type, std::string hostname_suffix = "");
 
 bool GetRemoteFileByHash(Socket& sock, std::string hostname, std::string hash, std::string& content);
 bool ProcessContentRequest(Socket& s, std::string remote, SplashMsg& msg);

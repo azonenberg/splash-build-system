@@ -642,7 +642,7 @@ string sha256_file(string path)
 /**
 	@brief Connects to the server and sends the hello transactions
  */
-bool ConnectToServer(Socket& sock, ClientHello::ClientType type)
+bool ConnectToServer(Socket& sock, ClientHello::ClientType type, string hostname_suffix)
 {
 	//Connect to the server
 	LogVerbose("Connecting to server...\n");
@@ -691,7 +691,7 @@ bool ConnectToServer(Socket& sock, ClientHello::ClientType type)
 	chim->set_magic(SPLASH_PROTO_MAGIC);
 	chim->set_version(SPLASH_PROTO_VERSION);
 	chim->set_type(type);
-	chim->set_hostname(ShellCommand("hostname", true));
+	chim->set_hostname(ShellCommand("hostname", true) + hostname_suffix);
 	chim->set_uuid(g_clientSettings->GetUUID());
 	if(!SendMessage(sock, chi))
 		return false;
