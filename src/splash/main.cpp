@@ -51,7 +51,7 @@ int ProcessListClientsCommand(Socket& s, const vector<string>& args);
 int ProcessListConfigsCommand(Socket& s, const vector<string>& args);
 int ProcessListTargetsCommand(Socket& s, const vector<string>& args, bool pretty);
 int ProcessListToolchainsCommand(Socket& s, const vector<string>& args);
-int ProcessDumpGraphCommand(Socket& s, const vector<string>& args);
+int ProcessDumpGraphCommand(Socket& s, const vector<string>& args, bool suppressSystemIncludes = true);
 
 string GetShortHash(string hash);
 
@@ -148,6 +148,8 @@ int main(int argc, char* argv[])
 		return ProcessListTargetsCommand(sock, args, false);
 	else if(cmd == "list-toolchains")
 		return ProcessListToolchainsCommand(sock, args);
+	else
+		LogError("Unknown command \"%s\"", cmd.c_str());
 
 	//Clean up and finish
 	delete g_cache;
@@ -623,7 +625,7 @@ int ProcessListArchesCommand(Socket& s, const vector<string>& args)
 /**
 	@brief Handles "splash dump-graph"
  */
-int ProcessDumpGraphCommand(Socket& s, const vector<string>& args)
+int ProcessDumpGraphCommand(Socket& s, const vector<string>& args, bool suppressSystemIncludes)
 {
 	//Sanity check
 	if(args.size() != 0)
@@ -653,13 +655,34 @@ int ProcessDumpGraphCommand(Socket& s, const vector<string>& args)
 	LogNotice("rankdir = LR;\n");
 	LogNotice("dpi = 200;\n");
 
-	//and process it
+	//Make a list of nodes being hidden
 	auto lt = msg.nodelist();
+	set<string> hiddenNodes;
+	if(suppressSystemIncludes)
+	{
+		for(int i=0; i<lt.infos_size(); i++)
+		{
+			auto node = lt.infos(i);
+			auto path = node.path();
+			auto hash = node.hash();
+
+			//See if we're hiding this node
+			if(path.find("__sysinclude__") != string::npos)
+				hiddenNodes.emplace(hash);
+		}
+	}
+
+	//and process it
 	for(int i=0; i<lt.infos_size(); i++)
 	{
 		auto node = lt.infos(i);
 		auto path = node.path();
-		auto hash = GetShortHash(node.hash());
+		auto rawhash = node.hash();
+		auto hash = GetShortHash(rawhash);
+
+		//If we're hiding the node, don't even show it
+		if(hiddenNodes.find(rawhash) != hiddenNodes.end())
+			continue;
 
 		string state = "invalid";
 		switch(node.state())
@@ -681,22 +704,32 @@ int ProcessDumpGraphCommand(Socket& s, const vector<string>& args)
 		}
 
 		//Dump the node name info
-		string label = "<table cellspacing=\"0\">";
-		label += string("<tr><td><b>Path</b></td><td>") + path + "</td></tr>";
-		label += string("<tr><td><b>Hash</b></td><td>") + node.hash() + "</td></tr>";
-		label += string("<tr><td><b>State</b></td><td>") + state + "</td></tr>";
-		label += string("<tr><td><b>Arch</b></td><td>") + node.arch() + "</td></tr>";
+		string label = "<table cellspacing=\"0\">\n";
+		label += string("<tr><td><b>Path</b></td><td>") + path + "</td></tr>\n";
+		label += string("<tr><td><b>Hash</b></td><td>") + node.hash() + "</td></tr>\n";
+		label += string("<tr><td><b>State</b></td><td>") + state + "</td></tr>\n";
+		label += string("<tr><td><b>Arch</b></td><td>") + node.arch() + "</td></tr>\n";
 		if(node.script() != "")
-			label += string("<tr><td><b>Script</b></td><td>") + node.script() + "</td></tr>";
+			label += string("<tr><td><b>Script</b></td><td>") + node.script() + "</td></tr>\n";
 		if(node.toolchain() != "")
-			label += string("<tr><td><b>Toolchain</b></td><td>") + node.toolchain() + "</td></tr>";
-		label += string("<tr><td><b>Config</b></td><td>") + node.config() + "</td></tr>";
-		label += "</table>";
+			label += string("<tr><td><b>Toolchain</b></td><td>") + node.toolchain() + "</td></tr>\n";
+		label += string("<tr><td><b>Config</b></td><td>") + node.config() + "</td></tr>\n";
+		label += "</table>\n";
+
+		//Create the actual node
 		LogNotice("\"%s\" [shape=none, margin=0, label=<%s>];\n", hash.c_str(), label.c_str());
 
 		//Dump our edges
 		for(int j=0; j<node.deps_size(); j++)
-			LogNotice("\"%s\" -> \"%s\";\n", hash.c_str(), GetShortHash(node.deps(j)).c_str());
+		{
+			string dephash = node.deps(j);
+
+			//If it points to a hidden node, don't show it
+			if(hiddenNodes.find(dephash) != hiddenNodes.end())
+				continue;
+
+			LogNotice("\"%s\" -> \"%s\";\n", hash.c_str(), GetShortHash(dephash).c_str());
+		}
 	}
 
 	LogNotice("}\n");
