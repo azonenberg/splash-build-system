@@ -6,7 +6,7 @@ set( LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
 set(EXTRA_WARNINGS "-Wcast-align -Winit-self -Wmissing-declarations")
 set(EXTRA_WARNINGS "${EXTRA_WARNINGS} -Wswitch -Wwrite-strings ")
-set( CMAKE_CXX_FLAGS "-Wall -Wextra ${EXTRA_WARNINGS} -std=c++11 -fPIC -shared-libgcc -ggdb")
+set( CMAKE_CXX_FLAGS "-Wall -Wextra ${EXTRA_WARNINGS} -std=c++11 -fPIC -shared-libgcc -ggdb -O2")
 set( CMAKE_LINK_FLAGS "-ggdb")
 
 #Search for Google protocol buffers
