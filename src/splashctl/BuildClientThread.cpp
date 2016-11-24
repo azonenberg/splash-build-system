@@ -200,7 +200,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
  */
 bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& ok)
 {
-	//LogDebug("[%7.3f] BuildClientThread ProcessScanJob\n", g_scheduler->GetDT());
+	//LogDebug("[%7.3f] ProcessScanJob on %s\n", g_scheduler->GetDT(), hostname.c_str());
 
 	//Grab the job settings
 	string chain = job->GetToolchain();
