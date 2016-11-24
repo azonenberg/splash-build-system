@@ -68,6 +68,7 @@ public:
 
 	virtual ~BuildGraphNode();
 
+	void StartFinalization();
 	void Finalize();
 
 	/**
@@ -183,6 +184,7 @@ public:
 
 protected:
 	virtual void DoFinalize() =0;
+	virtual void DoStartFinalization();
 
 	//Our mutex (need to be able to lock when already locked)
 	std::recursive_mutex m_mutex;
@@ -256,6 +258,9 @@ protected:
 
 	/// @brief The job we currently have pending to build us
 	Job* m_job;
+
+	/// @brief Indicates that this node has started the finalization process
+	bool m_finalizationStarted;
 
 	/// @brief Indicates that this node has been finalized.
 	bool m_finalized;

@@ -49,6 +49,7 @@ public:
 
 protected:
 	virtual void DoFinalize();
+	virtual void DoStartFinalization();
 
 	void UpdateHash();
 

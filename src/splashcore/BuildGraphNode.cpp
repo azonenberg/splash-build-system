@@ -42,6 +42,7 @@ using namespace std;
 BuildGraphNode::BuildGraphNode()
 	: m_ref(false)
 	, m_job(NULL)
+	, m_finalizationStarted(false)
 	, m_finalized(false)
 {
 	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
@@ -71,6 +72,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_invalidInput(false)
 	, m_usage(usage)
 	, m_job(NULL)
+	, m_finalizationStarted(false)
 	, m_finalized(false)
 {
 }
@@ -98,6 +100,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_invalidInput(false)
 	, m_usage(usage)
 	, m_job(NULL)
+	, m_finalizationStarted(false)
 	, m_finalized(false)
 {
 	//Look up the hash of our toolchain
@@ -132,6 +135,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_path(path)
 	, m_usage(usage)
 	, m_job(NULL)
+	, m_finalizationStarted(false)
 	, m_finalized(false)
 {
 	//Ignore the toolchain and arches sections, they're already taken care of
@@ -178,9 +182,34 @@ BuildGraphNode::~BuildGraphNode()
 }
 
 /**
+	@brief Begin finalizing the node
+
+	This involves kicking off scan jobs, etc but does not block.
+ */
+void BuildGraphNode::StartFinalization()
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//If we already got scanned, nothing to do
+	if(m_finalizationStarted)
+		return;
+	m_finalizationStarted = true;
+
+	//See if we are in the working copy.
+	//If we're not pointed to by the WC then we're an old version and should NOT be updated
+	//(since we're probably about to get GC'd)
+	if(m_hash != m_graph->GetWorkingCopy()->GetFileHash(GetFilePath()))
+		return;
+
+	//Go tell the derived class to prep scan jobs
+	DoStartFinalization();
+}
+
+/**
 	@brief Finalize this node
 
-	This involves running all dependency scans, etc. as well as computing the node's hash.
+	This involves running all dependency scans, etc. as well as computing the node's hash. Blocks until scans
+	have finished.
  */
 void BuildGraphNode::Finalize()
 {
@@ -192,18 +221,31 @@ void BuildGraphNode::Finalize()
 	if(m_hash != m_graph->GetWorkingCopy()->GetFileHash(GetFilePath()))
 		return;
 
-	string old_hash = m_hash;
+	//If nobody started the scan jobs etc, do that now
+	if(!m_finalizationStarted)
+		StartFinalization();
 
+	//Block until finalization is done
+	string old_hash = m_hash;
 	if(!m_finalized)
 	{
 		DoFinalize();
 		m_graph->FinalizeCallback(this, old_hash);
 	}
-
 	m_finalized = true;
 
 	//Update the records for us in the working copy
 	m_graph->GetWorkingCopy()->UpdateFile(GetFilePath(), m_hash, false, false);
+}
+
+/**
+	@brief Default implementation.
+
+	Not declared pure virtual since many nodes won't need any heavy lifting (blocking is OK).
+	All nodes that push scan jobs out to the cluster should take care of that here, though.
+ */
+void BuildGraphNode::DoStartFinalization()
+{
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

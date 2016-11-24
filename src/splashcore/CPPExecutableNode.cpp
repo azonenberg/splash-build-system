@@ -117,6 +117,16 @@ CPPExecutableNode::CPPExecutableNode(
 	}
 }
 
+/**
+	@brief Create all of our object files and kick off the dependency scans for them
+ */
+void CPPExecutableNode::DoStartFinalization()
+{
+}
+
+/**
+	@brief Calculate our final hash etc
+ */
 void CPPExecutableNode::DoFinalize()
 {
 	//LogDebug("DoFinalize for %s\n", GetFilePath().c_str());
