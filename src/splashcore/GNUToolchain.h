@@ -85,6 +85,15 @@ protected:
 	std::string FlagToString(BuildFlag flag);
 	bool VerifyFlags(std::string triplet);
 
+	bool FindLibraries(
+		Toolchain* chain,
+		std::string triplet,
+		std::set<BuildFlag> flags,
+		std::set<std::string>& foundpaths,
+		std::set<std::string>& foundlibNames,
+		std::set<BuildFlag>& libflags_in,
+		std::string& output);
+
 	/**
 		@brief Virtual include path we use for system include files.
 

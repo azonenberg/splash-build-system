@@ -381,99 +381,12 @@ bool GNUToolchain::ScanDependencies(
 	string aflags = m_archflags[triplet];
 	auto apath = m_virtualSystemIncludePath[triplet];
 
-	//Create a temporary directory to work in
-	char base[] = "/tmp/splash_XXXXXX";
-	string tmpdir = mkdtemp(base);
-
-	//Create a temporary C/C++ file to build
-	string cfn = tmpdir + "/test.c";
-	FILE* fp = fopen(cfn.c_str(), "w");
-	fprintf(fp, "int main(){return 0;}\n");
-	fclose(fp);
-
 	//Search for any library flags
 	set<string> foundpaths;
 	set<string> foundlibNames;
 	set<BuildFlag> libflags_in;
-	for(auto f : flags)
-	{
-		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
-			continue;
-
-		string libbase = f.GetArgs();
-		libflags_in.emplace(f);
-
-		//If we have a cached result from this library, don't scan for it again
-		pair<string, string> index(triplet, libbase);
-		if(m_libpaths.find(index) != m_libpaths.end())
-		{
-			string path = m_libpaths[index];
-
-			//If the cache says "not found", nothing to do
-			if(path == "")
-				continue;
-
-			//We found it, record the results
-			foundlibNames.emplace(libbase);
-			foundpaths.emplace(path);
-		}
-
-		//Not in cache, have to search
-		else
-		{
-			//Get library file name
-			//TODO: search static libraries too?
-			string libname = libpre + libbase + libsuf;
-			if(!ValidatePath(libname))
-			{
-				char tmp[1024];
-				snprintf(tmp, sizeof(tmp),
-					"Library path %s was malformed\n",
-					libname.c_str());
-				output += tmp;
-				return false;
-			}
-
-			//Use the compiler to find it
-			string fpath;
-			if(0 != ShellCommand(exe + " " + aflags + " --print-file-name=" + libname, fpath))
-			{
-				char tmp[1024];
-				snprintf(tmp, sizeof(tmp),
-					"Failed to search for library %s\n",
-					libname.c_str());
-				output += tmp;
-				return false;
-			}
-			while(isspace(fpath[fpath.length()-1]))
-				fpath.resize(fpath.length() - 1);
-
-			//See if the file exists. GCC will print a path even if it doesn't!
-			if(!DoesFileExist(fpath))
-			{
-				m_libpaths[index] = "";
-				continue;
-			}
-
-			//We're good, find the actual path
-			fpath = CanonicalizePath(fpath);
-
-			//At this point we know the library exists, but we don't yet know if it's compatible
-			//with our selected architecture.
-			//Do a test compile to find out
-			string ignored;
-			if(0 != ShellCommand(exe + " " + aflags + " -o /dev/null " + cfn + " " + fpath, ignored))
-			{
-				m_libpaths[index] = "";
-				continue;
-			}
-
-			//Record our results
-			m_libpaths[index] = fpath;
-			foundlibNames.emplace(libbase);
-			foundpaths.emplace(fpath);
-		}
-	}
+	if(!FindLibraries(chain, triplet, flags, foundpaths, foundlibNames, libflags_in, output))
+		return false;
 
 	//Remove all library-related flags from the list
 	for(auto f : libflags_in)
@@ -532,10 +445,6 @@ bool GNUToolchain::ScanDependencies(
 		flags.emplace(BuildFlag(flagname));
 		libFlags.emplace(BuildFlag(flagname));
 	}
-
-	//Clean up temp files
-	unlink(cfn.c_str());
-	rmdir(base);
 
 	//Make the full scan command line
 	string cmdline = exe + " " + aflags + " -M -MG ";
@@ -694,6 +603,121 @@ bool GNUToolchain::ScanDependencies(
 	for(auto it : m_timesScanned)
 		LogDebug("%-80s: %d\n", it.first.c_str(), it.second);
 	*/
+
+	return true;
+}
+
+/**
+	@brief Search for any libraries mentioned in our flags
+ */
+bool GNUToolchain::FindLibraries(
+	Toolchain* chain,
+	string triplet,
+	set<BuildFlag> flags,
+	set<string>& foundpaths,
+	set<string>& foundlibNames,
+	set<BuildFlag>& libflags_in,
+	string& output)
+{
+	//Pull out some properties we need
+	string exe = chain->GetBasePath();
+	string libpre = chain->GetSharedLibraryPrefix();
+	string libsuf = chain->GetSharedLibrarySuffix();
+	string aflags = m_archflags[triplet];
+
+	//Create a temporary directory to work in
+	char base[] = "/tmp/splash_XXXXXX";
+	string tmpdir = mkdtemp(base);
+
+	//Create a temporary C/C++ file to build
+	string cfn = tmpdir + "/test.c";
+	FILE* fp = fopen(cfn.c_str(), "w");
+	fprintf(fp, "int main(){return 0;}\n");
+	fclose(fp);
+
+	for(auto f : flags)
+	{
+		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
+			continue;
+
+		string libbase = f.GetArgs();
+		libflags_in.emplace(f);
+
+		//If we have a cached result from this library, don't scan for it again
+		pair<string, string> index(triplet, libbase);
+		if(m_libpaths.find(index) != m_libpaths.end())
+		{
+			string path = m_libpaths[index];
+
+			//If the cache says "not found", nothing to do
+			if(path == "")
+				continue;
+
+			//We found it, record the results
+			foundlibNames.emplace(libbase);
+			foundpaths.emplace(path);
+		}
+
+		//Not in cache, have to search
+		else
+		{
+			//Get library file name
+			//TODO: search static libraries too?
+			string libname = libpre + libbase + libsuf;
+			if(!ValidatePath(libname))
+			{
+				char tmp[1024];
+				snprintf(tmp, sizeof(tmp),
+					"Library path %s was malformed\n",
+					libname.c_str());
+				output += tmp;
+				return false;
+			}
+
+			//Use the compiler to find it
+			string fpath;
+			if(0 != ShellCommand(exe + " " + aflags + " --print-file-name=" + libname, fpath))
+			{
+				char tmp[1024];
+				snprintf(tmp, sizeof(tmp),
+					"Failed to search for library %s\n",
+					libname.c_str());
+				output += tmp;
+				return false;
+			}
+			while(isspace(fpath[fpath.length()-1]))
+				fpath.resize(fpath.length() - 1);
+
+			//See if the file exists. GCC will print a path even if it doesn't!
+			if(!DoesFileExist(fpath))
+			{
+				m_libpaths[index] = "";
+				continue;
+			}
+
+			//We're good, find the actual path
+			fpath = CanonicalizePath(fpath);
+
+			//At this point we know the library exists, but we don't yet know if it's compatible
+			//with our selected architecture.
+			//Do a test compile to find out
+			string ignored;
+			if(0 != ShellCommand(exe + " " + aflags + " -o /dev/null " + cfn + " " + fpath, ignored))
+			{
+				m_libpaths[index] = "";
+				continue;
+			}
+
+			//Record our results
+			m_libpaths[index] = fpath;
+			foundlibNames.emplace(libbase);
+			foundpaths.emplace(fpath);
+		}
+	}
+
+	//Clean up temp files
+	unlink(cfn.c_str());
+	rmdir(base);
 
 	return true;
 }
