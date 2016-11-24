@@ -43,16 +43,23 @@ public:
 		std::string path,
 		std::string toolchain,
 		std::string script,
-		std::set<BuildFlag> flags,
-		std::set<std::string>& libdeps,
-		std::set<BuildFlag>& libflags
+		std::set<BuildFlag> flags
 	);
 	virtual ~CPPObjectNode();
+
+	void GetLibraryScanResults(
+		std::set<std::string>& libdeps,
+		std::set<BuildFlag>& libflags);
 
 protected:
 	virtual void DoFinalize();
 
 	std::string m_errors;
+
+	DependencyScanJob* m_scanJob;
+
+	std::set<std::string> m_libdeps;
+	std::set<BuildFlag> m_libflags;
 };
 
 #endif

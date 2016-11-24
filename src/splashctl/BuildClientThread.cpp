@@ -109,13 +109,19 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		g_nodeManager->AddToolchain(id, toolchain, moreToolchains);
 	}
 
+	double lastJob = -1;
 	while(true)
 	{
 		//See if we have any scan jobs to process
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
-			//LogDebug("[%7.3f] BuildClientThread got job\n", g_scheduler->GetDT());
+			double dt = 0;
+			if(lastJob > 0)
+				dt = GetTime() - lastJob;
+			lastJob = GetTime();
+			LogDebug("[%7.3f] BuildClientThread %s got job (idle for %.3f)\n",
+				g_scheduler->GetDT(), hostname.c_str(), dt);
 
 			//If the job was canceled by dependencies, we cannot run it (ever)
 			if(djob->IsCanceledByDeps())
@@ -140,6 +146,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			{
 				djob->SetDone(ok);
 				djob->Unref();
+				LogDebug("[%7.3f] Job completed\n", g_scheduler->GetDT());
 				continue;
 			}
 
@@ -189,6 +196,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 
 		//Wait 50 ms for more work.
 		//This shouldn't hurt performance much as we only get here when the run queue is empty.
+		//LogDebug("Run queue (for %s) is empty, sleeping...\n", hostname.c_str());
 		usleep(50 * 1000);
 	}
 }

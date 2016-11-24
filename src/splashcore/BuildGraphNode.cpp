@@ -44,6 +44,10 @@ BuildGraphNode::BuildGraphNode()
 	, m_job(NULL)
 	, m_finalized(false)
 {
+	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "%p", this);
+	m_hash = sha256(tmp);
 }
 
 /**
@@ -98,6 +102,11 @@ BuildGraphNode::BuildGraphNode(
 {
 	//Look up the hash of our toolchain
 	m_toolchainHash = g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
+
+	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "%p", this);
+	m_hash = sha256(tmp);
 }
 
 /**
@@ -151,6 +160,11 @@ BuildGraphNode::BuildGraphNode(
 
 	//Look up the hash of our toolchain
 	m_toolchainHash = g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
+
+	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "%p", this);
+	m_hash = sha256(tmp);
 }
 
 BuildGraphNode::~BuildGraphNode()

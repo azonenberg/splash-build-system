@@ -122,6 +122,9 @@ double GetTime();
 #include "BuildGraph.h"
 #include "BuildGraphNode.h"
 
+#include "BuildJob.h"
+#include "DependencyScanJob.h"
+
 #include "SourceFileNode.h"
 #include "SystemLibraryNode.h"
 
@@ -133,9 +136,6 @@ double GetTime();
 #include "WorkingCopy.h"
 
 #include "NodeManager.h"
-
-#include "BuildJob.h"
-#include "DependencyScanJob.h"
 #include "Scheduler.h"
 
 #include "ClientSettings.h"

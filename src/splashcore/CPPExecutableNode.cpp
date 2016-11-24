@@ -115,11 +115,6 @@ CPPExecutableNode::CPPExecutableNode(
 		graph->AddNode(src);
 		m_sourcenodes.emplace(src);
 	}
-
-	//Set initial hash to something bogus just so we can be unique in the graph before finalizing
-	char tmp[128];
-	snprintf(tmp, sizeof(tmp), "%p", this);
-	m_hash = sha256(tmp);
 }
 
 void CPPExecutableNode::DoFinalize()
@@ -135,6 +130,7 @@ void CPPExecutableNode::DoFinalize()
 	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
 
 	//We have source nodes. Create the object nodes.
+	set<CPPObjectNode*> objects;
 	for(auto s : m_sourcenodes)
 	{
 		//Get the output file name
@@ -149,23 +145,22 @@ void CPPExecutableNode::DoFinalize()
 		//Create a test node first to compute the hash.
 		//If another node with that hash already exists, delete it and use the old node instead.
 		//TODO: more efficient way of doing this? cache dependencies and do simpler parse or something?
-		BuildGraphNode* obj = new CPPObjectNode(
+		auto obj = new CPPObjectNode(
 			m_graph,
 			m_arch,
 			src,
 			fname,
 			m_toolchain,
 			m_scriptpath,
-			compileFlags,
-			m_libdeps,
-			m_libflags);
+			compileFlags);
+		objects.emplace(obj);
 
 		//If we have a node for this hash already, delete it and use the existing one
 		string h = obj->GetHash();
 		if(m_graph->HasNodeWithHash(h))
 		{
 			delete obj;
-			obj = m_graph->GetNodeWithHash(h);
+			obj = dynamic_cast<CPPObjectNode*>(m_graph->GetNodeWithHash(h));
 		}
 
 		//It's new, keep it and add to the graph
@@ -179,6 +174,11 @@ void CPPExecutableNode::DoFinalize()
 		//Add the object file to our working copy
 		wc->UpdateFile(fname, h, false, false);
 	}
+
+	//Update libdeps and libflags
+	//TODO: Can we do this per executable, and not separately for each object?
+	for(auto obj : objects)
+		obj->GetLibraryScanResults(m_libdeps, m_libflags);
 
 	//Collect the linker flags
 	set<BuildFlag> linkflags;

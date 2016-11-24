@@ -41,15 +41,15 @@ CPPObjectNode::CPPObjectNode(
 	string path,
 	string toolchain,
 	string script,
-	set<BuildFlag> flags,
+	set<BuildFlag> flags/*,
 	set<string>& libdeps,
-	set<BuildFlag>& libflags)
+	set<BuildFlag>& libflags*/)
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, fname, path, flags)
 {
 	m_script = script;
 
-	LogDebug("Creating CPPObjectNode %s (from src %s)\nfor arch %s, toolchain %s\n",
-		path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
+	LogDebug("[%6.3f] Creating CPPObjectNode %s (from src %s)\nfor arch %s, toolchain %s\n",
+		g_scheduler->GetDT(), path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
 	LogIndenter li;
 
 	//Add an automatic dependency for the source file itself
@@ -62,19 +62,46 @@ CPPObjectNode::CPPObjectNode(
 
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
-	//TODO: handle generated headers, etc
 	//If the scan fails, declare us un-buildable
-	set<string> deps;
-	set<BuildFlag> foundflags;
-	if(!g_scheduler->ScanDependencies(
+	m_scanJob = g_scheduler->ScanDependenciesNonblocking(
 		fname,
 		arch,
 		toolchain,
 		flags,
-		graph->GetWorkingCopy(),
-		deps,
-		foundflags,
-		m_errors))
+		graph->GetWorkingCopy());
+	if(m_scanJob == NULL)
+	{
+		m_invalidInput = true;
+	}
+}
+
+CPPObjectNode::~CPPObjectNode()
+{
+}
+
+/**
+	@brief Get the results of our library search
+ */
+void CPPObjectNode::GetLibraryScanResults(
+	set<string>& libdeps,
+	set<BuildFlag>& libflags)
+{
+	Finalize();
+
+	for(auto d : m_libdeps)
+		libdeps.emplace(d);
+	for(auto f : m_libflags)
+		libflags.emplace(f);
+}
+
+void CPPObjectNode::DoFinalize()
+{
+	auto wc = m_graph->GetWorkingCopy();
+
+	//Block until the scan completes
+	set<string> deps;
+	set<BuildFlag> foundflags;
+	if(!g_scheduler->BlockOnScanResults(m_scanJob, wc, deps, foundflags, m_errors))
 	{
 		m_invalidInput = true;
 	}
@@ -93,7 +120,7 @@ CPPObjectNode::CPPObjectNode(
 		string osuf;
 		{
 			lock_guard<NodeManager> lock(*g_nodeManager);
-			auto chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
+			auto chain = g_nodeManager->GetAnyToolchainForName(m_arch, m_toolchain);
 			libpre = chain->GetSharedLibraryPrefix();
 			shlibsuf = chain->GetSharedLibrarySuffix();
 			statsuf = chain->GetStaticLibrarySuffix();
@@ -102,7 +129,7 @@ CPPObjectNode::CPPObjectNode(
 
 		//Go over the list of libraries we asked for and remove any optional ones we don't have
 		//TODO: export library set to caller for link stage?
-		for(auto f : flags)
+		for(auto f : m_flags)
 		{
 			if(f.GetType() != BuildFlag::TYPE_LIBRARY)
 				continue;
@@ -135,8 +162,8 @@ CPPObjectNode::CPPObjectNode(
 			//If we DID find it, add it as a dependency for the executable
 			else
 			{
-				libdeps.emplace(libpath);
-				libflags.emplace(f);
+				m_libdeps.emplace(libpath);
+				m_libflags.emplace(f);
 
 				//REMOVE the library from OUR dependencies though, no point in pulling it down when compiling
 				deps.erase(libpath);
@@ -147,7 +174,7 @@ CPPObjectNode::CPPObjectNode(
 				{
 					//LogDebug("[1] Creating SystemLibraryNode %s\n  with hash %s, graph %p\n",
 					//	libpath.c_str(), hash.c_str(), graph);
-					m_graph->AddNode(new SystemLibraryNode(graph, libpath, hash));
+					m_graph->AddNode(new SystemLibraryNode(m_graph, libpath, hash));
 				}
 			}
 		}
@@ -162,7 +189,7 @@ CPPObjectNode::CPPObjectNode(
 				continue;
 			}
 
-			libdeps.emplace(d);
+			m_libdeps.emplace(d);
 			//LogDebug("found object/library dep %s\n", d.c_str());
 
 			//If it wasn't already in the graph, create a node for it
@@ -171,7 +198,7 @@ CPPObjectNode::CPPObjectNode(
 			{
 				//LogDebug("[2] Creating SystemLibraryNode %s\n  with hash %s, graph %p\n",
 				//	d.c_str(), hash.c_str(), graph);
-				m_graph->AddNode(new SystemLibraryNode(graph, d, hash));
+				m_graph->AddNode(new SystemLibraryNode(m_graph, d, hash));
 			}
 		}
 
@@ -183,24 +210,23 @@ CPPObjectNode::CPPObjectNode(
 			//See what type of file we got as a dependency.
 
 			//Create a new node if needed
-			if(!graph->HasNodeWithHash(h))
-				graph->AddNode(new SourceFileNode(graph, d, h));
+			if(!m_graph->HasNodeWithHash(h))
+				m_graph->AddNode(new SourceFileNode(m_graph, d, h));
 
 			//Either way, we have the node now. Add it to our list of inputs.
 			m_dependencies.emplace(d);
 			//LogDebug("Adding %s as dependency to %s\n", d.c_str(), GetFilePath().c_str());
 		}
 
-		/*
+
 		//Dump the output
-		for(auto d : m_dependencies)
-		{
-			auto h = wc->GetFileHash(d);
-			LogDebug("dependency %s (%s)\n",
-				d.c_str(),
-				h.c_str());
-		}
-		*/
+		//for(auto d : m_dependencies)
+		//{
+		//	auto h = wc->GetFileHash(d);
+		//	LogDebug("dependency %s (%s)\n",
+		//		d.c_str(),
+		//		h.c_str());
+		//}
 	}
 
 	//DEBUG: Dump flag
@@ -230,13 +256,4 @@ CPPObjectNode::CPPObjectNode(
 	//so we can query the result in the cache later on.
 	if(m_invalidInput)
 		g_cache->AddFailedFile(GetFilePath(), m_hash, m_errors);
-}
-
-CPPObjectNode::~CPPObjectNode()
-{
-}
-
-void CPPObjectNode::DoFinalize()
-{
-
 }

@@ -47,11 +47,15 @@ public:
 	virtual ~Scheduler();
 
 	//Build graph interface
-	bool ScanDependencies(
+	DependencyScanJob* ScanDependenciesNonblocking(
 		std::string fname,
 		std::string arch,
 		std::string toolchain,
 		std::set<BuildFlag> flags,
+		WorkingCopy* wc);
+
+	bool BlockOnScanResults(
+		DependencyScanJob* job,
 		WorkingCopy* wc,
 		std::set<std::string>& deps,
 		std::set<BuildFlag>& foundflags,

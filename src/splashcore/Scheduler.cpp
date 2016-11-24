@@ -160,20 +160,16 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 // Dependency scanning
 
 /**
-	@brief Immediately schedules a dependency-scan job and blocks until it completes.
+	@brief Schedules a dependency-scan job and returns immediately after submitting it.
 
-	@return		True on a successful scan
-				False if the scan could not complete (parse error, etc
+	@return		The newly scheduled job
  */
-bool Scheduler::ScanDependencies(
+DependencyScanJob* Scheduler::ScanDependenciesNonblocking(
 	string fname,
 	string arch,
 	string toolchain,
 	set<BuildFlag> flags,
-	WorkingCopy* wc,
-	set<string>& deps,
-	set<BuildFlag>& foundflags,
-	string& errors)
+	WorkingCopy* wc)
 {
 	//If this is our first job, reset the timer for clean profiling
 	if(!m_running)
@@ -193,16 +189,16 @@ bool Scheduler::ScanDependencies(
 	//Look up the hash for the job
 	auto hash = g_nodeManager->GetToolchainHash(arch, toolchain);
 	if(hash == "")
-		return false;
+		return NULL;
 	auto chain = g_nodeManager->GetAnyToolchainForHash(hash);
 	if(chain == NULL)
-		return false;
+		return NULL;
 	//LogDebug("Compiler hash is %s (%s)\n", hash.c_str(), chain->GetVersionString().c_str());
 
 	//Find which node is supposed to run this job
 	auto id = g_nodeManager->GetGoldenNodeForToolchain(hash);
 	if(id.empty())
-		return false;
+		return NULL;
 	auto build_wc = g_nodeManager->GetWorkingCopy(id);
 	string hostname = build_wc->GetHostname();
 	//LogDebug("Golden node for this toolchain is %s (%s)\n", id.c_str(), hostname.c_str());
@@ -210,7 +206,19 @@ bool Scheduler::ScanDependencies(
 	//Create the scan job and submit it
 	DependencyScanJob* job = new DependencyScanJob(fname, wc, hash, arch, flags);
 	SubmitScanJob(id, job);
+	return job;
+}
 
+/**
+	@brief Waits for a scan job to complete, then crunches the results
+ */
+bool Scheduler::BlockOnScanResults(
+	DependencyScanJob* job,
+	WorkingCopy* wc,
+	set<string>& deps,
+	set<BuildFlag>& foundflags,
+	string& errors)
+{
 	//Block until the job is done
 	//TODO: make this more efficient
 	Job::Status status = Job::STATUS_PENDING;
