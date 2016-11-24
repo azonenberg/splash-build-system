@@ -38,7 +38,7 @@ class ClientSettings
 public:
 
 	ClientSettings();
-	ClientSettings(std::string host, int port);
+	ClientSettings(std::string host, int port, std::string uuid = "");
 
 	virtual ~ClientSettings();
 
