@@ -101,10 +101,16 @@ int main(int argc, char* argv[])
 		//We're the child process? Set up the files then exec the commands
 		if(pid == 0)
 		{
-			//We're not using stdin/out/err, so close it
-			close(STDIN_FILENO);
-			close(STDOUT_FILENO);
-			close(STDERR_FILENO);
+			//We're not using stdin/out/err, so pipe them to /dev/null
+			int hnull = open("/dev/null", O_RDWR);
+			if(hnull < 0)
+				LogFatal("couldnt open /dev/null\n");
+			if(dup2(hnull, STDIN_FILENO) < 0)
+				LogFatal("dup2 #1 failed\n");
+			if(dup2(hnull, STDOUT_FILENO) < 0)
+				LogFatal("dup2 #2 failed\n");
+			if(dup2(hnull, STDERR_FILENO) < 0)
+				LogFatal("dup2 #3 failed\n");
 
 			//Open the logfile
 			char logpath[32];
