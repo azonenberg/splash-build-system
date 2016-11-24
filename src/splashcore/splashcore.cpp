@@ -177,7 +177,7 @@ int ShellCommand(string cmd, string& stdout)
 		execl("/bin/sh", "/bin/sh", "-c", cmd.c_str(), NULL);
 
 		//If we get here, it failed
-		LogError("fork failed\n");
+		LogError("exec failed\n");
 		exit(69);
 	}
 
