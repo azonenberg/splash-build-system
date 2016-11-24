@@ -42,8 +42,6 @@ int main(int argc, char* argv[])
 	Severity console_verbosity = Severity::NOTICE;
 
 	string ctl_server;
-	int port = 49000;
-	int nodenum = 0;
 
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
@@ -66,24 +64,12 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
-		else if( (s == "--nodenum") && (i+1 < argc) )
-			nodenum = atoi(argv[++i]);
-
 		//Last arg without switch is control server.
 		//TODO: mandatory arguments to introduce these?
 		else
 			ctl_server = argv[i];
 
 	}
-	/*
-	char sworker[64];
-	snprintf(sworker, sizeof(sworker), "splashbuild-%d", nodenum);
-
-	//Set up temporary directory
-	g_tmpdir = string("/tmp/") + sworker;
-	MakeDirectoryRecursive(g_tmpdir, 0700);
-	g_builddir = g_tmpdir + "/workdir";
-	MakeDirectoryRecursive(g_builddir, 0700);
 
 	//Set up logging
 	g_log_sinks.emplace(g_log_sinks.begin(), new ColoredSTDLogSink(console_verbosity));
@@ -95,112 +81,87 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 
-	//Initialize the cache
-	//Use separate caches for each instance if we multithread for now.
-	//TODO: figure out how to share?
-	g_cache = new Cache(sworker);
+	//Create a UUID
+	string uuid = ShellCommand("uuidgen -r");
 
-	//Set up the config object from our arguments
-	g_clientSettings = new ClientSettings(ctl_server, port);
+	//Figure out how many virtual CPUs we have
+	string scount = ShellCommand("cat /proc/cpuinfo  | grep vendor_id | wc -l");
+	int cpucount = atoi(scount.c_str());
+	LogNotice("Found %d virtual CPU cores, starting workers...\n", cpucount);
 
-	//Connect to the server
-	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-	if(!ConnectToServer(sock, ClientHello::CLIENT_BUILD, string("-") + sworker))
-		return 1;
-
-	//Look for compilers
-	LogVerbose("Enumerating compilers...\n");
+	//Launch the apps
+	vector<pid_t> daemons;
+	for(int i=0; i<cpucount; i++)
 	{
-		LogIndenter li;
-		FindLinkers();
-		FindCPPCompilers();
-		FindFPGACompilers();
-	}
+		//Fork off the background process
+		pid_t pid = fork();
+		if(pid < 0)
+			LogFatal("Fork failed\n");
 
-	//Get some basic metadata about our hardware and tell the server
-	SplashMsg binfo;
-	auto binfom = binfo.mutable_buildinfo();
-	binfom->set_cpucount(atoi(ShellCommand("cat /proc/cpuinfo  | grep processor | wc -l").c_str()));
-	binfom->set_cpuspeed(atoi(ShellCommand("cat /proc/cpuinfo | grep bogo | head -n 1 | cut -d : -f 2").c_str()));
-	binfom->set_ramsize(atol(ShellCommand("cat /proc/meminfo  | grep MemTotal  | cut -d : -f 2").c_str()) / 1024);
-	binfom->set_numchains(g_toolchains.size());
-	if(!SendMessage(sock, binfo, ctl_server))
-		return 1;
-
-	//Report the toolchains we found to the server
-	for(auto it : g_toolchains)
-	{
-		auto t = it.second;
-
-		//DEBUG: Print it out
-		//t->DebugPrint();
-
-		//Send the toolchain info to the server
-		SplashMsg tadd;
-		auto madd = tadd.mutable_addcompiler();
-		madd->set_compilertype(t->GetType());
-		madd->set_versionnum((t->GetMajorVersion() << 16) |
-							(t->GetMinorVersion() << 8) |
-							(t->GetPatchVersion() << 0));
-		madd->set_hash(t->GetHash());
-		madd->set_versionstr(t->GetVersionString());
-		madd->set_exesuffix(t->GetExecutableSuffix());
-		madd->set_shlibsuffix(t->GetSharedLibrarySuffix());
-		madd->set_stlibsuffix(t->GetStaticLibrarySuffix());
-		madd->set_objsuffix(t->GetObjectSuffix());
-		madd->set_shlibprefix(t->GetSharedLibraryPrefix());
-		auto dlangs = t->GetSupportedLanguages();
-		for(auto x : dlangs)
-			madd->add_lang(x);
-		auto triplets = t->GetTargetTriplets();
-		for(auto x : triplets)
-			*madd->add_triplet() = x;
-
-		if(!SendMessage(sock, tadd, ctl_server))
-			return 1;
-	}
-
-	//Sit around and wait for stuff to come in
-	LogVerbose("\nReady\n\n");
-	while(true)
-	{
-		SplashMsg rxm;
-		if(!RecvMessage(sock, rxm))
-			return 1;
-
-		auto type = rxm.Payload_case();
-
-		switch(type)
+		//We're the child process? Set up the files then exec the commands
+		if(pid == 0)
 		{
-			//Requesting a dependency scan
-			case SplashMsg::kDependencyScan:
-				ProcessDependencyScan(sock, rxm.dependencyscan());
-				break;
+			//We're not using stdin/out/err, so close it
+			close(STDIN_FILENO);
+			close(STDOUT_FILENO);
+			close(STDERR_FILENO);
 
-			//Requesting a compile operation
-			case SplashMsg::kNodeBuildRequest:
-				ProcessBuildRequest(sock, rxm.nodebuildrequest());
-				break;
+			//Open the logfile
+			char logpath[32];
+			snprintf(logpath, sizeof(logpath), "/tmp/splashbuild-%d.log", i);
 
-			//Asking for more data
-			case SplashMsg::kContentRequestByHash:
-				if(!ProcessContentRequest(sock, g_clientSettings->GetServerHostname(), rxm))
-					return false;
-				break;
+			//Find the directory our exe is in (splashbuild should be in the same spot)
+			string launcher_path = CanonicalizePath("/proc/self/exe");
+			string splashbuild_path = GetDirOfFile(launcher_path) + "/splashbuild";
 
-			default:
-				LogDebug("Got an unknown message, ignoring it\n");
-				break;
+			//Format the node number as ascii for the argument
+			char snodenum[32];
+			snprintf(snodenum, sizeof(snodenum), "%d", i);
+
+			//Run the process
+			execl(
+				splashbuild_path.c_str(),
+				"splashbuild",
+				"--debug",
+				ctl_server.c_str(),
+				"--nodenum",
+				snodenum,
+				"--uuid",
+				uuid.c_str(),
+				"--logfile-lines",
+				logpath,
+				NULL);
+
+			//If we get here, it failed
+			LogError("exec failed\n");
+			exit(69);
 		}
+
+		//Parent process, save results
+		else
+			daemons.push_back(pid);
 	}
 
-	//clean up
-	delete g_cache;
-	for(auto x : g_toolchains)
-		delete x.second;
-	g_toolchains.clear();
-	delete g_clientSettings;
-	*/
+	//Wait for user to press a key
+	LogNotice("Build daemons running, press any key to exit...\n");
+	fflush(stdout);
+	struct termios oldt, newt;
+	tcgetattr ( STDIN_FILENO, &oldt );
+	newt = oldt;
+	newt.c_lflag &= ~( ICANON | ECHO );
+	tcsetattr ( STDIN_FILENO, TCSANOW, &newt );
+	getchar();
+	tcsetattr ( STDIN_FILENO, TCSANOW, &oldt );
+
+	//Kill the build servers
+	for(auto pid : daemons)
+	{
+		kill(pid, SIGQUIT);
+
+		int code;
+		if(waitpid(pid, &code, 0) <= 0)
+			LogError("waitpid failed\n");
+	}
 
 	return 0;
 }
@@ -208,7 +169,7 @@ int main(int argc, char* argv[])
 void ShowVersion()
 {
 	printf(
-		"SPLASH build server daemon by Andrew D. Zonenberg.\n"
+		"SPLASH build server launcher by Andrew D. Zonenberg.\n"
 		"\n"
 		"License: 3-clause BSD\n"
 		"This is free software: you are free to change and redistribute it.\n"
@@ -217,6 +178,6 @@ void ShowVersion()
 
 void ShowUsage()
 {
-	printf("Usage: splashbuild ctlserver\n");
+	printf("Usage: splashbuild-launcher ctlserver\n");
 	exit(0);
 }

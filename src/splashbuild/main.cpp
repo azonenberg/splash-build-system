@@ -75,6 +75,7 @@ int main(int argc, char* argv[])
 	string ctl_server;
 	int port = 49000;
 	int nodenum = 0;
+	string uuid;
 
 	//Parse command-line arguments
 	for(int i=1; i<argc; i++)
@@ -99,6 +100,9 @@ int main(int argc, char* argv[])
 
 		else if( (s == "--nodenum") && (i+1 < argc) )
 			nodenum = atoi(argv[++i]);
+
+		else if( (s == "--uuid") && (i+1 < argc) )
+			uuid = argv[++i];
 
 		//Last arg without switch is control server.
 		//TODO: mandatory arguments to introduce these?
@@ -132,7 +136,7 @@ int main(int argc, char* argv[])
 	g_cache = new Cache(sworker);
 
 	//Set up the config object from our arguments
-	g_clientSettings = new ClientSettings(ctl_server, port);
+	g_clientSettings = new ClientSettings(ctl_server, port, uuid);
 
 	//Connect to the server
 	Socket sock(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
