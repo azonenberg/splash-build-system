@@ -48,9 +48,9 @@ CPPObjectNode::CPPObjectNode(
 {
 	m_script = script;
 
-	LogDebug("[%6.3f] Creating CPPObjectNode %s (from src %s)\nfor arch %s, toolchain %s\n",
-		g_scheduler->GetDT(), path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
-	LogIndenter li;
+	//LogDebug("[%6.3f] Creating CPPObjectNode %s (from src %s)\nfor arch %s, toolchain %s\n",
+	//	g_scheduler->GetDT(), path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
+	//LogIndenter li;
 
 	//Add an automatic dependency for the source file itself
 	auto wc = graph->GetWorkingCopy();

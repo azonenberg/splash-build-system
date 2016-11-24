@@ -119,7 +119,6 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			double dt = 0;
 			if(lastJob > 0)
 				dt = GetTime() - lastJob;
-			lastJob = GetTime();
 			LogDebug("[%7.3f] BuildClientThread %s got job (idle for %.3f)\n",
 				g_scheduler->GetDT(), hostname.c_str(), dt);
 
@@ -147,6 +146,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 				djob->SetDone(ok);
 				djob->Unref();
 				LogDebug("[%7.3f] Job completed\n", g_scheduler->GetDT());
+				lastJob = GetTime();
 				continue;
 			}
 
@@ -154,6 +154,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			//TODO: Put it back in the queue or something fault tolerant?
 			djob->SetCanceled();
 			djob->Unref();
+			lastJob = GetTime();
 			continue;
 		}
 
@@ -391,7 +392,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 	auto path = node->GetFilePath();
 
 	LogDebug("Run build job %s\n", path.c_str());
-	LogIndenter li;
+	//LogIndenter li;
 
 	//Look up the flags
 	set<BuildFlag> flags;
@@ -476,7 +477,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 	LogDebug("Build results\n");
 
 	auto res = msg.nodebuildresults();
-	LogIndenter li;
+	//LogIndenter li;
 
 	//Look up the build job
 	BuildJob* bj = dynamic_cast<BuildJob*>(job);

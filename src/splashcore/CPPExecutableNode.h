@@ -60,6 +60,7 @@ protected:
 	std::string m_scriptpath;
 
 	std::set<BuildGraphNode*> m_sourcenodes;
+	std::set<CPPObjectNode*> m_objects;
 };
 
 #endif

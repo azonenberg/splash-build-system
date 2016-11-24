@@ -793,6 +793,8 @@ void BuildGraph::Rebuild()
 	//Finalize each node in the graph
 	//LogDebug("Finalizing nodes\n");
 	for(auto n : nodes)
+		n->StartFinalization();
+	for(auto n : nodes)
 		n->Finalize();
 
 	//Collect any garbage we generated

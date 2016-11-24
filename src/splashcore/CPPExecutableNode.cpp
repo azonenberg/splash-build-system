@@ -46,9 +46,9 @@ CPPExecutableNode::CPPExecutableNode(
 	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
 	, m_scriptpath(scriptpath)
 {
-	LogDebug("Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
-		toolchain.c_str(), path.c_str());
-	LogIndenter li;
+	//LogDebug("Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
+	//	toolchain.c_str(), path.c_str());
+	//LogIndenter li;
 
 	//Look up the type of executable we are
 	string type;
@@ -122,13 +122,6 @@ CPPExecutableNode::CPPExecutableNode(
  */
 void CPPExecutableNode::DoStartFinalization()
 {
-}
-
-/**
-	@brief Calculate our final hash etc
- */
-void CPPExecutableNode::DoFinalize()
-{
 	//LogDebug("DoFinalize for %s\n", GetFilePath().c_str());
 	//LogIndenter li;
 
@@ -140,7 +133,6 @@ void CPPExecutableNode::DoFinalize()
 	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
 
 	//We have source nodes. Create the object nodes.
-	set<CPPObjectNode*> objects;
 	for(auto s : m_sourcenodes)
 	{
 		//Get the output file name
@@ -163,7 +155,6 @@ void CPPExecutableNode::DoFinalize()
 			m_toolchain,
 			m_scriptpath,
 			compileFlags);
-		objects.emplace(obj);
 
 		//If we have a node for this hash already, delete it and use the existing one
 		string h = obj->GetHash();
@@ -178,16 +169,23 @@ void CPPExecutableNode::DoFinalize()
 			m_graph->AddNode(obj);
 
 		//Either way we have the node now. Add to our list of sources.
+		m_objects.emplace(obj);
 		m_sources.emplace(fname);
 		m_dependencies.emplace(fname);
 
 		//Add the object file to our working copy
 		wc->UpdateFile(fname, h, false, false);
 	}
+}
 
+/**
+	@brief Calculate our final hash etc
+ */
+void CPPExecutableNode::DoFinalize()
+{
 	//Update libdeps and libflags
 	//TODO: Can we do this per executable, and not separately for each object?
-	for(auto obj : objects)
+	for(auto obj : m_objects)
 		obj->GetLibraryScanResults(m_libdeps, m_libflags);
 
 	//Collect the linker flags
@@ -254,7 +252,7 @@ void CPPExecutableNode::DoFinalize()
 	//Finalize all of our dependencies
 	for(auto d : m_dependencies)
 	{
-		LogIndenter li;
+		//LogIndenter li;
 		auto n = m_graph->GetNodeWithPath(d);
 		if(n)
 		{
