@@ -465,7 +465,6 @@ bool GNUToolchain::ScanDependencies(
 		output = makerule;
 		return false;
 	}
-
 	//Parse it
 	size_t offset = makerule.find(':');
 	if(offset == string::npos)
@@ -571,8 +570,6 @@ bool GNUToolchain::ScanDependencies(
 				continue;
 			}
 		}
-
-		//TODO: Don't even read the file if we already have it in the cache?
 
 		//Add file to cache
 		string data = GetFileContents(files[i]);
