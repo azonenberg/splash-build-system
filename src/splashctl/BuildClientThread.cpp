@@ -41,6 +41,13 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Build server %s (%s) connected\n", hostname.c_str(), id.c_str());
 
+	//Set thread name
+	#ifdef _GNU_SOURCE
+	string threadname = ("BLD:") + hostname;
+	threadname.resize(15);
+	pthread_setname_np(pthread_self(), threadname.c_str());
+	#endif
+
 	//Expect a BuildInfo message
 	SplashMsg binfo;
 	if(!RecvMessage(s, binfo, hostname))
@@ -109,18 +116,20 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		g_nodeManager->AddToolchain(id, toolchain, moreToolchains);
 	}
 
-	double lastJob = -1;
+	//double lastJob = -1;
 	while(true)
 	{
 		//See if we have any scan jobs to process
 		DependencyScanJob* djob = g_scheduler->PopScanJob(id);
 		if(djob != NULL)
 		{
+			/*
 			double dt = 0;
 			if(lastJob > 0)
 				dt = GetTime() - lastJob;
 			LogDebug("[%7.3f] BuildClientThread %s got job (idle for %.3f)\n",
 				g_scheduler->GetDT(), hostname.c_str(), dt);
+			*/
 
 			//If the job was canceled by dependencies, we cannot run it (ever)
 			if(djob->IsCanceledByDeps())
@@ -145,8 +154,8 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			{
 				djob->SetDone(ok);
 				djob->Unref();
-				LogDebug("[%7.3f] Job completed\n", g_scheduler->GetDT());
-				lastJob = GetTime();
+				//LogDebug("[%7.3f] Job completed\n", g_scheduler->GetDT());
+				//lastJob = GetTime();
 				continue;
 			}
 
@@ -154,7 +163,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			//TODO: Put it back in the queue or something fault tolerant?
 			djob->SetCanceled();
 			djob->Unref();
-			lastJob = GetTime();
+			//lastJob = GetTime();
 			continue;
 		}
 
@@ -391,7 +400,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 	auto wc = node->GetGraph()->GetWorkingCopy();
 	auto path = node->GetFilePath();
 
-	LogDebug("Run build job %s\n", path.c_str());
+	LogDebug("[%6.3f] Run build job %s\n", g_scheduler->GetDT(), path.c_str());
 	//LogIndenter li;
 
 	//Look up the flags
@@ -474,8 +483,6 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
  */
 bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Job* job, bool& ok)
 {
-	LogDebug("Build results\n");
-
 	auto res = msg.nodebuildresults();
 	//LogIndenter li;
 
@@ -494,6 +501,8 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 	string fname = res.fname();
 	string dir = GetDirOfFile(fname);
 	string base = GetBasenameOfFile(fname);
+
+	LogDebug("[%6.3f] Build results (for %s)\n", g_scheduler->GetDT(), fname.c_str());
 
 	//If the build failed, add a dummy cached file with the proper ID and stdout
 	//so we can query the result in the cache later on.
@@ -524,7 +533,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 
 		//Get the full path of the file
 		ffname = dir + "/" + ffname;
-		LogDebug("Compiled file %s has hash %s\n", ffname.c_str(), hash.c_str());
+		//LogDebug("Compiled file %s has hash %s\n", ffname.c_str(), hash.c_str());
 
 		//Main node output? Add to the cache using the node's hash
 		string shash;
