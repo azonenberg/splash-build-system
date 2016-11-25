@@ -235,7 +235,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	{
 		//Some virtual files are in the source dir (generated constant tables etc)
 		//These need special treatment
-		bool in_build_dir = (f.find(bapath) != 0);
+		bool in_build_dir = (f.find(bapath) == 0);
 
 		//If the file is in a system directory, skip it
 		if(f.find("__sys") == 0)
