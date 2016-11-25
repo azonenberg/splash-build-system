@@ -235,7 +235,9 @@ void BuildGraphNode::Finalize()
 	m_finalized = true;
 
 	//Update the records for us in the working copy
-	m_graph->GetWorkingCopy()->UpdateFile(GetFilePath(), m_hash, false, false);
+	//Don't re-scan anything, it's too late to change anything by this point
+	set<string> ignored;
+	m_graph->GetWorkingCopy()->UpdateFile(GetFilePath(), m_hash, false, false, ignored);
 }
 
 /**

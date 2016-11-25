@@ -124,8 +124,10 @@ void ConstantTableNode::GenerateConstants(
 	//LogDebug("CONSTANT TABLE\n%s\n", code.c_str());
 
 	//Add it to the working copy
+	//Don't worry about dirty scripts
 	g_cache->AddFile(GetBasenameOfFile(fname), m_hash, sha256(code), code, "");
-	m_graph->GetWorkingCopy()->UpdateFile(fname, m_hash, false, false);
+	set<string> ignored;
+	m_graph->GetWorkingCopy()->UpdateFile(fname, m_hash, false, false, ignored);
 }
 
 string ConstantTableNode::GenerateConstantsCDefine(string name, map<string, uint64_t>& table, int /*width*/)

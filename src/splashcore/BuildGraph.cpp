@@ -304,7 +304,7 @@ void BuildGraph::CollectGarbage()
 	@param body			True if we should scan the body (file_config is included)
 	@param config		True if we should scan the recursive_config section
  */
-void BuildGraph::UpdateScript(string path, string hash, bool body, bool config)
+void BuildGraph::UpdateScript(string path, string hash, bool body, bool config, set<string>& dirtyScripts)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -314,20 +314,20 @@ void BuildGraph::UpdateScript(string path, string hash, bool body, bool config)
 	m_buildScriptPaths[path] = hash;
 
 	//Reload the build script (and its dependencies)
-	InternalUpdateScript(path, hash, body, config);
+	InternalUpdateScript(path, hash, body, config, dirtyScripts);
 }
 
 /**
 	@brief Reloads a build script
  */
-void BuildGraph::InternalUpdateScript(string path, string hash, bool body, bool config)
+void BuildGraph::InternalUpdateScript(string path, string hash, bool body, bool config, set<string>& dirtyScripts)
 {
 	//Delete all targets/tests declared in the file
 	InternalRemove(path);
 
 	//Read the new script and execute it
 	//Don't check if the file is in cache already, it was just updated and is thus LRU
-	ParseScript(g_cache->ReadCachedFile(hash), path, body, config);
+	ParseScript(g_cache->ReadCachedFile(hash), path, body, config, dirtyScripts);
 
 	//If we changed a script in a parent directory, go through all of our subdirectories and re-parse them
 	//since recursively inherited configuration may have changed.
@@ -350,7 +350,7 @@ void BuildGraph::InternalUpdateScript(string path, string hash, bool body, bool 
 				s.c_str());
 			LogDebug("pos=%zu dir=%s path=%s\n", pos, dir.c_str(), path.c_str());
 
-			InternalUpdateScript(s, m_buildScriptPaths[s], body, config);
+			InternalUpdateScript(s, m_buildScriptPaths[s], body, config, dirtyScripts);
 		}
 	}
 }
@@ -404,8 +404,9 @@ void BuildGraph::InternalRemove(string path)
 	@param path			Relative path of the script (for error messages etc)
 	@param body			True if we should scan the body (file_config is included)
 	@param config		True if we should scan the recursive_config section
+	@param dirtyScripts	Set of scripts that might have to be rebuilt as a result of this one changing
  */
-void BuildGraph::ParseScript(const string& script, string path, bool body, bool config)
+void BuildGraph::ParseScript(const string& script, string path, bool body, bool config, set<string>& dirtyScripts)
 {
 	//LogDebug("Loading build script %s\n", path.c_str());
 
@@ -414,7 +415,7 @@ void BuildGraph::ParseScript(const string& script, string path, bool body, bool 
 		//Read the root node
 		vector<YAML::Node> nodes = YAML::LoadAll(script);
 		for(auto node : nodes)
-			LoadYAMLDoc(node, path, body, config);
+			LoadYAMLDoc(node, path, body, config, dirtyScripts);
 	}
 	catch(YAML::ParserException exc)
 	{
@@ -429,8 +430,9 @@ void BuildGraph::ParseScript(const string& script, string path, bool body, bool 
 	@param path			Relative path of the script (for error messages etc)
 	@param body			True if we should scan the body (file_config is included)
 	@param config		True if we should scan the recursive_config section
+	@param dirtyScripts	Set of scripts that might have to be rebuilt as a result of this one changing
  */
-void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path, bool body, bool config)
+void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path, bool body, bool config, set<string>& dirtyScripts)
 {
 	for(auto it : doc)
 	{
@@ -452,7 +454,13 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path, bool body, bool confi
 
 		//Nope, just a target
 		else if(body)
+		{
 			LoadTarget(it.second, name, path);
+
+			auto& targets = GetDependentScripts(name);
+			for(auto t : targets)
+				dirtyScripts.emplace(t);
+		}
 	}
 }
 
@@ -485,7 +493,8 @@ void BuildGraph::AddNode(BuildGraphNode* node)
 
 	//Put it in the working copy
 	//Don't re-scan anything though
-	m_workingCopy->UpdateFile(node->GetFilePath(), node->GetHash(), false, false);
+	set<string> ignored;
+	m_workingCopy->UpdateFile(node->GetFilePath(), node->GetHash(), false, false, ignored);
 }
 
 /**
@@ -706,6 +715,7 @@ bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, strin
 
 	//Read the root node
 	vector<YAML::Node> nodes = YAML::LoadAll(table_yaml);
+	set<string> ignored;
 	for(auto doc : nodes)
 	{
 		for(auto it : doc)
@@ -716,9 +726,10 @@ bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, strin
 			//LogDebug("Enum %s is at %s\n", name.c_str(), opath.c_str());
 
 			//Create and add the node
+			//Do not touch any build scripts.
 			auto n = new ConstantTableNode(this, opath, name, it.second, rtpath, generator, sha256(table_yaml));
 			AddNode(n);
-			m_workingCopy->UpdateFile(opath, n->GetHash(), false, false);
+			m_workingCopy->UpdateFile(opath, n->GetHash(), false, false, ignored);
 		}
 	}
 

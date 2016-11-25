@@ -51,7 +51,7 @@ public:
 	BuildGraph(WorkingCopy* wc);
 	virtual ~BuildGraph();
 
-	void UpdateScript(std::string path, std::string hash, bool body, bool config);
+	void UpdateScript(std::string path, std::string hash, bool body, bool config, std::set<std::string>& dirtyScripts);
 	void RemoveScript(std::string path);
 
 	/**
@@ -107,12 +107,41 @@ public:
 	//Update the location of a node during rebuilding
 	void FinalizeCallback(BuildGraphNode* node, std::string old_hash);
 
+	/**
+		@brief Adds a hint that at least one target in a given build script depends on a specific library target.
+
+		This is used to force a re-scan of the dependent target as needed.
+	 */
+	void AddTargetDependencyHint(std::string libname, std::string targetscript)
+	{ m_dependentScripts[libname].emplace(targetscript); }
+
+	/**
+		@brief Get the set of build scripts that have to be re-scanned if a given target changes
+	 */
+	const std::set<std::string>& GetDependentScripts(std::string target)
+	{ return m_dependentScripts[target]; }
+
 protected:
 	void InternalRemove(std::string path);
-	void InternalUpdateScript(std::string path, std::string hash, bool body, bool config);
+	void InternalUpdateScript(
+		std::string path,
+		std::string hash,
+		bool body,
+		bool config,
+		std::set<std::string>& dirtyScripts);
 
-	void ParseScript(const std::string& script, std::string path, bool body, bool config);
-	void LoadYAMLDoc(YAML::Node& doc, std::string path, bool body, bool config);
+	void ParseScript(
+		const std::string& script,
+		std::string path,
+		bool body,
+		bool config,
+		std::set<std::string>& dirtyScripts);
+	void LoadYAMLDoc(
+		YAML::Node& doc,
+		std::string path,
+		bool body,
+		bool config,
+		std::set<std::string>& dirtyScripts);
 
 	void LoadConfig(YAML::Node& node, bool recursive, std::string path);
 	void LoadTarget(YAML::Node& node, std::string name, std::string path);
@@ -151,7 +180,7 @@ protected:
 	//Map from target name to script path
 	std::map<std::string, std::string> m_targetReverseOrigins;
 
-	//TODO: Log of configuration error messages (displayed to client when we try to build, if not empty)
+	//TODO: Log of build script parsing error messages (displayed to client when we try to build, if not empty)
 
 	//Map of toolchain names to settings for that toolchain
 	std::map<std::string, ToolchainSettings> m_toolchainSettings;
@@ -179,6 +208,11 @@ protected:
 	//Relative path for system include files
 	//One directory per toolchain (TODO: use hash instead of version+triplet?)
 	std::string m_sysIncludePath;
+
+	//Map of target names to build scripts which depend on them.
+	//Used to force a re-scan if we change e.g. a library we link to.
+	//For now this is a hint and we don't remove entries if we delete a dependency.
+	std::map<std::string, std::set<std::string> > m_dependentScripts;
 };
 
 #endif

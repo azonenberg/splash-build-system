@@ -133,6 +133,7 @@ void CPPExecutableNode::DoStartFinalization()
 	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
 
 	//We have source nodes. Create the object nodes.
+	set<string> ignored;
 	for(auto s : m_sourcenodes)
 	{
 		//Get the output file name
@@ -173,8 +174,9 @@ void CPPExecutableNode::DoStartFinalization()
 		m_sources.emplace(fname);
 		m_dependencies.emplace(fname);
 
-		//Add the object file to our working copy
-		wc->UpdateFile(fname, h, false, false);
+		//Add the object file to our working copy.
+		//Don't worry about dirtying targets in other files, there shouldn't be any
+		wc->UpdateFile(fname, h, false, false, ignored);
 	}
 }
 
@@ -231,6 +233,9 @@ void CPPExecutableNode::DoFinalize()
 		//LogDebug("Linking to target lib %s\n", path.c_str());
 		m_sources.emplace(path);
 		m_dependencies.emplace(path);
+
+		//Add a hint to the graph that we depend on it
+		m_graph->AddTargetDependencyHint(f.GetArgs(), m_scriptpath);
 	}
 
 	//Add our link-time dependencies.

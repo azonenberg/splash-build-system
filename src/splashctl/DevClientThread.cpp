@@ -110,6 +110,9 @@ bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id)
  */
 bool OnBulkFileData(Socket& /*s*/, const BulkFileData& msg, string& /*hostname*/, clientID id)
 {
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+
+	set<string> dirtyScripts;
 	for(int i=0; i<msg.data_size(); i++)
 	{
 		auto d = msg.data(i);
@@ -121,7 +124,16 @@ bool OnBulkFileData(Socket& /*s*/, const BulkFileData& msg, string& /*hostname*/
 
 		//Update the file's status in our working copy
 		//(and re-run build scripts if needed)
-		g_nodeManager->GetWorkingCopy(id)->UpdateFile(fname, d.hash(), true, true);
+		wc->UpdateFile(fname, d.hash(), true, true, dirtyScripts);
+	}
+
+	//If this change caused a script to become dirty, re-run that script.
+	//TODO: Recursively update scripts (but don't update ones we've updated during this round)
+	set<string> ignored;
+	for(auto f : dirtyScripts)
+	{
+		LogVerbose("Re-running script %s because it contains targets depending on a target we updated\n", f.c_str());
+		wc->UpdateFile(f, wc->GetFileHash(f), true, true, ignored);
 	}
 
 	return true;
@@ -185,14 +197,25 @@ bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, 
 	}
 
 	//Finally, process the files in the order the client asked us to
+	set<string> dirtyScripts;
 	for(int i=0; i<msg.files_size(); i++)
 	{
 		auto mfc = msg.files(i);
-		g_nodeManager->GetWorkingCopy(id)->UpdateFile(mfc.fname(), mfc.hash(), mfc.body(), mfc.config());
+		g_nodeManager->GetWorkingCopy(id)->UpdateFile(mfc.fname(), mfc.hash(), mfc.body(), mfc.config(), dirtyScripts);
+	}
+
+	//If this change caused a script to become dirty, re-run that script.
+	//TODO: Recursively update scripts (but don't update ones we've updated during this round)
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	set<string> ignored;
+	for(auto f : dirtyScripts)
+	{
+		LogVerbose("Re-running script %s because it contains targets depending on a target we updated\n", f.c_str());
+		wc->UpdateFile(f, wc->GetFileHash(f), true, true, ignored);
 	}
 
 	//and rebuild the dependency graph
-	g_nodeManager->GetWorkingCopy(id)->GetGraph().Rebuild();
+	wc->GetGraph().Rebuild();
 
 	return true;
 }

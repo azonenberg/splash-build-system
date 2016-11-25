@@ -517,6 +517,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 	//Successful build if we get here
 
 	//Go over the files and see what we have
+	set<string> ignored;
 	for(int i=0; i<res.outputs_size(); i++)
 	{
 		auto file = res.outputs(i);
@@ -551,8 +552,9 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		g_cache->AddFile(ffname, shash, hash, data, stdout);
 
 		//Add the node to the working copy
+		//Don't dirty any new build scripts, we only care about that when we change a script
 		//LogDebug("Adding %s to wc %p as %s\n", ffname.c_str(), node->GetGraph()->GetWorkingCopy(), shash.c_str());
-		node->GetGraph()->GetWorkingCopy()->UpdateFile(ffname, shash, false, false);
+		node->GetGraph()->GetWorkingCopy()->UpdateFile(ffname, shash, false, false, ignored);
 	}
 
 	return true;

@@ -116,8 +116,10 @@ string WorkingCopy::GetFileHash(string path)
 	@param body			True if we should re-scan the body (ignored if not a build script)
 	@param config		For a build script: True if we should re-scan the config section.
 						For a source file:  True if we should re-scan dependent build scripts.
+	@param dirtyScripts	Set of build scripts that contain targets depending on the changed file (if it's a script).
+						These scripts might have to have their targets re-generated as a result of this script changing.
  */
-void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
+void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config, set<string>& dirtyScripts)
 {
 	//LogDebug("WorkingCopy::UpdateFile %s (hash %s)\n", path.c_str(), hash.c_str());
 
@@ -138,12 +140,12 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config)
 	//If the file is a build.yml, process it
 	bool is_script = (GetBasenameOfFile(path) == "build.yml");
 	if(is_script)
-		m_graph.UpdateScript(path, hash, body, config);
+		m_graph.UpdateScript(path, hash, body, config, dirtyScripts);
 
 	//If we have a build.yml in the directory, re-run its targets even if we didn't make the file new
 	//(since we may have added an include statement, etc
 	if(has_script && !is_script && config)
-		m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false);
+		m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false, dirtyScripts);
 
 	//TODO: Have a list of nodes that depend on each file and re-create them?
 	//The current "rerun current dir" stuff only works if we do not allow pulling source from another directory!
@@ -187,10 +189,12 @@ void WorkingCopy::RefreshToolchains()
 	//This way we do root dirs first so that we don't waste time doing multiple refreshes
 	sort(paths.begin(), paths.end());
 
-	//And evaluate them in that order
+	//And evaluate them in that order.
+	//Ignore dirty script hints because we're refreshing the entire graph
+	set<string> ignored;
 	for(auto p : paths)
 	{
 		//LogDebug("Re-evaluating build script %s\n", p.c_str());
-		m_graph.UpdateScript(p, m_fileMap[p], true, true);
+		m_graph.UpdateScript(p, m_fileMap[p], true, true, ignored);
 	}
 }

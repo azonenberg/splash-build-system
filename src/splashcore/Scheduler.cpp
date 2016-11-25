@@ -255,9 +255,11 @@ bool Scheduler::BlockOnScanResults(
 	}
 
 	//Add dependencies to the working copy as needed
+	//Don't worry about changing anything with newly added files
 	auto output = job->GetOutput();
+	set<string> ignored;
 	for(auto it : output)
-		wc->UpdateFile(it.first, it.second, false, false);
+		wc->UpdateFile(it.first, it.second, false, false, ignored);
 
 	//Return the list of dependencies
 	for(auto it : output)

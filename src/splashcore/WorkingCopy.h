@@ -42,7 +42,7 @@ public:
 	WorkingCopy(std::string hostname, clientID id);
 	virtual ~WorkingCopy();
 
-	void UpdateFile(std::string path, std::string hash, bool body, bool config);
+	void UpdateFile(std::string path, std::string hash, bool body, bool config, std::set<std::string>& dirtyScripts);
 	void RemoveFile(std::string path);
 
 	std::string GetFileHash(std::string path);
