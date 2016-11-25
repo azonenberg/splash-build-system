@@ -351,11 +351,6 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 		return m_job;
 	}
 
-	//Create a new job for us
-	//Ref it again (implicit creation ref for us, second ref for the caller)
-	m_job = new BuildJob(prio, m_usage, this, m_toolchainHash);
-	m_job->Ref();
-
 	//Build each of our dependencies, if needed
 	set<Job*> deps;
 	auto wc = m_graph->GetWorkingCopy();
@@ -393,6 +388,11 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 		//If not, build it
 		deps.emplace(n->Build());
 	}
+
+	//Create a new job for us
+	//Ref it again (implicit creation ref for us, second ref for the caller)
+	m_job = new BuildJob(prio, m_usage, this, m_toolchainHash);
+	m_job->Ref();
 
 	//Add dependencies to our job
 	for(auto j : deps)
