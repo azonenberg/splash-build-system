@@ -49,6 +49,13 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer client %s (%s) connected\n", hostname.c_str(), id.c_str());
 
+	//Set thread name
+	#ifdef _GNU_SOURCE
+	string threadname = ("UI:") + hostname;
+	threadname.resize(15);
+	pthread_setname_np(pthread_self(), threadname.c_str());
+	#endif
+
 	//Expect a DevInfo message
 	SplashMsg dinfo;
 	if(!RecvMessage(s, dinfo, hostname))
@@ -153,13 +160,13 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			//Nope, it's missing
 			//Need to build it
 			missingtargets.emplace(node);
-			LogDebug("Target %s needs to be rebuilt\n", node->GetFilePath().c_str());
 		}
 
 		//Now we have the list of targets that need building
 		//Make them build themselves
 		for(auto node : missingtargets)
 		{
+			LogDebug("Target %s needs to be rebuilt\n", node->GetFilePath().c_str());
 			auto j = node->Build();
 			if(!j)
 			{
