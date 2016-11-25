@@ -326,6 +326,7 @@ message BuildResult
 				string		stdout		= 3;	//TODO: maybe cache this clientside?
 				bool		executable	= 4;	//Check if this file should be chmodded +x
 				bool		ok			= 5;	//true if file was built successfully
+				bool		sync		= 6;	//true if file should be synced to client
 }
 
 //Summary of a completed compile

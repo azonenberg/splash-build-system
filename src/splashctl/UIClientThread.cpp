@@ -221,7 +221,8 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	//LogDebug("Dumping graph for wc %p\n", wc);
 	for(auto it : *wc)
 	{
-		//LogDebug("%s\n", it.first.c_str());
+		//string fname = it.first;
+		//LogDebug("%s\n", fname.c_str());
 		paths.emplace(it.first);
 	}
 
@@ -232,10 +233,13 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	string bapath = graph.GetBuildArtifactPath() + "/";
 	for(auto f : paths)
 	{
-		//If the file is not in the build directory, skip it
-		if(f.find(bapath) != 0)
+		//Some virtual files are in the source dir (generated constant tables etc)
+		//These need special treatment
+		bool in_build_dir = (f.find(bapath) != 0);
+
+		//If the file is in a system directory, skip it
+		if(f.find("__sys") == 0)
 			continue;
-		LogIndenter li;
 
 		//Look up the ID of this file
 		//(not hash of the file content)
@@ -253,6 +257,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			res->set_stdout(g_cache->ReadCachedLog(hash));
 			res->set_executable(true);
 			res->set_ok(true);
+			res->set_sync(in_build_dir);
 		}
 
 		//If cached fail, add that result
@@ -263,6 +268,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			res->set_stdout(g_cache->ReadCachedLog(hash));
 			res->set_executable(true);
 			res->set_ok(false);
+			res->set_sync(in_build_dir);
 		}
 	}
 

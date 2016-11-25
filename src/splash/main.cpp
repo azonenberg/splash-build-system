@@ -229,8 +229,8 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 			unlink(f.c_str());
 		}
 
-		//Node built OK, grab the contents from somewhere
-		else
+		//Node built OK, grab the contents from somewhere (unless the file is marked no-sync)
+		else if(r.sync())
 		{
 			//See if we have the file in our local cache.
 			//If not, download it
