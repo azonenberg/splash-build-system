@@ -419,14 +419,17 @@ bool DoScanDependencies(
 			string dc = d;
 			if(!CanonicalizePathThatMightNotExist(dc))
 			{
-				LogError("Couldn't canonicalize %s\n", d.c_str());
+				output += string("Couldn't canonicalize path ") + d + "\n";
 				return false;
 			}
 			if( !DoesFileExist(dc) && (dc.find("__sys") == string::npos) )
 				missingDeps.emplace(dc);
 		}
 		if(!GrabMissingDependencies(sock, missingDeps, output))
+		{
+			output += "ERROR: GrabMissingDependencies(1) failed\n";
 			return false;
+		}
 
 		//If the scan found files we're missing, ask for them!
 		if(!missingFiles.empty())
@@ -435,7 +438,10 @@ bool DoScanDependencies(
 
 			//Get the files
 			if(!GrabMissingDependencies(sock, missingFiles, output))
+			{
+				output += "ERROR: GrabMissingDependencies(2) failed\n";
 				return false;
+			}
 
 			//Scan each of the files we downloaded to see if they pulled in more stuff
 			//This is not an 100% accurate scan (since we aren't using any #define's provided by the parent file)
@@ -445,17 +451,19 @@ bool DoScanDependencies(
 				//Run the scan
 				DependencyResults ignored;
 				set<BuildFlag> ignoredLibFlags;
-				string ignoredOutput;
+				string recursiveOutput;
 				if(!DoScanDependencies(
 					sock,
 					chain,
 					flags,
 					arch,
 					g_builddir + "/" + f,
-					ignoredOutput,
+					recursiveOutput,
 					ignoredLibFlags,
 					&ignored))
 				{
+					output += string("Dependency scan of included file ") + f + " failed:\n";
+					output += recursiveOutput;
 					return false;
 				}
 			}

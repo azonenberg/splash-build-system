@@ -375,7 +375,10 @@ bool GNUToolchain::ScanDependencies(
 
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
+	{
+		output = "ERROR: Flag verification failed\n";
 		return false;
+	}
 
 	//Look up some arch-specific stuff
 	string aflags = m_archflags[triplet];
@@ -386,7 +389,10 @@ bool GNUToolchain::ScanDependencies(
 	set<string> foundlibNames;
 	set<BuildFlag> libflags_in;
 	if(!FindLibraries(chain, triplet, flags, foundpaths, foundlibNames, libflags_in, output))
+	{
+		output += "ERROR: Library searching failed\n";
 		return false;
+	}
 
 	//Remove all library-related flags from the list
 	for(auto f : libflags_in)
@@ -469,7 +475,7 @@ bool GNUToolchain::ScanDependencies(
 	size_t offset = makerule.find(':');
 	if(offset == string::npos)
 	{
-		LogError("GNUToolchain::ScanDependencies - Make rule was not well formed (scan error?)\n");
+		output += "ERROR: GNUToolchain::ScanDependencies - Make rule was not well formed (scan error?)\n";
 		return false;
 	}
 	vector<string> files;
@@ -560,7 +566,7 @@ bool GNUToolchain::ScanDependencies(
 				string fname = str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f;
 				if(!CanonicalizePathThatMightNotExist(fname))
 				{
-					LogError("Couldn't canonicalize path %s\n", fname.c_str());
+					output += string("Couldn't canonicalize path ") + fname + "\n";
 					return false;
 				}
 
