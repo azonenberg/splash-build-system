@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
 	}
 
 	char sworker[64];
-	snprintf(sworker, sizeof(sworker), "splashbuild-%d", nodenum);
+	snprintf(sworker, sizeof(sworker), "sb%d", nodenum);
 
 	//Set up temporary directory
 	g_tmpdir = string("/tmp/") + sworker;
