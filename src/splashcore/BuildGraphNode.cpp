@@ -386,7 +386,7 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 		if(state == NodeInfo::FAILED)
 		{
 			LogError("Dependency \"%s\" failed to build, we cannot be built\n", d.c_str());
-			g_cache->AddFailedFile(GetFilePath(), m_hash, "Unable to build due to failed inputs\n");
+			g_cache->AddFailedFile(GetFilePath(), m_hash, "ERROR: Unable to build due to failed inputs\n");
 			return NULL;
 		}
 
