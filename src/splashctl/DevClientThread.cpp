@@ -38,7 +38,14 @@ bool OnFileRemoved(const FileRemoved& msg, string& hostname, clientID id);
 void DevClientThread(Socket& s, string& hostname, clientID id)
 {
 	LogNotice("Developer workstation %s (%s) connected\n", hostname.c_str(), id.c_str());
-	LogIndenter li;
+	//LogIndenter li;
+
+	//Set thread name
+	#ifdef _GNU_SOURCE
+	string threadname = ("DEV:") + hostname;
+	threadname.resize(15);
+	pthread_setname_np(pthread_self(), threadname.c_str());
+	#endif
 
 	//Expect a DevInfo message
 	SplashMsg dinfo;
