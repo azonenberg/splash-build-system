@@ -68,6 +68,9 @@ ConstantTableNode::ConstantTableNode(
 	if(node["width"])
 		width = node["width"].as<int>();
 
+	//Calculate our hash
+	m_hash = sha256(yaml_hash + "!" + generator + "!" + fname);
+
 	//Read the values
 	if(!node["values"])
 	{
@@ -76,10 +79,23 @@ ConstantTableNode::ConstantTableNode(
 	}
 	map<string, uint64_t> values;
 	for(auto it : node["values"])
-		values[it.first.as<string>()] = strtoul(it.second.as<string>().c_str(), NULL, base);
+	{
+		string id = it.first.as<string>();
 
-	//Calculate our hash
-	m_hash = sha256(yaml_hash + "!" + generator + "!" + fname);
+		//If the name is already used, complain
+		if(values.find(id) != values.end())
+		{
+			string err = string("ERROR: Attempted redeclaration of name ") + id + " in constant table "
+				+ table_fname + "\n";
+			g_cache->AddFailedFile(GetBasenameOfFile(fname), m_hash, err);
+			set<string> ignored;
+			m_graph->GetWorkingCopy()->UpdateFile(fname, m_hash, false, false, ignored);
+			m_invalidInput = true;
+			return;
+		}
+
+		values[id] = strtoul(it.second.as<string>().c_str(), NULL, base);
+	}
 
 	//Actually make the table
 	GenerateConstants(fname, name, values, generator, width);
