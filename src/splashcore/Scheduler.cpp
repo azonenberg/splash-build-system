@@ -130,7 +130,7 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 
 	//Go over the list from oldest to newest
 	jobqueue& jobs = m_runnableJobs[prio];
-	for(auto it = jobs.begin(); it != jobs.end(); it++)
+	for(auto it = jobs.begin(); it != jobs.end();)
 	{
 		auto job = *it;
 
@@ -139,13 +139,16 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 		{
 			LogDebug("PopJob rejecting job %p b/c toolchain %s not offered by client %s\n",
 				job, job->GetToolchain().c_str(), id.c_str());
+			it++;
 			continue;
 		}
 
-		//If the job was canceled, delete it from the queue rather than wasting time spinning
+		//If the job was canceled, delete it from the queue rather than wasting time spinning.
 		if(job->IsCanceledByDeps())
 		{
-			jobs.erase(it);
+			auto old_it = it;
+			it++;
+			jobs.erase(old_it);
 			job->Unref();
 			continue;
 		}
@@ -155,6 +158,8 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 		{
 			LogDebug("PopJob rejecting job %p (%s) b/c not runnable\n",
 				job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
+
+			it++;
 			continue;
 		}
 
@@ -303,7 +308,7 @@ void Scheduler::SubmitJob(Job* job)
 
 	if(job == NULL)
 		LogFatal("Submitted null job\n");
-	
+
 	job->Ref();
 
 	LogDebug("[%6.3f] Submit job %p (%s)\n",
