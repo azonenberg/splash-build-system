@@ -129,6 +129,7 @@ void CPPObjectNode::DoFinalize()
 
 		//Go over the list of libraries we asked for and remove any optional ones we don't have
 		//TODO: export library set to caller for link stage?
+		set<BuildFlag> flagsToErase;
 		for(auto f : m_flags)
 		{
 			if(f.GetType() != BuildFlag::TYPE_LIBRARY)
@@ -156,7 +157,7 @@ void CPPObjectNode::DoFinalize()
 			if(!found)
 			{
 				//LogDebug("Did not find a hit for %s, removing\n", static_cast<string>(f).c_str());
-				m_flags.erase(f);
+				flagsToErase.emplace(f);
 			}
 
 			//If we DID find it, add it as a dependency for the executable
@@ -178,6 +179,10 @@ void CPPObjectNode::DoFinalize()
 				}
 			}
 		}
+
+		//can't do this in the loop above or iterators go bad
+		for(auto f : flagsToErase)
+			m_flags.erase(f);
 
 		//Make a note of any object or library files we have in the dependency list that were not specified by flags
 		for(auto d : deps)
