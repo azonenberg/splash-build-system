@@ -112,19 +112,25 @@ bool OnBulkFileData(Socket& /*s*/, const BulkFileData& msg, string& /*hostname*/
 {
 	auto wc = g_nodeManager->GetWorkingCopy(id);
 
+	//Add all of the files to the cache.
+	//Update the working copy with everything but build scripts
 	set<string> dirtyScripts;
 	for(int i=0; i<msg.data_size(); i++)
 	{
 		auto d = msg.data(i);
-
 		string fname = d.fname();
-
-		//Write the file to cache
 		g_cache->AddFile(GetBasenameOfFile(fname), d.id(), d.hash(), d.filedata(), "");
+		if(GetBasenameOfFile(fname) != "build.yml")
+			wc->UpdateFile(fname, d.hash(), true, false, dirtyScripts);
+	}
 
-		//Update the file's status in our working copy
-		//(and re-run build scripts if needed)
-		wc->UpdateFile(fname, d.hash(), true, true, dirtyScripts);
+	//Process build scripts once the files they depend on are done
+	for(int i=0; i<msg.data_size(); i++)
+	{
+		auto d = msg.data(i);
+		string fname = d.fname();
+		if(GetBasenameOfFile(fname) == "build.yml")
+			wc->UpdateFile(fname, d.hash(), true, true, dirtyScripts);
 	}
 
 	//If this change caused a script to become dirty, re-run that script.
@@ -196,12 +202,24 @@ bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, 
 		}
 	}
 
-	//Finally, process the files in the order the client asked us to
+	//Finally, process the files in the order the client asked us to.
+	//Do two passes, source first then scripts
 	set<string> dirtyScripts;
 	for(int i=0; i<msg.files_size(); i++)
 	{
 		auto mfc = msg.files(i);
-		g_nodeManager->GetWorkingCopy(id)->UpdateFile(mfc.fname(), mfc.hash(), mfc.body(), mfc.config(), dirtyScripts);
+		string fname = mfc.fname();
+		if(GetBasenameOfFile(fname) != "build.yml")
+			g_nodeManager->GetWorkingCopy(id)->UpdateFile(mfc.fname(), mfc.hash(), mfc.body(), mfc.config(), dirtyScripts);
+	}
+
+	//Process build scripts once the files they depend on are done
+	for(int i=0; i<msg.files_size(); i++)
+	{
+		auto mfc = msg.files(i);
+		string fname = mfc.fname();
+		if(GetBasenameOfFile(fname) == "build.yml")
+			g_nodeManager->GetWorkingCopy(id)->UpdateFile(mfc.fname(), mfc.hash(), mfc.body(), mfc.config(), dirtyScripts);
 	}
 
 	//If this change caused a script to become dirty, re-run that script.
