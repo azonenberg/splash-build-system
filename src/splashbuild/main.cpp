@@ -569,6 +569,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	Toolchain* chain = PrepBuild(rxm.toolchain());
 	if(!chain)
 		return;
+	chdir(g_builddir.c_str());
 
 	//Look up the list of sources
 	map<string, string> sources;				//Map of fname to hash
@@ -620,7 +621,6 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	auto replym = reply.mutable_nodebuildresults();
 
 	//Do the actual build
-	chdir(g_builddir.c_str());
 	string stdout;
 	map<string, string> outputs;
 	if(!chain->Build(
@@ -652,6 +652,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(auto it : outputs)
 	{
 		auto bf = replym->add_outputs();
+		//LogDebug("Output file %s\n", it.first.c_str());
 		bf->set_fname(it.first);
 		bf->set_hash(it.second);
 		bf->set_data(GetFileContents(it.first));
@@ -660,6 +661,8 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	//Successful completion of the run, send the results to the server
 	if(!replym->success())
 		LogDebug("Build failed\n");
+	//else
+	//	LogDebug("Build complete\n");
 	SendMessage(sock, reply);
 }
 

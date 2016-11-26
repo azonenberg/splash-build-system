@@ -137,7 +137,13 @@ bool Job::IsRunnable()
 
 		//If the dependency isn't done, no go
 		if(status != STATUS_DONE)
+		{
+			auto bj = dynamic_cast<BuildJob*>(d);
+			if(bj)
+				LogDebug("Job is not runnable because dependency %s is not done\n",
+					bj->GetOutputNode()->GetFilePath().c-str());
 			return false;
+		}
 	}
 
 	return true;

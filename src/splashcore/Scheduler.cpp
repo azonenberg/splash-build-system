@@ -130,22 +130,29 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 
 	//Go over the list from oldest to newest
 	jobqueue& jobs = m_runnableJobs[prio];
-	for(auto it = jobs.begin(); it != jobs.end();)
+	int n = 0;
+	for(auto it = jobs.begin(); it != jobs.end(); n++)
 	{
 		auto job = *it;
 
 		//See if we have the toolchain this job needs
 		if(toolchains.find(job->GetToolchain()) == toolchains.end())
 		{
-			LogDebug("PopJob rejecting job %p b/c toolchain %s not offered by client %s\n",
-				job, job->GetToolchain().c_str(), id.c_str());
+			//LogDebug("[%d] PopJob rejecting job %p b/c toolchain %s not offered by client %s\n",
+			//	n, job, job->GetToolchain().c_str(), id.c_str());
 			it++;
 			continue;
 		}
 
-		//If the job was canceled, delete it from the queue rather than wasting time spinning.
+		//If the job had a dependency fail, delete it from the queue rather than wasting time spinning.
 		if(job->IsCanceledByDeps())
 		{
+			//LogDebug("[%d] PopJob cancelling job %p (canceled by dependencies)\n", n, job);
+
+			//Mark the job as canceled
+			job->SetCanceled();
+
+			//Delete it from the queue
 			auto old_it = it;
 			it++;
 			jobs.erase(old_it);
@@ -156,8 +163,8 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 		//If we can't run the job b/c of dependencies, keep looking
 		if(!job->IsRunnable())
 		{
-			LogDebug("PopJob rejecting job %p (%s) b/c not runnable\n",
-				job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
+			//LogDebug("[%d] PopJob rejecting job %p (%s) b/c not runnable (%d jobs in queue)\n",
+			//	n, job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str(), jobs.size());
 
 			it++;
 			continue;
@@ -165,6 +172,7 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 
 		//We're good, use this job
 		jobs.erase(it);
+		//LogDebug("Popped job %p (%d jobs in queue)\n", job, jobs.size());
 		return job;
 	}
 
@@ -308,14 +316,20 @@ void Scheduler::SubmitJob(Job* job)
 
 	if(job == NULL)
 		LogFatal("Submitted null job\n");
-
-	job->Ref();
-
-	LogDebug("[%6.3f] Submit job %p (%s)\n",
-		GetDT(), job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
-
 	if(job->GetToolchain() == "")
 		LogFatal("Submitted job with bad toolchain\n");
+	if(job->GetPriority() >= Job::PRIO_COUNT)
+		LogFatal("Submitted job with bad priority\n");
 
+	job->Ref();
 	m_runnableJobs[job->GetPriority()].push_back(job);
+
+	/*
+	LogDebug("[%6.3f] Submit job %p (%s), prio %d (%d total)\n",
+		GetDT(),
+		job,
+		dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str(),
+		job->GetPriority(),
+		m_runnableJobs[job->GetPriority()].size());
+	*/
 }

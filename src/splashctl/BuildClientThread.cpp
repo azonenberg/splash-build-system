@@ -400,7 +400,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 	auto wc = node->GetGraph()->GetWorkingCopy();
 	auto path = node->GetFilePath();
 
-	LogDebug("[%6.3f] Run build job %s\n", g_scheduler->GetDT(), path.c_str());
+	LogDebug("[%6.3f] Run build job %p (%s)\n", g_scheduler->GetDT(), job, path.c_str());
 	//LogIndenter li;
 
 	//Look up the flags
