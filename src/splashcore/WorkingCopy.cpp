@@ -147,7 +147,7 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config, s
 	if(has_script && !is_script && config)
 		m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false, dirtyScripts);
 
-	//TODO: Have a list of nodes that depend on each file and re-create them?
+	//TODO: Have a list of nodes that depend on each file and add to the set of dirty scripts as needed?
 	//The current "rerun current dir" stuff only works if we do not allow pulling source from another directory!
 }
 
