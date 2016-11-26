@@ -137,20 +137,26 @@ Job* Scheduler::PopJob(clientID id, Job::Priority prio)
 		//See if we have the toolchain this job needs
 		if(toolchains.find(job->GetToolchain()) == toolchains.end())
 		{
-			//LogDebug("PopJob rejecting job %p b/c toolchain %s not offered by client %s\n",
-			//	job, job->GetToolchain().c_str(), id.c_str());
+			LogDebug("PopJob rejecting job %p b/c toolchain %s not offered by client %s\n",
+				job, job->GetToolchain().c_str(), id.c_str());
+			continue;
+		}
+
+		//If the job was canceled, delete it from the queue rather than wasting time spinning
+		if(job->IsCanceledByDeps())
+		{
+			jobs.erase(it);
+			job->Unref();
 			continue;
 		}
 
 		//If we can't run the job b/c of dependencies, keep looking
 		if(!job->IsRunnable())
 		{
-			//LogDebug("PopJob rejecting job %p (%s) b/c not runnable\n",
-			//	job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
+			LogDebug("PopJob rejecting job %p (%s) b/c not runnable\n",
+				job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
 			continue;
 		}
-
-		//TODO: If the job was canceled, delete it from the queue and cancel everything
 
 		//We're good, use this job
 		jobs.erase(it);
@@ -294,10 +300,17 @@ void Scheduler::SubmitScanJob(clientID id, DependencyScanJob* job)
 void Scheduler::SubmitJob(Job* job)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(job == NULL)
+		LogFatal("Submitted null job\n");
+	
 	job->Ref();
 
 	LogDebug("[%6.3f] Submit job %p (%s)\n",
 		GetDT(), job, dynamic_cast<BuildJob*>(job)->GetOutputNode()->GetFilePath().c_str());
+
+	if(job->GetToolchain() == "")
+		LogFatal("Submitted job with bad toolchain\n");
 
 	m_runnableJobs[job->GetPriority()].push_back(job);
 }
