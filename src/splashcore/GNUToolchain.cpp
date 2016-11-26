@@ -559,7 +559,7 @@ bool GNUToolchain::ScanDependencies(
 				return false;
 			}
 
-			//Relative path - we don't have it locally
+			//Relative path - we probably don't have it locally
 			//Ask the server for it (by best-guess filename)
 			else if(longest_prefix == "")
 			{
@@ -570,10 +570,21 @@ bool GNUToolchain::ScanDependencies(
 					return false;
 				}
 
-				//LogDebug("Unable to resolve include %s\n", f.c_str());
-				//LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
-				missingFiles.emplace(fname);
-				continue;
+				//It seems like sometimes #include <> (vs "") doesn't resolve to an absolute path sometimes :(
+				//Check if we have the file in the working directory
+				if(DoesFileExist(fname))
+				{
+					LogDebug("Resolved relative %s to current directory\n", fname.c_str());
+					f = fname;
+				}
+
+				else
+				{
+					LogDebug("Unable to resolve include %s\n", f.c_str());
+					LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
+					missingFiles.emplace(fname);
+					continue;
+				}
 			}
 		}
 

@@ -356,6 +356,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	//Do the actual scan (recursively scanning headers etc)
 	string output;
 	set<BuildFlag> libFlags;
+	chdir(g_builddir.c_str());
 	bool ok = DoScanDependencies(sock, chain, flags, rxm.arch(), aname, output, libFlags, replym);
 
 	//Process the results
@@ -425,10 +426,13 @@ bool DoScanDependencies(
 			if( !DoesFileExist(dc) && (dc.find("__sys") == string::npos) )
 				missingDeps.emplace(dc);
 		}
-		if(!GrabMissingDependencies(sock, missingDeps, output))
+		if(!missingDeps.empty())
 		{
-			output += "ERROR: GrabMissingDependencies(1) failed\n";
-			return false;
+			if(!GrabMissingDependencies(sock, missingDeps, output))
+			{
+				output += "ERROR: GrabMissingDependencies(1) failed\n";
+				return false;
+			}
 		}
 
 		//If the scan found files we're missing, ask for them!
@@ -469,6 +473,7 @@ bool DoScanDependencies(
 			}
 
 			//Go back and scan this file again
+			//LogDebug("Re-running scan due to %d missing files\n", (int)missingFiles.size());
 			continue;
 		}
 
@@ -494,6 +499,8 @@ bool GrabMissingDependencies(
 	set<string> missingFiles,
 	string& errors)
 {
+	//LogDebug("Grabbing %d missing dependencies...\n", (int)missingFiles.size());
+
 	//Look up the hashes
 	map<string, string> hashes;
 	auto hostname = g_clientSettings->GetServerHostname();
