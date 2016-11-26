@@ -773,7 +773,7 @@ bool GetRemoteHashesByPath(Socket& sock, string hostname, set<string> fnames, ma
 		//Complain if we couldn't find the file
 		if(!f.found())
 		{
-			LogWarning("Couldn't find file %s\n", f.fname().c_str());
+			LogWarning("GetRemoteHashesByPath: Couldn't find file %s\n", f.fname().c_str());
 			continue;
 		}
 
