@@ -569,19 +569,20 @@ bool GNUToolchain::ScanDependencies(
 					output += string("Couldn't canonicalize path ") + fname + "\n";
 					return false;
 				}
+				//LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
 
 				//It seems like sometimes #include <> (vs "") doesn't resolve to an absolute path sometimes :(
 				//Check if we have the file in the working directory
 				if(DoesFileExist(fname))
 				{
-					LogDebug("Resolved relative %s to current directory\n", fname.c_str());
+					//LogDebug("Resolved relative %s to current directory\n", fname.c_str());
+					files[i] = fname;
 					f = fname;
 				}
 
 				else
 				{
-					LogDebug("Unable to resolve include %s\n", f.c_str());
-					LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
+					//LogDebug("Unable to resolve include %s\n", f.c_str());
 					missingFiles.emplace(fname);
 					continue;
 				}
