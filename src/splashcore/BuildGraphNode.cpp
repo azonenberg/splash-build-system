@@ -379,7 +379,7 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 		if(state == NodeInfo::READY)
 			continue;
 
-		//If the build failed, die now
+		//If the build already failed, die now
 		if(state == NodeInfo::FAILED)
 		{
 			//Finalize the node so we get all of the build output
@@ -394,8 +394,17 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 			return NULL;
 		}
 
-		//If not, build it
-		deps.emplace(n->Build());
+		//If not, build it.
+		//If that build fails, we need to complain and not segfault!
+		auto job = n->Build();
+		if(n)
+			deps.emplace(job);
+		else
+		{
+			string errors = string("ERROR: Unable to build due to failed input ") + d + "\n";
+			g_cache->AddFailedFile(GetFilePath(), m_hash, errors);
+			return NULL;
+		}
 	}
 
 	//Create a new job for us
