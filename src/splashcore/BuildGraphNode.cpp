@@ -69,11 +69,11 @@ BuildGraphNode::BuildGraphNode(
 	, m_name(GetBasenameOfFile(path))
 	, m_script("")
 	, m_path(path)
-	, m_invalidInput(false)
 	, m_usage(usage)
 	, m_job(NULL)
 	, m_finalizationStarted(false)
 	, m_finalized(false)
+	, m_invalidInput(false)
 {
 }
 
@@ -97,11 +97,11 @@ BuildGraphNode::BuildGraphNode(
 	, m_script("")
 	, m_path(path)
 	, m_flags(flags)
-	, m_invalidInput(false)
 	, m_usage(usage)
 	, m_job(NULL)
 	, m_finalizationStarted(false)
 	, m_finalized(false)
+	, m_invalidInput(false)
 {
 	//Look up the hash of our toolchain
 	m_toolchainHash = g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
@@ -137,6 +137,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_job(NULL)
 	, m_finalizationStarted(false)
 	, m_finalized(false)
+	, m_invalidInput(false)
 {
 	//Ignore the toolchain and arches sections, they're already taken care of
 
@@ -340,11 +341,28 @@ void BuildGraphNode::GetFlagsForUseAt(
 // Building
 
 /**
+	@brief Record that our input was invalid so we can't even begin to build
+ */
+void BuildGraphNode::SetInvalidInput(string errors)
+{
+	string fname = GetFilePath();
+	g_cache->AddFailedFile(fname, m_hash, errors);
+
+	set<string> ignored;
+	m_graph->GetWorkingCopy()->UpdateFile(fname, m_hash, false, false, ignored);
+
+	m_invalidInput = true;
+}
+
+/**
 	@brief Actually start building this node
  */
 Job* BuildGraphNode::Build(Job::Priority prio)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
+
+	if(m_invalidInput)
+		return NULL;
 
 	//If we're already building, return a new reference to the existing job
 	if(m_job != NULL)
@@ -397,7 +415,7 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 		//If not, build it.
 		//If that build fails, we need to complain and not segfault!
 		auto job = n->Build();
-		if(n)
+		if(job)
 			deps.emplace(job);
 		else
 		{

@@ -105,5 +105,5 @@ bool GNULinkerToolchain::Build(
 	string& output)
 {
 	//TODO: decide whether to link as c or c++ based on something?
-	return GNUToolchain::Link(m_basepath, triplet, sources, fname, flags, outputs, output, true);
+	return GNUToolchain::Link(this, m_basepath, triplet, sources, fname, flags, outputs, output, true);
 }

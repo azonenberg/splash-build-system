@@ -85,12 +85,9 @@ ConstantTableNode::ConstantTableNode(
 		//If the name is already used, complain
 		if(values.find(id) != values.end())
 		{
-			string err = string("ERROR: Attempted redeclaration of name ") + id + " in constant table "
-				+ table_fname + "\n";
-			g_cache->AddFailedFile(GetBasenameOfFile(fname), m_hash, err);
-			set<string> ignored;
-			m_graph->GetWorkingCopy()->UpdateFile(fname, m_hash, false, false, ignored);
-			m_invalidInput = true;
+			SetInvalidInput(
+				string("ERROR: Attempted redeclaration of name ") + id + " in constant table "
+				+ table_fname + "\n");
 			return;
 		}
 

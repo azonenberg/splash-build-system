@@ -136,13 +136,13 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 		//Compile and link it
 		map<string, string> unused;
 		string sout;
-		if(!Compile(exe, arch, sources, oout, flags, unused, sout, (type == GNU_CPP)))
+		if(!Compile(NULL, exe, arch, sources, oout, flags, unused, sout, (type == GNU_CPP)))
 		{
 			LogError("Test compilation failed for toolchain %s\n", exe.c_str());
 			continue;
 		}
 		sout = "";
-		if(!Link(exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP)))
+		if(!Link(NULL, exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP)))
 		{
 			LogError("Test link failed for toolchain %s:\n%s\n", exe.c_str(), sout.c_str());
 			continue;
@@ -744,6 +744,7 @@ bool GNUToolchain::FindLibraries(
 	@brief Compile one or more source files to an object file
  */
 bool GNUToolchain::Compile(
+	Toolchain* chain,
 	string exe,
 	string triplet,
 	set<string> sources,
@@ -757,7 +758,7 @@ bool GNUToolchain::Compile(
 	for(auto s : sources)
 	{
 		if(s.find(".o") != string::npos)
-			return Link(exe, triplet, sources, fname, flags, outputs, output, cpp);
+			return Link(chain, exe, triplet, sources, fname, flags, outputs, output, cpp);
 	}
 
 	//LogDebug("Compile for arch %s\n", triplet.c_str());
@@ -787,7 +788,7 @@ bool GNUToolchain::Compile(
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";
-	//LogDebug("Compile command line: %s\n", cmdline.c_str());
+	LogDebug("Compile command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
@@ -809,6 +810,7 @@ bool GNUToolchain::Compile(
 }
 
 bool GNUToolchain::Link(
+	Toolchain* chain,
 	string exe,
 	string triplet,
 	set<string> sources,
@@ -831,7 +833,7 @@ bool GNUToolchain::Link(
 	bool is_shared = flags.find(BuildFlag("output/shared")) != flags.end();
 	bool using_elf = (triplet.find("linux") != string::npos) || (triplet.find("elf") != string::npos);
 
-	//Make the full compile command line
+	//Make the base command line
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
 	for(auto f : flags)
 		cmdline += FlagToString(f) + " ";
@@ -843,12 +845,31 @@ bool GNUToolchain::Link(
 	if(is_shared && using_elf)
 		cmdline += string("-Wl,-soname,") + soname + " ";
 
-	//Add the object/library files to be linked
+	//Add the object/library files to be linked.
+	//Do some reordering to ensure objects come before libs.
+	set<string> objects;
+	set<string> libs;
 	for(auto s : sources)
-		cmdline += s + " ";
-	//LogDebug("Link command line: %s\n", cmdline.c_str());
+	{
+		//If toolchain is null we're being called by the ctor
+		//and obviously not linking any libraries.
+		//In this case, assume the input is a source file
+		if(chain && s.find(chain->GetSharedLibrarySuffix()) != string::npos)
+			libs.emplace(s);
+		else if(chain && s.find(chain->GetStaticLibrarySuffix()) != string::npos)
+			libs.emplace(s);
+		else
+			objects.emplace(s);
+	}
 
-	//Run the compile itself
+	for(auto s : objects)
+		cmdline += s + " ";
+	for(auto s : libs)
+		cmdline += s + " ";
+
+	LogDebug("Link command line: %s\n", cmdline.c_str());
+
+	//Run the link itself
 	if(0 != ShellCommand(cmdline, output))
 	{
 		LogDebug("link failed\n");

@@ -183,6 +183,9 @@ public:
 	bool IsReferenced();
 
 protected:
+
+	void SetInvalidInput(std::string errors);
+
 	virtual void DoFinalize() =0;
 	virtual void DoStartFinalization();
 
@@ -245,13 +248,6 @@ protected:
 	std::set<std::string> m_sources;
 
 	/**
-		@brief Indicates that this node is in an "error" state and cannot be built.
-
-		This is used for things like "missing input files" etc.
-	 */
-	bool m_invalidInput;
-
-	/**
 		@brief The type of build operation we're doing (important for us to use the correct flags)
 	 */
 	BuildFlag::FlagUsage m_usage;
@@ -264,6 +260,14 @@ protected:
 
 	/// @brief Indicates that this node has been finalized.
 	bool m_finalized;
+
+private:
+	/**
+		@brief Indicates that this node is in an "error" state and cannot be built.
+
+		This is used for things like "missing input files" etc.
+	 */
+	bool m_invalidInput;
 };
 
 #endif

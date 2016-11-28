@@ -62,6 +62,7 @@ public:
 		bool cpp);
 
 	virtual bool Compile(
+		Toolchain* chain,
 		std::string exe,
 		std::string triplet,
 		std::set<std::string> sources,
@@ -72,6 +73,7 @@ public:
 		bool cpp);
 
 	virtual bool Link(
+		Toolchain* chain,
 		std::string exe,
 		std::string triplet,
 		std::set<std::string> sources,

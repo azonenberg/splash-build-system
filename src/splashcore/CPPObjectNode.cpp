@@ -71,7 +71,7 @@ CPPObjectNode::CPPObjectNode(
 		graph->GetWorkingCopy());
 	if(m_scanJob == NULL)
 	{
-		m_invalidInput = true;
+		SetInvalidInput("Failed to start dependency scanner\n");
 	}
 }
 
@@ -101,14 +101,9 @@ void CPPObjectNode::DoFinalize()
 	//Block until the scan completes
 	set<string> deps;
 	set<BuildFlag> foundflags;
-	if(!g_scheduler->BlockOnScanResults(m_scanJob, wc, deps, foundflags, m_errors))
+	if(g_scheduler->BlockOnScanResults(m_scanJob, wc, deps, foundflags, m_errors))
 	{
-		m_invalidInput = true;
-	}
-
-	//Dependencies scanned OK, update our stuff
-	else
-	{
+		//Dependencies scanned OK, update our stuff
 		//Update our flags with the HAVE_xx macros from the libraries we located
 		for(auto f : foundflags)
 			m_flags.emplace(f);
@@ -259,6 +254,6 @@ void CPPObjectNode::DoFinalize()
 
 	//If the dependency scan failed, add a dummy cached file with the proper ID and stdout
 	//so we can query the result in the cache later on.
-	if(m_invalidInput)
-		g_cache->AddFailedFile(GetFilePath(), m_hash, m_errors);
+	if(m_errors != "")
+		SetInvalidInput(m_errors);
 }

@@ -64,12 +64,9 @@ CPPExecutableNode::CPPExecutableNode(
 	//Sanity check: we must have some source files!
 	if(!node["sources"])
 	{
-		LogParseError(
-			"CPPExecutableNode: cannot have a C++ executable (%s, declared in %s) without any source files\n",
-			name.c_str(),
-			path.c_str()
-			);
-		m_invalidInput = true;
+		SetInvalidInput(
+			string("CPPExecutableNode: cannot have a C++ executable (") + name + ", declared in " +
+			path +") without any source files\n");
 		return;
 	}
 	auto snode = node["sources"];
@@ -89,10 +86,7 @@ CPPExecutableNode::CPPExecutableNode(
 		//Gotta make sure it's there first!
 		if(!wc->HasFile(fname))
 		{
-			LogParseError(
-				"CPPExecutableNode: No file named %s in working copy\n",
-				fname.c_str());
-			m_invalidInput = true;
+			SetInvalidInput(string("CPPExecutableNode: No file named ") + fname + " in working copy\n");
 			return;
 		}
 
@@ -219,10 +213,8 @@ void CPPExecutableNode::DoFinalize()
 		m_graph->GetTargets(nodes, f.GetArgs(), m_arch, m_config);
 		if(nodes.empty())
 		{
-			LogParseError(
-				"CPPExecutableNode: Could not link to target %s because it doesn't exist\n",
-				f.GetArgs().c_str());
-			m_invalidInput = true;
+			SetInvalidInput(
+				string("CPPExecutableNode: Could not link to target ") + f.GetArgs() + " because it doesn't exist\n");
 			return;
 		}
 		//TODO: verify only one?
