@@ -129,12 +129,15 @@ void FindGCCCompilers()
 				continue;
 			string triplet = base.substr(0, offset-1);
 
-			//The text after the triplet should be of the form gcc-major.minor
+			//The text after the triplet should be of the form gcc-major.minor or gcc-major
 			string remainder = base.substr(offset);
 			int major;
 			int minor;
 			if(2 != sscanf(remainder.c_str(), "gcc-%4d.%4d", &major, &minor))
-				continue;
+			{
+				if(1 != sscanf(remainder.c_str(), "gcc-%4d", &major))
+					continue;
+			}
 
 			//Create the toolchain object
 			auto gcc = new GNUCToolchain(exe, triplet);
