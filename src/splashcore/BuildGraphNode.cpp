@@ -352,6 +352,7 @@ void BuildGraphNode::SetInvalidInput(string errors)
 	m_graph->GetWorkingCopy()->UpdateFile(fname, m_hash, false, false, ignored);
 
 	m_invalidInput = true;
+	m_finalized = true;
 }
 
 /**
