@@ -86,20 +86,68 @@ bool Toolchain::ScanDependencies(
 	string scanhash = m_depCache.GetHash(path, triplet, flags);
 	if(m_depCache.IsCached(scanhash))
 	{
-		//LogDebug("[Toolchain::ScanDependencies] Results for %s were cached\n", path.c_str());
+		//LogDebug("[Toolchain::ScanDependencies] Results for %s are in cache\n", path.c_str());
 		auto& results = m_depCache.GetCachedDependencies(scanhash);
 
-		//Copy the outputs
-		output = results.m_stdout;
-		deps = results.m_deps;
-		dephashes = results.m_filedeps;
-		libFlags = results.m_libflags;
+		//Make sure that the cached dependencies haven't changed. If they changed, then our cache is invalid!
+		bool cache_clean = true;
+		for(auto it : results.m_filedeps)
+		{
+			auto fname = it.first;
+			auto hash_expected = it.second;
 
-		//never any missing files in the cache
-		missingFiles.clear();
+			//If the file exists, we can check it right now
+			if(DoesFileExist(fname))
+			{
+				if(sha256_file(fname) == hash_expected)
+					continue;
 
-		//Done
-		return results.m_ok;
+				else
+				{
+					cache_clean = false;
+					/*
+					LogDebug(
+						"[Toolchain::ScanDependencies] Cannot use cached dependencies for %s because dependent "
+						"file %s has changed\n",
+						path.c_str(), fname.c_str());
+					*/
+				}
+			}
+
+			//File is a system include/library etc.
+			//For now, don't check it. It is the sysadmin's responsibility to restart splashbuild after
+			//any compiler/lib/header package upgrades.
+			//TODO: see if this is a reasonable policy.
+			else if(fname.find("__sys") != string::npos)
+				continue;
+
+			//Cached file doesn't exist. We need a copy of it to verify that the cache is still clean.
+			//TODO: Reach out to server and ask for the metadata, but don't pull full content to verify?
+			else
+				missingFiles.emplace(fname);
+		}
+
+		//Cached data can't be checked, wait for the files to come
+		if(!missingFiles.empty())
+			return true;
+
+		//Cached data is good, use it
+		else if(cache_clean)
+		{
+			//Copy the outputs
+			output = results.m_stdout;
+			deps = results.m_deps;
+			dephashes = results.m_filedeps;
+			libFlags = results.m_libflags;
+
+			//never any missing files in the cache
+			missingFiles.clear();
+
+			//Done
+			return results.m_ok;
+		}
+
+		//If we get here the cache is confirmed to be dirty... run a new scan
 	}
 
 	bool ok = ScanDependenciesUncached(triplet, path, root, flags, deps, dephashes, output, missingFiles, libFlags);

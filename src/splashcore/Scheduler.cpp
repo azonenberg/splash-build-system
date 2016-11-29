@@ -274,11 +274,16 @@ bool Scheduler::BlockOnScanResults(
 	}
 
 	//Add dependencies to the working copy as needed
-	//Don't worry about changing anything with newly added files
+	//Don't worry about changing anything with newly added files.
+	//Note that we only care about system headers/libs, project code is already in the working copy
 	auto output = job->GetOutput();
 	set<string> ignored;
 	for(auto it : output)
-		wc->UpdateFile(it.first, it.second, false, false, ignored);
+	{
+		auto fname = it.first;
+		if(fname.find("__sys") != string::npos)
+			wc->UpdateFile(fname, it.second, false, false, ignored);
+	}
 
 	//Return the list of dependencies
 	for(auto it : output)

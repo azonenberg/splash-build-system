@@ -529,7 +529,9 @@ bool GrabMissingDependencies(
 	{
 		auto fname = it.first;
 		string data = g_cache->ReadCachedFile(it.second);
-		//LogDebug("Writing source file %s\n", fname.c_str());
+
+		//LogDebug("Writing source file %s (object ID %s)\n", fname.c_str(), it.second.c_str());
+
 		fname = g_builddir + "/" + fname;
 		MakeDirectoryRecursive(GetDirOfFile(fname), 0700);
 		if(!PutFileContents(fname, data))

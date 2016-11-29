@@ -119,6 +119,7 @@ bool OnBulkFileData(Socket& /*s*/, const BulkFileData& msg, string& /*hostname*/
 	{
 		auto d = msg.data(i);
 		string fname = d.fname();
+		//LogDebug("Source file %s changed\n", fname.c_str());
 		g_cache->AddFile(GetBasenameOfFile(fname), d.id(), d.hash(), d.filedata(), "");
 		if(GetBasenameOfFile(fname) != "build.yml")
 			wc->UpdateFile(fname, d.hash(), true, false, dirtyScripts);

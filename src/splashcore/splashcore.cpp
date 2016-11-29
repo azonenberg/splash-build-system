@@ -787,6 +787,7 @@ bool GetRemoteHashesByPath(Socket& sock, string hostname, set<string> fnames, ma
 
 		//Write to the output array
 		hashes[fname] = f.hash();
+		//LogDebug("%s has hash %s\n", fname.c_str(), f.hash().c_str());
 	}
 
 	return true;
@@ -842,7 +843,6 @@ bool RefreshRemoteFilesByHash(Socket& sock, string hostname, map<string, string>
 	if(res.data_size() != (int)hs.size())
 	{
 		LogError("Got an unexpected message (should be ContentResponse of size %zu)\n", hashes.size());
-		asm("int3");
 		return false;
 	}
 

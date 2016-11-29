@@ -286,7 +286,9 @@ bool ProcessScanJob(Socket& s, string& hostname, DependencyScanJob* job, bool& o
  */
 bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, DependencyScanJob* job, bool& ok)
 {
-	//LogDebug("[%7.3f] BuildClientThread got dependency results\n", g_scheduler->GetDT());
+	//LogDebug("[%7.3f] BuildClientThread got dependency results (for %s)\n",
+	//	g_scheduler->GetDT(), job->GetPath().c_str());
+	LogIndenter li;
 
 	//If the scan failed, we can't do anything else
 	auto res = msg.dependencyresults();
@@ -306,7 +308,6 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 		auto dep = res.deps(i);
 		string h = dep.hash();
 		string f = dep.fname();
-		//LogDebug("%-50s has hash %s\n", f.c_str(), h.c_str());
 
 		if(!ValidatePath(f))
 		{
@@ -315,11 +316,25 @@ bool ProcessDependencyResults(Socket& s, string& hostname, SplashMsg& msg, Depen
 			continue;
 		}
 
-		//Save the hash now that we know the fname is OK
-		hashes[f] = h;
+		//Canonicalize the path
+		if(!CanonicalizePathThatMightNotExist(f))
+		{
+			LogWarning("path %s failed to canonicalize\n", f.c_str());
+			ok = false;
+			continue;
+		}
+
+		//If the file is in a system directory, pull it from the client.
+		//DO NOT pull source files from the client, we already have them.
+		if(f.find("__sys") != string::npos)
+			hashes[f] = h;
+
+		//Debug: print source file dependency names
+		//else
+		//	LogDebug("%-50s has hash %s\n", f.c_str(), h.c_str());
 
 		//Add dependency even if we don't have the content for the hash yet
-		//since nobody will try de-refering the hash before we report the job as complete
+		//since nobody will try de-referencing the hash before we report the job as complete
 		job->AddDependency(f, h);
 	}
 
