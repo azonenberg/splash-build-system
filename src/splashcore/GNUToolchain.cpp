@@ -515,6 +515,7 @@ bool GNUToolchain::ScanDependencies(
 	for(size_t i=1; i<files.size(); i++)
 	{
 		string f = files[i];
+
 		//LogDebug("%s\n", f.c_str());
 		LogIndenter li;
 
@@ -594,6 +595,12 @@ bool GNUToolchain::ScanDependencies(
 		string hash = sha256(data);
 		if(!g_cache->IsCached(hash))
 			g_cache->AddFile(f, hash, hash, data, "");
+
+		if(!CanonicalizePathThatMightNotExist(f))
+		{
+			output += string("Couldn't canonicalize path ") + f + "\n";
+			return false;
+		}
 
 		//Add virtual path to output dep list
 		deps.emplace(f);
