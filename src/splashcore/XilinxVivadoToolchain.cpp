@@ -61,6 +61,14 @@ XilinxVivadoToolchain::XilinxVivadoToolchain(string basepath, int major, int min
 	m_triplets.emplace("zynq7-xc7z020");
 	m_triplets.emplace("zynq7-xc7z030");
 
+	//File format suffixes
+	//An "executable" is a bitstream. A "static library" is an IP core? Shared libraries are partial bitstreams?
+	m_exeSuffix = ".bit";
+	m_shlibSuffix = "";
+	m_stlibSuffix = "";
+	m_objSuffix = "";
+	m_shlibPrefix = "";
+
 	//Generate the hash
 	m_hash = sha256(string("Xilinx Vivado ") + m_stringVersion);
 }

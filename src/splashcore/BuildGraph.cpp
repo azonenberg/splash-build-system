@@ -546,6 +546,10 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	if(node["type"])
 		type = node["type"].as<std::string>();
 
+	//Remap a couple of types so GetOutputFilePath makes more sense
+	if(type == "bitstream")
+		type = "exe";
+
 	//See what architecture(s) we're targeting.
 	//Start by pulling in the default architectures
 	set<string> darches;
@@ -629,6 +633,22 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 				}
 			}
 
+			//Verilog designs
+			//TODO: Replace "verilog" with "hdl"? How to handle mixed language designs?
+			else if(chaintype == "verilog")
+			{
+				if(false)
+				{
+				}
+
+				else
+				{
+					LogParseError("Don't know what to do with target type \"%s\"\n", type.c_str());
+					continue;
+				}
+			}
+
+			//Something is wrong
 			else
 			{
 				LogParseError("Don't know what to do with toolchain type \"%s\"\n", chaintype.c_str());

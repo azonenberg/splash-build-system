@@ -42,7 +42,7 @@ public:
 		Allows build server to report installed compilers to splashctl.
 
 		Type IDs should be ordered such that higher IDs are preferable when both are available for a given
-		language/architecture pairing (for example Vivado is preferred to ISE as the default Verilog toolchain)
+		language/architecture pairing (for example Vivado is preferred over ISE as the default Verilog toolchain)
 	 */
 	enum ToolchainType
 	{
@@ -50,6 +50,7 @@ public:
 
 		TOOLCHAIN_GNU,		//GNU C/C++
 		TOOLCHAIN_CLANG,	//Clang
+
 		TOOLCHAIN_ISE,		//Xilinx ISE
 		TOOLCHAIN_VIVADO,	//Xilinx Vivado
 
@@ -289,6 +290,8 @@ protected:
 		@brief Toolchain string version. This may include info like distro patches etc
 	 */
 	std::string m_stringVersion;
+
+	//TODO: Replace all of this with a map<string, string> of type -> prefix/suffix
 
 	/**
 		@brief Suffix, including the dot, used for executable files.
