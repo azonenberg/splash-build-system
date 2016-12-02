@@ -76,24 +76,22 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 			"__sysinclude__/" + str_replace(" ", "_", m_stringVersion) + "_" + t;
 	}
 
-	//Set suffixes for WINDOWS
+	//Set pre/suffixes for WINDOWS
 	if(triplet.find("mingw") != string::npos)
 	{
-		m_exeSuffix = ".exe";
-		m_shlibSuffix = ".dll";
-		m_stlibSuffix = ".lib";
-		m_objSuffix = ".obj";
-		m_shlibPrefix = "";
+		m_fixes["exe"] = stringpair("", ".exe");
+		m_fixes["object"] = stringpair("", ".obj");
+		m_fixes["shlib"] = stringpair("", ".dll");
+		m_fixes["stlib"] = stringpair("", ".lib");
 	}
 
-	//Set suffixes for POSIX
+	//Set pre/suffixes for POSIX
 	else
 	{
-		m_exeSuffix = "";
-		m_shlibSuffix = ".so";
-		m_stlibSuffix = ".a";
-		m_objSuffix = ".o";
-		m_shlibPrefix = "lib";
+		m_fixes["exe"] = stringpair("", "");
+		m_fixes["object"] = stringpair("", ".o");
+		m_fixes["shlib"] = stringpair("lib", ".so");
+		m_fixes["stlib"] = stringpair("lib", ".a");
 	}
 
 	//Generate the hash

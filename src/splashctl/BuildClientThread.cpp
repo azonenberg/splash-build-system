@@ -85,6 +85,14 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			return;
 		auto madd = tadd.addcompiler();
 
+		//Look up the pre/suffixes for various file types
+		Toolchain::stringpairmap fixes;
+		for(int j=0; j<madd.types_size(); j++)
+		{
+			auto t = madd.types(j);
+			fixes[t.name()] = Toolchain::stringpair(t.prefix(), t.suffix());
+		}
+
 		//Create and initialize the toolchain object
 		RemoteToolchain* toolchain = new RemoteToolchain(
 			static_cast<RemoteToolchain::ToolchainType>(madd.compilertype()),
@@ -93,11 +101,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			(madd.versionnum() >> 16) & 0xffff,
 			(madd.versionnum() >> 8) & 0xff,
 			(madd.versionnum() >> 0) & 0xff,
-			madd.exesuffix(),
-			madd.shlibsuffix(),
-			madd.stlibsuffix(),
-			madd.objsuffix(),
-			madd.shlibprefix()
+			fixes
 			);
 
 		//Languages

@@ -41,11 +41,7 @@ RemoteToolchain::RemoteToolchain(
 		int major,
 		int minor,
 		int patch,
-		string exeSuffix,
-		string shlibSuffix,
-		string stlibSuffix,
-		string objSuffix,
-		string shlibPrefix)
+		const Toolchain::stringpairmap& fixes)
 : Toolchain("", type)
 {
 	m_hash = hash;
@@ -53,11 +49,8 @@ RemoteToolchain::RemoteToolchain(
 	m_majorVersion = major;
 	m_minorVersion = minor;
 	m_patchVersion = patch;
-	m_exeSuffix = exeSuffix;
-	m_shlibSuffix = shlibSuffix;
-	m_stlibSuffix = stlibSuffix;
-	m_objSuffix = objSuffix;
-	m_shlibPrefix = shlibPrefix;
+
+	m_fixes = fixes;
 }
 
 RemoteToolchain::~RemoteToolchain()

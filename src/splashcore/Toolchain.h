@@ -163,35 +163,30 @@ public:
 	int CompareVersion(Toolchain* rhs);
 	int CompareVersionAndType(Toolchain* rhs);
 
-	/**
-		@brief Get the suffix, including the dot, used for executable files
-	 */
-	std::string GetExecutableSuffix()
-	{ return m_exeSuffix; }
+	//Helpful map typedefs
+	typedef std::pair<std::string, std::string> stringpair;
+	typedef std::map<std::string, stringpair> stringpairmap;
 
 	/**
-		@brief Get the suffix, including the dot, used for shared libaries
+		@brief Get the suffix, including the dot, used for output files
 	 */
-	std::string GetSharedLibrarySuffix()
-	{ return m_shlibSuffix; }
+	std::string GetSuffix(std::string type)
+	{ return m_fixes[type].second; }
 
 	/**
-		@brief Get the prefix used for shared libaries
+		@brief Get the prefix used for output files
 	 */
-	std::string GetSharedLibraryPrefix()
-	{ return m_shlibPrefix; }
+	std::string GetPrefix(std::string type)
+	{ return m_fixes[type].first; }
 
 	/**
-		@brief Get the suffix, including the dot, used for static libraries
+		@brief Check if a given type is sane
 	 */
-	std::string GetStaticLibrarySuffix()
-	{ return m_stlibSuffix; }
+	bool IsTypeValid(std::string type)
+	{ return (m_fixes.find(type) != m_fixes.end()); }
 
-	/**
-		@brief Get the suffix, including the dot, used for object files
-	 */
-	std::string GetObjectSuffix()
-	{ return m_objSuffix; }
+	const stringpairmap& GetFixes()
+	{ return m_fixes; }
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Actual compilation stuff
@@ -291,42 +286,14 @@ protected:
 	 */
 	std::string m_stringVersion;
 
-	//TODO: Replace all of this with a map<string, string> of type -> prefix/suffix
-
 	/**
-		@brief Suffix, including the dot, used for executable files.
+		@brief Pre/suffix used for various types of file.
+
+		Map from type to pair<prefix, suffix>
 
 		Must be set in the constructor.
 	 */
-	std::string m_exeSuffix;
-
-	/**
-		@brief Suffix, including the dot, used for shared libraries.
-
-		Must be set in the constructor.
-	 */
-	std::string m_shlibSuffix;
-
-	/**
-		@brief Suffix, including the dot, used for static libraries.
-
-		Must be set in the constructor.
-	 */
-	std::string m_stlibSuffix;
-
-	/**
-		@brief Suffix, including the dot, used for object files.
-
-		Must be set in the constructor.
-	 */
-	std::string m_objSuffix;
-
-	/**
-		@brief Prefix used for shared library files.
-
-		Must be set in the constructor.
-	 */
-	std::string m_shlibPrefix;
+	stringpairmap m_fixes;
 
 	/**
 		Cache of dependency-scan results

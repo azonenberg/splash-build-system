@@ -179,11 +179,15 @@ int main(int argc, char* argv[])
 							(t->GetPatchVersion() << 0));
 		madd->set_hash(t->GetHash());
 		madd->set_versionstr(t->GetVersionString());
-		madd->set_exesuffix(t->GetExecutableSuffix());
-		madd->set_shlibsuffix(t->GetSharedLibrarySuffix());
-		madd->set_stlibsuffix(t->GetStaticLibrarySuffix());
-		madd->set_objsuffix(t->GetObjectSuffix());
-		madd->set_shlibprefix(t->GetSharedLibraryPrefix());
+
+		auto& fix = t->GetFixes();
+		for(auto jt : fix)
+		{
+			auto type = madd->add_types();
+			type->set_name(jt.first);
+			type->set_prefix(jt.second.first);
+			type->set_suffix(jt.second.second);
+		}
 		auto dlangs = t->GetSupportedLanguages();
 		for(auto x : dlangs)
 			madd->add_lang(x);

@@ -104,6 +104,14 @@ message BuildInfo
 	uint32	numchains	= 5;	//Number of toolchains on the node
 };
 
+//A type of output file (shared library, executable, etc)
+message OutputFileType
+{
+				string	name		= 1;	//Type of the binary ("shlib", "exe", etc)
+				string	prefix		= 2;	//Prefix added to target name to get output file name
+				string	suffix		= 3;	//Suffix added to target name to get output file name (including dot)
+};
+
 //Report compilers installed on the build server
 message AddCompiler
 {
@@ -116,13 +124,7 @@ message AddCompiler
 	repeated	uint32	lang		= 5;	//Array of languages
 	repeated	string	triplet		= 6;	//Array of architecture triplets
 
-	//The following flags are only meaningful / present for toolchains that produce native executables.
-	//Must be set to the empty string (not null) for other cases.
-				string	exeSuffix	= 7;	//Executable file suffix, including the dot if required (.exe, empty string, etc)
-				string	shlibSuffix	= 8;	//Shared library suffix, including the dot if required (.dll, .so, etc)
-				string	stlibSuffix = 9;	//Static library suffix, including the dot if required (.lib, .a, etc)
-				string	objSuffix	= 10;	//Object file suffix, including the dot if requied (.obj, .o, etc)
-				string	shlibPrefix	= 11;	//Shared library prefix ("lib" etc)
+	repeated	OutputFileType types	= 7;	//Output file types
 };
 
 //Request that a build server perform a dependency scan on a specific source file

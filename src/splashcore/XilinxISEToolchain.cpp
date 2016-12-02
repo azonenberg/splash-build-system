@@ -80,6 +80,9 @@ XilinxISEToolchain::XilinxISEToolchain(string basepath, int major, int minor)
 	m_triplets.emplace("zynq7-xc7z020");
 	m_triplets.emplace("zynq7-xc7z030");
 
+	//File format suffixes
+	m_fixes["bitstream"] = stringpair("", ".bit");
+
 	//Generate the hash
 	m_hash = sha256(string("Xilinx ISE ") + m_stringVersion);
 }

@@ -116,10 +116,10 @@ void CPPObjectNode::DoFinalize()
 		{
 			lock_guard<NodeManager> lock(*g_nodeManager);
 			auto chain = g_nodeManager->GetAnyToolchainForName(m_arch, m_toolchain);
-			libpre = chain->GetSharedLibraryPrefix();
-			shlibsuf = chain->GetSharedLibrarySuffix();
-			statsuf = chain->GetStaticLibrarySuffix();
-			osuf = chain->GetObjectSuffix();
+			libpre = chain->GetPrefix("shlib");
+			shlibsuf = chain->GetSuffix("shlib");
+			statsuf = chain->GetSuffix("stlib");
+			osuf = chain->GetSuffix("object");
 		}
 
 		//Go over the list of libraries we asked for and remove any optional ones we don't have

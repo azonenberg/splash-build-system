@@ -43,11 +43,7 @@ public:
 		int major,
 		int minor,
 		int patch,
-		std::string exeSuffix,
-		std::string shlibSuffix,
-		std::string stlibSuffix,
-		std::string objSuffix,
-		std::string shlibPrefix);
+		const Toolchain::stringpairmap& fixes);
 	virtual ~RemoteToolchain();
 
 	void AddLanguage(Language l)

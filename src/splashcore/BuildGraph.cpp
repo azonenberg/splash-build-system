@@ -546,10 +546,6 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	if(node["type"])
 		type = node["type"].as<std::string>();
 
-	//Remap a couple of types so GetOutputFilePath makes more sense
-	if(type == "bitstream")
-		type = "exe";
-
 	//See what architecture(s) we're targeting.
 	//Start by pulling in the default architectures
 	set<string> darches;
@@ -637,8 +633,9 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			//TODO: Replace "verilog" with "hdl"? How to handle mixed language designs?
 			else if(chaintype == "verilog")
 			{
-				if(false)
+				if(type == "bitstream")
 				{
+					//TODO: generate the output
 				}
 
 				else
@@ -871,27 +868,20 @@ string BuildGraph::GetOutputFilePath(
 			toolchain.c_str(), arch.c_str());
 		return "";
 	}
+	if(!chain->IsTypeValid(type))
+	{
+		LogParseError("Unknown type \"%s\"\n", type.c_str());
+		return "";
+	}
 
 	string path = m_buildArtifactPath + "/";
 	path += arch + "/";
 	path += config + "/";
 
-	//Figure out the prefix
-	if(type == "shlib")
-		path += chain->GetSharedLibraryPrefix();
-
-	//Add the actual target name
+	//Filename including pre/suffix
+	path += chain->GetPrefix(type);
 	path += name;
-
-	//Figure out the suffix
-	if(type == "exe")
-		path += chain->GetExecutableSuffix();
-	else if(type == "shlib")
-		path += chain->GetSharedLibrarySuffix();
-	else if(type == "stlib")
-		path += chain->GetStaticLibrarySuffix();
-	else
-		LogParseError("Unknown type \"%s\"\n", type.c_str());
+	path += chain->GetSuffix(type);
 
 	LogIndenter li;
 	//LogDebug("final path = %s\n", path.c_str());
@@ -915,14 +905,6 @@ string BuildGraph::GetIntermediateFilePath(
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	string path = m_buildArtifactPath + "/";
-	path += arch + "/";
-	path += config + "/";
-
-	path += GetDirOfFile(srcpath);
-	path += "/";
-	path += GetBasenameOfFileWithoutExt(srcpath);
-
 	//Look up a toolchain to query
 	lock_guard<NodeManager> lock2(*g_nodeManager);
 	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(arch, toolchain);
@@ -933,11 +915,21 @@ string BuildGraph::GetIntermediateFilePath(
 		return "";
 	}
 
-	//Add the type
-	if(type == "object")
-		path += chain->GetObjectSuffix();
-	else
+	if(!chain->IsTypeValid(type))
+	{
 		LogParseError("Unknown type \"%s\"\n", type.c_str());
+		return "";
+	}
+
+	string path = m_buildArtifactPath + "/";
+	path += arch + "/";
+	path += config + "/";
+
+	path += GetDirOfFile(srcpath);
+	path += "/";
+	path += chain->GetPrefix(type);
+	path += GetBasenameOfFileWithoutExt(srcpath);
+	path += chain->GetSuffix(type);
 
 	return path;
 }

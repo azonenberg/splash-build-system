@@ -370,8 +370,8 @@ bool GNUToolchain::ScanDependencies(
 
 	//Pull out some properties we need
 	string exe = chain->GetBasePath();
-	string libpre = chain->GetSharedLibraryPrefix();
-	string libsuf = chain->GetSharedLibrarySuffix();
+	string libpre = chain->GetPrefix("shlib");
+	string libsuf = chain->GetSuffix("shlib");
 
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
@@ -643,8 +643,8 @@ bool GNUToolchain::FindLibraries(
 {
 	//Pull out some properties we need
 	string exe = chain->GetBasePath();
-	string libpre = chain->GetSharedLibraryPrefix();
-	string libsuf = chain->GetSharedLibrarySuffix();
+	string libpre = chain->GetPrefix("shlib");
+	string libsuf = chain->GetSuffix("shlib");
 	string aflags = m_archflags[triplet];
 
 	//Create a temporary directory to work in
@@ -856,14 +856,21 @@ bool GNUToolchain::Link(
 	//Do some reordering to ensure objects come before libs.
 	set<string> objects;
 	set<string> libs;
+	string sosuf;
+	string asuf;
+	if(chain)
+	{
+		chain->GetSuffix("shlib");
+		chain->GetSuffix("stlib");
+	}
 	for(auto s : sources)
 	{
 		//If toolchain is null we're being called by the ctor
 		//and obviously not linking any libraries.
 		//In this case, assume the input is a source file
-		if(chain && s.find(chain->GetSharedLibrarySuffix()) != string::npos)
+		if(chain && s.find(sosuf) != string::npos)
 			libs.emplace(s);
-		else if(chain && s.find(chain->GetStaticLibrarySuffix()) != string::npos)
+		else if(chain && s.find(asuf) != string::npos)
 			libs.emplace(s);
 		else
 			objects.emplace(s);
