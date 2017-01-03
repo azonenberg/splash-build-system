@@ -51,6 +51,8 @@ public:
 		TOOLCHAIN_GNU,		//GNU C/C++
 		TOOLCHAIN_CLANG,	//Clang
 
+		TOOLCHAIN_YOSYS,	//Yosys
+
 		TOOLCHAIN_ISE,		//Xilinx ISE
 		TOOLCHAIN_VIVADO,	//Xilinx Vivado
 

@@ -116,6 +116,7 @@ double GetTime();
 #include "RemoteToolchain.h"
 #include "XilinxISEToolchain.h"
 #include "XilinxVivadoToolchain.h"
+#include "YosysToolchain.h"
 
 #include "Job.h"
 

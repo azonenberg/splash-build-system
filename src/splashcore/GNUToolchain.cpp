@@ -795,7 +795,7 @@ bool GNUToolchain::Compile(
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";
-	LogDebug("Compile command line: %s\n", cmdline.c_str());
+	//LogDebug("Compile command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
@@ -881,7 +881,7 @@ bool GNUToolchain::Link(
 	for(auto s : libs)
 		cmdline += s + " ";
 
-	LogDebug("Link command line: %s\n", cmdline.c_str());
+	//LogDebug("Link command line: %s\n", cmdline.c_str());
 
 	//Run the link itself
 	if(0 != ShellCommand(cmdline, output))

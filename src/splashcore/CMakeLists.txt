@@ -41,6 +41,7 @@ add_library(splashcore SHARED
 	Toolchain.cpp
 	XilinxISEToolchain.cpp
 	XilinxVivadoToolchain.cpp
+	YosysToolchain.cpp
 
 	BuildGraph.cpp
 	BuildGraphNode.cpp

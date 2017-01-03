@@ -33,6 +33,7 @@ using namespace std;
 
 void FindGCCCompilers();
 void FindClangCompilers();
+void FindYosysCompilers();
 void FindXilinxISECompilers();
 void FindXilinxVivadoCompilers();
 
@@ -101,6 +102,7 @@ void FindFPGACompilers()
 
 	FindXilinxISECompilers();
 	FindXilinxVivadoCompilers();
+	FindYosysCompilers();
 }
 
 void FindGCCCompilers()
@@ -241,4 +243,21 @@ void FindXilinxVivadoCompilers()
 		auto vdo = new XilinxVivadoToolchain(dir, major, minor);
 		g_toolchains[vdo->GetHash()] = vdo;
 	}
+}
+
+void FindYosysCompilers()
+{
+	LogDebug("Searching for Yosys compilers...\n");
+	LogIndenter li;
+
+	//Only look in $PATH for now
+	string basepath = ShellCommand("which yosys");
+	if(!DoesFileExist(basepath))
+	{
+		LogDebug("No %s found, giving up\n", basepath.c_str());
+		return;
+	}
+
+	auto chain = new YosysToolchain(basepath);
+	g_toolchains[chain->GetHash()] = chain;
 }

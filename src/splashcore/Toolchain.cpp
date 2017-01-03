@@ -250,6 +250,9 @@ string Toolchain::GetToolchainType()
 		case TOOLCHAIN_ISE:
 			return "ISE";
 
+		case TOOLCHAIN_YOSYS:
+			return "Yosys";
+
 		case TOOLCHAIN_VIVADO:
 			return "Vivado";
 
