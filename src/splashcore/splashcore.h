@@ -133,6 +133,8 @@ double GetTime();
 #include "CPPObjectNode.h"
 #include "CPPExecutableNode.h"
 #include "CPPSharedLibraryNode.h"
+#include "HDLNetlistNode.h"
+#include "FormalVerificationNode.h"
 
 #include "WorkingCopy.h"
 

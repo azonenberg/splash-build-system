@@ -27,130 +27,40 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef BuildFlag_h
-#define BuildFlag_h
+#ifndef HDLNetlistNode_h
+#define HDLNetlistNode_h
 
 /**
-	@brief A single compiler/linker flag.
+	@brief A C++ object file
  */
-class BuildFlag
+class HDLNetlistNode : public BuildGraphNode
 {
 public:
-	BuildFlag(std::string flag);
-	virtual ~BuildFlag();
-	
-	bool operator==(const BuildFlag& rhs) const
-	{ return m_rawflag == rhs.m_rawflag; }
-	
-	/**
-		@brief Bitmask of when this flag can be used
-	 */
-	enum FlagUsage
-	{
-		COMPILE_TIME 	= 0x01,		//software compilation
-		LINK_TIME 		= 0x02,		//software linking
-		SYNTHESIS_TIME	= 0x04,		//HDL synthesis
-		MAP_TIME		= 0x08,		//HDL technology mapping
-		PAR_TIME		= 0x10,		//HDL place-and-route
-		IMAGE_TIME		= 0x20,		//Firmware image creation time
-		PROOF_TIME		= 0x40,		//Formal verification solvers etc
-		
-		NO_TIME			= 0x00		//placeholder
-	};
-	
-	/**
-		@brief Major functional group describing roughly what this flag does
-	 */
-	enum FlagType
-	{
-		TYPE_META		= 1,		//flags that control splash itself (like "global")
-		TYPE_WARNING	= 2,		//enable/disable some kind of warning
-		TYPE_ERROR		= 3,		//enable/disable some kind of error
-		TYPE_OPTIMIZE	= 4,		//control optimization behavior
-		TYPE_DEBUG		= 5,		//enable/disable debug symbols or debugging features
-		TYPE_ANALYSIS	= 6,		//enable/disable profiling, tracing, etc
-		TYPE_DIALECT	= 7,		//control which dialect of a language is being used
-		TYPE_OUTPUT		= 8,		//control the output file (extension, soname, etc)
-		TYPE_LIBRARY	= 9,		//control linking of libraries, IP cores, etc
-		TYPE_DEFINE		= 10,		//define macros
-		
-		TYPE_INVALID	= 0			//placeholder
-	};
+	HDLNetlistNode(
+		BuildGraph* graph,
+		std::string arch,
+		std::string fname,
+		std::string path,
+		std::string toolchain,
+		std::string script,
+		std::set<BuildFlag> flags
+	);
+	virtual ~HDLNetlistNode();
 
-	/**
-		@brief Return the original flag text, human readable (like "warning/max")
-	 */
-	operator std::string() const
-	{ return m_rawflag; }
+	void GetLibraryScanResults(
+		std::set<std::string>& libdeps,
+		std::set<BuildFlag>& libflags);
 
-	FlagType GetType()
-	{ return m_type; }
-
-	std::string GetFlag() const
-	{ return m_flag; }
-
-	std::string GetArgs() const
-	{ return m_arg; }
-
-	bool IsUsedAt(FlagUsage t);
-	
 protected:
+	virtual void DoFinalize();
+	/*
+	std::string m_errors;
 
-	//Helpers for initializing
-	void LoadWarningFlag();
-	void LoadErrorFlag();
-	void LoadOptimizeFlag();
-	void LoadDebugFlag();
-	void LoadAnalysisFlag();
-	void LoadDialectFlag();
-	void LoadOutputFlag();
-	void LoadLibraryFlag();
-	void LoadDefineFlag();
-	
-	/**
-		@brief Usage flags (bitmask of FlagUsage)
-		
-		This is checked by toolchains to determine whether this flag is relevant to them or not
-	 */
-	uint32_t	m_usage;
-	
-	/**
-		@brief Functional group for the flag (used to determine what part of a complex tool should look at it)
-	 */
-	FlagType	m_type;
-	
-	/**
-		@brief Textual name of this flag (like "max" for TYPE_WARNING to enable all warnings)
-	 */
-	std::string	m_flag;
-	
-	/**
-		@brief Raw text of this flag (used for hash comparisons etc)
-	 */
-	std::string	m_rawflag;
+	DependencyScanJob* m_scanJob;
 
-	/**
-		@brief Argument of this flag (for things like libraries)
-	 */
-	std::string m_arg;
-};
-
-/**
-	@brief Hash/comparison function (for unordered_set / set)
- */
-namespace std
-{
-	template<> struct hash<BuildFlag>
-	{
-		size_t operator()(const BuildFlag& b) const
-		{ return hash<string>()(static_cast<string>(b)); }
-	};
-
-	template<> struct less<BuildFlag>
-	{
-		size_t operator()(const BuildFlag& a, const BuildFlag& b) const
-		{ return static_cast<string>(a) < static_cast<string>(b); }
-	};
+	std::set<std::string> m_libdeps;
+	std::set<BuildFlag> m_libflags;
+	*/
 };
 
 #endif

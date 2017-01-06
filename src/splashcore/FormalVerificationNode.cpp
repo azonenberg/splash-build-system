@@ -34,7 +34,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Construction / destruction
 
-CPPExecutableNode::CPPExecutableNode(
+FormalVerificationNode::FormalVerificationNode(
 	BuildGraph* graph,
 	string arch,
 	string config,
@@ -43,13 +43,14 @@ CPPExecutableNode::CPPExecutableNode(
 	string path,
 	string toolchain,
 	YAML::Node& node)
-	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
-	, m_scriptpath(scriptpath)
+	: BuildGraphNode(graph, BuildFlag::PROOF_TIME, toolchain, arch, config, name, scriptpath, path, node)
+	//, m_scriptpath(scriptpath)
 {
-	//LogDebug("Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
+	//LogDebug("Creating FormalVerificationNode (toolchain %s, output fname %s)\n",
 	//	toolchain.c_str(), path.c_str());
 	//LogIndenter li;
 
+	/*
 	//Look up the type of executable we are
 	string type;
 	if(node["type"])
@@ -60,6 +61,7 @@ CPPExecutableNode::CPPExecutableNode(
 		//Add the "shared library" flag
 		m_flags.emplace(BuildFlag("output/shared"));
 	}
+	*/
 
 	//Look up all of the source files
 	LoadSourceFileNodes(node, scriptpath, name, path, m_sourcenodes);
@@ -68,7 +70,7 @@ CPPExecutableNode::CPPExecutableNode(
 /**
 	@brief Create all of our object files and kick off the dependency scans for them
  */
-void CPPExecutableNode::DoStartFinalization()
+void FormalVerificationNode::DoStartFinalization()
 {
 	//LogDebug("DoFinalize for %s\n", GetFilePath().c_str());
 	//LogIndenter li;
@@ -76,11 +78,11 @@ void CPPExecutableNode::DoStartFinalization()
 	//Look up the working copy we're part of
 	WorkingCopy* wc = m_graph->GetWorkingCopy();
 
-	//Collect the compiler flags
+	//Collect the synth flags
 	set<BuildFlag> compileFlags;
-	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
-
-	//We have source nodes. Create the object nodes.
+	GetFlagsForUseAt(BuildFlag::SYNTHESIS_TIME, compileFlags);
+	/*
+	//We have source nodes. Create the netlist node.
 	set<string> ignored;
 	for(auto s : m_sourcenodes)
 	{
@@ -126,13 +128,15 @@ void CPPExecutableNode::DoStartFinalization()
 		//Don't worry about dirtying targets in other files, there shouldn't be any
 		wc->UpdateFile(fname, h, false, false, ignored);
 	}
+	*/
 }
 
 /**
 	@brief Calculate our final hash etc
  */
-void CPPExecutableNode::DoFinalize()
+void FormalVerificationNode::DoFinalize()
 {
+	/*
 	//Update libdeps and libflags
 	//TODO: Can we do this per executable, and not separately for each object?
 	for(auto obj : m_objects)
@@ -168,7 +172,7 @@ void CPPExecutableNode::DoFinalize()
 		if(nodes.empty())
 		{
 			SetInvalidInput(
-				string("CPPExecutableNode: Could not link to target ") + f.GetArgs() + " because it doesn't exist\n");
+				string("FormalVerificationNode: Could not link to target ") + f.GetArgs() + " because it doesn't exist\n");
 			return;
 		}
 		//TODO: verify only one?
@@ -189,14 +193,14 @@ void CPPExecutableNode::DoFinalize()
 	//source file scan time in order to set the right -DHAVE_xxx flags
 	for(auto d : m_libdeps)
 	{
-		//LogDebug("[CPPExecutableNode] Found library %s for %s\n", d.c_str(), GetFilePath().c_str());
+		//LogDebug("[FormalVerificationNode] Found library %s for %s\n", d.c_str(), GetFilePath().c_str());
 		//and to our dependencies
 		m_sources.emplace(d);
 		m_dependencies.emplace(d);
 	}
 	for(auto f : m_libflags)
 	{
-		//LogDebug("[CPPExecutableNode] Found library flag %s\n", static_cast<string>(f).c_str());
+		//LogDebug("[FormalVerificationNode] Found library flag %s\n", static_cast<string>(f).c_str());
 		m_flags.emplace(f);
 	}
 
@@ -215,16 +219,17 @@ void CPPExecutableNode::DoFinalize()
 	}
 
 	UpdateHash();
+	*/
 }
 
-CPPExecutableNode::~CPPExecutableNode()
+FormalVerificationNode::~FormalVerificationNode()
 {
 }
 
 /**
 	@brief Calculate our hash. Must only be called from DoFinalize().
  */
-void CPPExecutableNode::UpdateHash()
+void FormalVerificationNode::UpdateHash()
 {
 	BuildGraphNode::UpdateHash_DefaultTarget();
 }

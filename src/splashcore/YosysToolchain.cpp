@@ -2,7 +2,7 @@
 *                                                                                                                      *
 * SPLASH build system v0.2                                                                                             *
 *                                                                                                                      *
-* Copyright (c) 2016 Andrew D. Zonenberg                                                                               *
+* Copyright (c) 2017 Andrew D. Zonenberg                                                                               *
 * All rights reserved.                                                                                                 *
 *                                                                                                                      *
 * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the     *
@@ -45,7 +45,6 @@ YosysToolchain::YosysToolchain(string basepath)
 	snprintf(tmp, sizeof(tmp), "Yosys %d.%d+%d", m_majorVersion, m_minorVersion, m_patchVersion);
 	m_stringVersion = tmp;
 
-
 	//Set list of target architectures
 	//TODO: IceStorm stuff
 	m_triplets.emplace("generic-formal");
@@ -54,7 +53,7 @@ YosysToolchain::YosysToolchain(string basepath)
 	m_triplets.emplace("greenpak4-slg46621");
 
 	//File format suffixes
-	//m_fixes["bitstream"] = stringpair("", ".bit");
+	m_fixes["formal"] = stringpair("", ".txt");
 
 	//Generate the hash based on the full git ID etc
 	m_hash = sha256(sver);

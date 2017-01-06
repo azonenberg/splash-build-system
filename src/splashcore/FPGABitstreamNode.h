@@ -31,7 +31,7 @@
 #define FPGABitstreamNode_h
 
 /**
-	@brief A C++ executable
+	@brief An FPGA bitstream
  */
 class FPGABitstreamNode : public BuildGraphNode
 {

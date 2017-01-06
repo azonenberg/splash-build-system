@@ -638,6 +638,9 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 					//TODO: generate the output
 				}
 
+				else if(type == "formal")
+					target = new FormalVerificationNode(this, a, c, name, path, exepath, toolchain, node);
+
 				else
 				{
 					LogParseError("Don't know what to do with target type \"%s\"\n", type.c_str());

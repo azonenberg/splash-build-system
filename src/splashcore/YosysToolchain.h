@@ -31,7 +31,7 @@
 #define YosysToolchain_h
 
 /**
-	@brief A Xilinx ISE FPGA toolchain
+	@brief A Yosys FPGA toolchain
  */
 class YosysToolchain : public FPGAToolchain
 {

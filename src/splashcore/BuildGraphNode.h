@@ -186,6 +186,17 @@ protected:
 
 	void SetInvalidInput(std::string errors);
 
+	//Load source file nodes, creating new ones as needed
+	void LoadSourceFileNodes(
+		YAML::Node& node,
+		const std::string& scriptpath,
+		const std::string& name,
+		const std::string& path,
+		std::set<BuildGraphNode*>& sourcenodes);
+
+	//Update hash for a standard target without anything funny going on
+	void UpdateHash_DefaultTarget();
+
 	virtual void DoFinalize() =0;
 	virtual void DoStartFinalization();
 
