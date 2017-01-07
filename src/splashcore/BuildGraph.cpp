@@ -520,7 +520,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	//Sanity check that we asked for a toolchain
 	if(!node["toolchain"])
 	{
-		LogParseError("Target \"%s\" in build script \"%s\" cannot be loaded as no toolchain was specified",
+		LogParseError("Target \"%s\" in build script \"%s\" cannot be loaded as no toolchain was specified\n",
 			name.c_str(), path.c_str());
 		return;
 	}
@@ -537,7 +537,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		chaintype = toolchain.substr(0, offset);
 	if(chaintype.empty())
 	{
-		LogParseError("Malformed toolchain name \"%s\" in build script \"%s\"", toolchain.c_str(), path.c_str());
+		LogParseError("Malformed toolchain name \"%s\" in build script \"%s\"\n", toolchain.c_str(), path.c_str());
 		return;
 	}
 
@@ -549,11 +549,47 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	//See what architecture(s) we're targeting.
 	//Start by pulling in the default architectures
 	set<string> darches;
+	unordered_set<string> arches;
 	GetDefaultArchitecturesForToolchain(toolchain, path, darches);
 
-	//Then look to see if we overrode them
-	unordered_set<string> arches;
-	if(node["arches"])
+	//If we specify a list of target boards, read the BSP rather than the arch list
+	if(node["boards"])
+	{
+		//If we also specified arches something derpy is going on... complain!
+		if(node["arches"])
+		{
+			LogParseError("Node \"%s\" specified both boards and arches in build script \"%s\"\n",
+				name.c_str(), path.c_str());
+			return;
+		}
+
+		//Read the board list and crunch that
+		auto boards = node["boards"];
+		string base = GetDirOfFile(path);
+		for(auto it : boards)
+		{
+			//Get the YAML file name and make sure we have it
+			string bpath = base + "/" + it.as<std::string>();
+			if(!CanonicalizePathThatMightNotExist(bpath))
+			{
+				LogParseError("Board file name \"%s\" in build script \"%s\" is malformed\n",
+					bpath.c_str(), path.c_str());
+				return;
+			}
+			if(!m_workingCopy->HasFile(bpath))
+			{
+				LogParseError("Board file \"%s\" in build script \"%s\" does not exist\n",
+					bpath.c_str(), path.c_str());
+				return;
+			}
+
+			//TODO: crunch
+			LogDebug("Board file load TODO\n");
+		}
+	}
+
+	//Look to see if we overrode defaults
+	else if(node["arches"])
 	{
 		auto oarch = node["arches"];
 
@@ -634,9 +670,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			else if(chaintype == "verilog")
 			{
 				if(type == "bitstream")
-				{
-					//TODO: generate the output
-				}
+					target = new FPGABitstreamNode(this, a, c, name, path, exepath, toolchain, node);
 
 				else if(type == "formal")
 					target = new FormalVerificationNode(this, a, c, name, path, exepath, toolchain, node);

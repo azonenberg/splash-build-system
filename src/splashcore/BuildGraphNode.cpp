@@ -208,14 +208,19 @@ void BuildGraphNode::LoadSourceFileNodes(
 	for(auto it : snode)
 	{
 		//File name is relative to the build script.
-		//Get the actual path name (TODO: canonicalize ../ etc)
+		//Get the actual path name
 		string fname = (dir + "/" + it.as<std::string>());
+		if(!CanonicalizePathThatMightNotExist(fname))
+		{
+			SetInvalidInput(string("BuildGraphNode: File name ") + fname + " could not be canonicalized\n");
+			return;
+		}
 
 		//Now we can check the working copy and see what the file looks like.
 		//Gotta make sure it's there first!
 		if(!wc->HasFile(fname))
 		{
-			SetInvalidInput(string("CPPExecutableNode: No file named ") + fname + " in working copy\n");
+			SetInvalidInput(string("BuildGraphNode: No file named ") + fname + " in working copy\n");
 			return;
 		}
 

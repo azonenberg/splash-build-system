@@ -50,6 +50,7 @@ add_library(splashcore SHARED
 	CPPSharedLibraryNode.cpp
 	CPPObjectNode.cpp
 	FormalVerificationNode.cpp
+	FPGABitstreamNode.cpp
 	HDLNetlistNode.cpp
 	SourceFileNode.cpp
 	SystemLibraryNode.cpp

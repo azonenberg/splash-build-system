@@ -105,6 +105,8 @@ bool XilinxISEToolchain::Build(
 	map<string, string>& /*outputs*/,
 	string& /*stdout*/)
 {
+	//
+
 	LogDebug("XilinxISEToolchain::Build() not implemented\n");
 	return false;
 }

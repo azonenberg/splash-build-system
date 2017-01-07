@@ -135,6 +135,7 @@ double GetTime();
 #include "CPPSharedLibraryNode.h"
 #include "HDLNetlistNode.h"
 #include "FormalVerificationNode.h"
+#include "FPGABitstreamNode.h"
 
 #include "WorkingCopy.h"
 

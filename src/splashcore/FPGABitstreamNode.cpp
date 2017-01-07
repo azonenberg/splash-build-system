@@ -49,6 +49,7 @@ FPGABitstreamNode::FPGABitstreamNode(
 	//LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
 	//	toolchain.c_str(), path.c_str());
 	//LogIndenter li;
+
 	/*
 	//Look up the type of executable we are
 	string type;
@@ -60,56 +61,10 @@ FPGABitstreamNode::FPGABitstreamNode(
 		//Add the "shared library" flag
 		m_flags.emplace(BuildFlag("output/shared"));
 	}
-
-	//Sanity check: we must have some source files!
-	if(!node["sources"])
-	{
-		SetInvalidInput(
-			string("FPGABitstreamNode: cannot have a C++ executable (") + name + ", declared in " +
-			path +") without any source files\n");
-		return;
-	}
-	auto snode = node["sources"];
-
-	//Look up the working copy we're part of
-	WorkingCopy* wc = m_graph->GetWorkingCopy();
-
-	//Look up the source files and see if we have source nodes for them yet
-	string dir = GetDirOfFile(scriptpath);
-	for(auto it : snode)
-	{
-		//File name is relative to the build script.
-		//Get the actual path name (TODO: canonicalize ../ etc)
-		string fname = (dir + "/" + it.as<std::string>());
-
-		//Now we can check the working copy and see what the file looks like.
-		//Gotta make sure it's there first!
-		if(!wc->HasFile(fname))
-		{
-			SetInvalidInput(string("FPGABitstreamNode: No file named ") + fname + " in working copy\n");
-			return;
-		}
-
-		//We have the file, look up the hash
-		//This is a separate mutex operation from HasFile(), but no real risk of a race condition
-		//because the constructor is only called from the DevClientThread, which is the only thread
-		//that can remove files from the working copy.
-		string hash = wc->GetFileHash(fname);
-
-		//If we already have a node, save it
-		if(m_graph->HasNodeWithHash(hash))
-		{
-			//LogDebug("Already have source node for %s\n", fname.c_str());
-			m_sourcenodes.emplace(m_graph->GetNodeWithHash(hash));
-			continue;
-		}
-
-		//Nope, need to create one
-		auto src = new SourceFileNode(m_graph, fname, hash);
-		graph->AddNode(src);
-		m_sourcenodes.emplace(src);
-	}
 	*/
+
+	//Look up all of the source files
+	LoadSourceFileNodes(node, scriptpath, name, path, m_sourcenodes);
 }
 
 /**
@@ -277,26 +232,5 @@ FPGABitstreamNode::~FPGABitstreamNode()
  */
 void FPGABitstreamNode::UpdateHash()
 {
-	/*
-	//Look up the working copy we're part of
-	WorkingCopy* wc = m_graph->GetWorkingCopy();
-
-	//Calculate our hash.
-	//Dependencies and flags are obvious
-	string hashin;
-	for(auto d : m_dependencies)
-		hashin += wc->GetFileHash(d);
-	for(auto f : m_flags)
-		hashin += sha256(f);
-
-	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
-	hashin += g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
-	hashin += sha256(m_arch);
-
-	//Do not hash the output file name.
-	//Having multiple files with identical inputs merged into a single node is *desirable*.
-
-	//Done, calculate final hash
-	m_hash = sha256(hashin);
-	*/
+	BuildGraphNode::UpdateHash_DefaultTarget();
 }

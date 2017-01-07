@@ -44,7 +44,7 @@ FormalVerificationNode::FormalVerificationNode(
 	string toolchain,
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::PROOF_TIME, toolchain, arch, config, name, scriptpath, path, node)
-	//, m_scriptpath(scriptpath)
+	, m_scriptpath(scriptpath)
 {
 	//LogDebug("Creating FormalVerificationNode (toolchain %s, output fname %s)\n",
 	//	toolchain.c_str(), path.c_str());
