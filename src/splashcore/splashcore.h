@@ -120,6 +120,8 @@ double GetTime();
 
 #include "Job.h"
 
+#include "BoardInfoFile.h"
+
 #include "BuildGraph.h"
 #include "BuildGraphNode.h"
 

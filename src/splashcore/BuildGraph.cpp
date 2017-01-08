@@ -553,6 +553,8 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	GetDefaultArchitecturesForToolchain(toolchain, path, darches);
 
 	//If we specify a list of target boards, read the BSP rather than the arch list
+	BoardInfoFile* boardInfo = NULL;
+	string infoHash;
 	if(node["boards"])
 	{
 		//If we also specified arches something derpy is going on... complain!
@@ -583,8 +585,9 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 				return;
 			}
 
-			//TODO: crunch
-			LogDebug("Board file load TODO\n");
+			//Load the board info
+			infoHash = m_workingCopy->GetFileHash(bpath);
+			boardInfo = new BoardInfoFile(g_cache->ReadCachedFile(infoHash));
 		}
 	}
 
@@ -708,6 +711,13 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	//Record that we were declared in this file
 	m_targetOrigins[path].emplace(name);
 	m_targetReverseOrigins[name] = path;
+
+	//Clean up
+	if(boardInfo)
+	{
+		delete boardInfo;
+		boardInfo = NULL;
+	}
 }
 
 /**

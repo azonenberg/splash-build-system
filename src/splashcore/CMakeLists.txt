@@ -22,6 +22,7 @@ add_library(splashcore SHARED
 
 	${PROTOBUF_DIR}/splashcore/SplashNet.pb.cc
 
+	# Configuration of the build
 	BuildConfiguration.cpp
 	BuildFlag.cpp
 	BuildSettings.cpp
@@ -29,6 +30,7 @@ add_library(splashcore SHARED
 
 	DependencyCache.cpp
 
+	# Toolchains
 	CPPToolchain.cpp
 	CToolchain.cpp
 	FPGAToolchain.cpp
@@ -43,6 +45,8 @@ add_library(splashcore SHARED
 	XilinxVivadoToolchain.cpp
 	YosysToolchain.cpp
 
+	# Graph stuff
+	BoardInfoFile.cpp
 	BuildGraph.cpp
 	BuildGraphNode.cpp
 	ConstantTableNode.cpp
@@ -55,6 +59,7 @@ add_library(splashcore SHARED
 	SourceFileNode.cpp
 	SystemLibraryNode.cpp
 
+	# Scheduling
 	BuildJob.cpp
 	DependencyScanJob.cpp
 	Job.cpp
