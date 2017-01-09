@@ -36,10 +36,23 @@ using namespace std;
 
 BoardInfoFile::BoardInfoFile(string data)
 {
-	vector<YAML::Node> nodes = YAML::LoadAll(data);
-	for(auto node : nodes)
+	vector<YAML::Node> docs = YAML::LoadAll(data);
+	for(auto doc : docs)
 	{
-		//TODO
+		if(doc["device"])
+			ProcessDevice(doc["device"]);
+		else
+		{
+			LogError("Board info file missing device node\n");
+			return;
+		}
+
+		/*
+		for(auto it : doc)
+		{
+			string name = it.first.as<std::string>();
+			LogDebug("BoardInfo %s\n", name.c_str());
+		}*/
 	}
 }
 
@@ -47,3 +60,14 @@ BoardInfoFile::~BoardInfoFile()
 {
 }
 
+void BoardInfoFile::ProcessDevice(YAML::Node& node)
+{
+}
+
+void BoardInfoFile::ProcessIOs(YAML::Node& node)
+{
+}
+
+void BoardInfoFile::ProcessClocks(YAML::Node& node)
+{
+}

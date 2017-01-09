@@ -40,6 +40,9 @@ public:
 	virtual ~BoardInfoFile();
 
 protected:
+	void ProcessDevice(YAML::Node& node);
+	void ProcessIOs(YAML::Node& node);
+	void ProcessClocks(YAML::Node& node);
 };
 
 #endif
