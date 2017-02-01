@@ -47,27 +47,128 @@ BoardInfoFile::BoardInfoFile(string data)
 			return;
 		}
 
-		/*
-		for(auto it : doc)
+		if(doc["ios"])
+			ProcessIOs(doc["ios"]);
+		else
 		{
-			string name = it.first.as<std::string>();
-			LogDebug("BoardInfo %s\n", name.c_str());
-		}*/
+			LogError("Board info file missing ios node\n");
+			return;
+		}
+
+		if(doc["clocks"])
+			ProcessClocks(doc["clocks"]);
+		else
+		{
+			LogError("Board info file missing clocks node\n");
+			return;
+		}
 	}
+
+	Print();
 }
 
 BoardInfoFile::~BoardInfoFile()
 {
 }
 
-void BoardInfoFile::ProcessDevice(YAML::Node& node)
+void BoardInfoFile::ProcessDevice(const YAML::Node& node)
 {
+	if(!node["triplet"])
+	{
+		LogError("Board info file missing triplet entry\n");
+		return;
+	}
+
+	if(!node["speed"])
+	{
+		LogError("Board info file missing speed entry\n");
+		return;
+	}
+
+	if(!node["package"])
+	{
+		LogError("Board info file missing package entry\n");
+		return;
+	}
+
+	/*
+	device:
+		triplet: zynq7-xc7z010
+		speed: 1
+		package: clg400
+	 */
+	m_triplet = node["triplet"].as<string>();
+	m_package = node["package"].as<string>();
+	m_speed = node["speed"].as<int>();
 }
 
-void BoardInfoFile::ProcessIOs(YAML::Node& node)
+void BoardInfoFile::ProcessIOs(const YAML::Node& node)
 {
+	//Array of I/O pin declarations
+	for(auto it : node)
+	{
+		/*
+		clk:
+			loc:    L16
+			std:    LVCMOS33
+		*/
+		string name = it.first.as<string>();
+		YAML::Node pin = it.second;
+
+		if(!pin["loc"])
+		{
+			LogError("Pin \"%s\" missing loc\n", name.c_str());
+			return;
+		}
+
+		if(!pin["std"])
+		{
+			LogError("Pin \"%s\" missing std\n", name.c_str());
+			return;
+		}
+
+		m_pins[name] = BoardInfoPin(
+			pin["loc"].as<string>(),
+			pin["std"].as<string>());
+	}
 }
 
-void BoardInfoFile::ProcessClocks(YAML::Node& node)
+void BoardInfoFile::ProcessClocks(const YAML::Node& node)
 {
+	//Array of clock pin declarations
+	for(auto it : node)
+	{
+		/*
+		clk:
+			mhz:    125.000
+			duty:   50
+		 */
+
+		string name = it.first.as<string>();
+		YAML::Node clk = it.second;
+
+		if(!clk["mhz"])
+		{
+			LogError("Clock \"%s\" missing mhz\n", name.c_str());
+			return;
+		}
+
+		if(!clk["duty"])
+		{
+			LogError("duty \"%s\" missing duty\n", name.c_str());
+			return;
+		}
+
+		m_clocks[name] = BoardInfoClock(
+			clk["mhz"].as<double>(),
+			clk["duty"].as<double>());
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Debug output
+
+void BoardInfoFile::Print()
+{
+
 }

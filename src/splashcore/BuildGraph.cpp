@@ -308,7 +308,8 @@ void BuildGraph::UpdateScript(string path, string hash, bool body, bool config, 
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	LogDebug("Updating build script %s (body=%d, config=%d)\n", path.c_str(), body, config);
+	//LogDebug("Updating build script %s (body=%d, config=%d)\n", path.c_str(), body, config);
+	//LogIndenter li;
 
 	//This is now a known script, keep track of it
 	m_buildScriptPaths[path] = hash;
@@ -346,9 +347,9 @@ void BuildGraph::InternalUpdateScript(string path, string hash, bool body, bool 
 			if( (pos != 0) || (s == path) )
 				continue;
 
-			LogDebug("Build script %s needs to be re-run to reflect changed recursive configurations\n",
-				s.c_str());
-			LogDebug("pos=%zu dir=%s path=%s\n", pos, dir.c_str(), path.c_str());
+			//LogDebug("Build script %s needs to be re-run to reflect changed recursive configurations\n",
+			//	s.c_str());
+			//LogDebug("pos=%zu dir=%s path=%s\n", pos, dir.c_str(), path.c_str());
 
 			InternalUpdateScript(s, m_buildScriptPaths[s], body, config, dirtyScripts);
 		}
@@ -555,6 +556,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	//If we specify a list of target boards, read the BSP rather than the arch list
 	BoardInfoFile* boardInfo = NULL;
 	string infoHash;
+	map<string, BoardInfoFile*> boards;
 	if(node["boards"])
 	{
 		//If we also specified arches something derpy is going on... complain!
@@ -566,12 +568,15 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		}
 
 		//Read the board list and crunch that
-		auto boards = node["boards"];
+		auto nboards = node["boards"];
 		string base = GetDirOfFile(path);
-		for(auto it : boards)
+		for(auto it : nboards)
 		{
+			string fname = it.as<std::string>();
+			string basename = GetBasenameOfFile(fname);
+
 			//Get the YAML file name and make sure we have it
-			string bpath = base + "/" + it.as<std::string>();
+			string bpath = base + "/" + fname;
 			if(!CanonicalizePathThatMightNotExist(bpath))
 			{
 				LogParseError("Board file name \"%s\" in build script \"%s\" is malformed\n",
@@ -587,7 +592,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 
 			//Load the board info
 			infoHash = m_workingCopy->GetFileHash(bpath);
-			boardInfo = new BoardInfoFile(g_cache->ReadCachedFile(infoHash));
+			boards[basename] = new BoardInfoFile(g_cache->ReadCachedFile(infoHash));
 		}
 	}
 
@@ -622,6 +627,52 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 	//See what configurations we might be building for
 	set<string> configs;
 	GetConfigNames(toolchain, path, configs);
+
+	//If we have boards, process these separately
+	if(!boards.empty())
+	{
+		for(auto it : boards)
+		{
+			auto bfname = it.first;
+			auto board = it.second;
+
+			//Look up the toolchain for the board's architecture triplet
+			auto arch = board->GetTriplet();
+			if(NULL == g_nodeManager->GetAnyToolchainForName(arch, toolchain))
+			{
+				LogError(
+					"Target \"%s\" (declared in \"%s\") needs a toolchain of type \"%s\" for architecture \"%s\",\n"
+					"but no nodes could provide it\n",
+					name.c_str(), path.c_str(), toolchain.c_str(), arch.c_str());
+				continue;
+			}
+			LogDebug("Processing design for board %s (arch %s)\n", bfname.c_str(), arch.c_str());
+
+			//Only supported type is verilog/bitstream
+			if( (chaintype != "verilog") || (type != "bitstream") )
+			{
+				LogError("Target types other than verilog/bitstream are not supported for board nodes\n");
+				continue;
+			}
+
+			//Create a node for each configuration
+			auto boardbase = GetBasenameOfFileWithoutExt(bfname);
+			for(auto c : configs)
+			{
+				LogIndenter li;
+				auto bitpath = GetOutputFilePath(toolchain, c, arch, type, name, bfname);
+				//LogDebug("Output for config %s is %s\n", c.c_str(), bitpath.c_str());
+
+				auto target = new FPGABitstreamNode(this, arch, c, name, path, bitpath, toolchain, board, node);
+				GetTargetMap(ArchConfig(boardbase, c))[name] = target;
+				AddNode(target);
+			}
+		}
+
+		for(auto it : boards)
+			delete it.second;
+		return;
+	}
 
 	//Figure out what kind of target we're creating
 	//Empty type is OK, pick a reasonable default for that.
@@ -672,10 +723,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 			//TODO: Replace "verilog" with "hdl"? How to handle mixed language designs?
 			else if(chaintype == "verilog")
 			{
-				if(type == "bitstream")
-					target = new FPGABitstreamNode(this, a, c, name, path, exepath, toolchain, node);
-
-				else if(type == "formal")
+				if(type == "formal")
 					target = new FormalVerificationNode(this, a, c, name, path, exepath, toolchain, node);
 
 				else
@@ -893,7 +941,7 @@ void BuildGraph::FinalizeCallback(BuildGraphNode* node, string old_hash)
 	@brief Gets the output file name for a *target*.
 
 	Overall path looks like this:
-	output_dir/architecture/config/name.suffix
+	output_dir/architecture/config/prefixname.suffix
 
 	Returns the empty string if the configuration requested cannot be satisfied with any available toolchain.
  */
@@ -902,7 +950,8 @@ string BuildGraph::GetOutputFilePath(
 	string config,
 	string arch,
 	string type,
-	string name)
+	string name,
+	string board)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -922,7 +971,10 @@ string BuildGraph::GetOutputFilePath(
 	}
 
 	string path = m_buildArtifactPath + "/";
-	path += arch + "/";
+	if(board != "")
+		path += GetBasenameOfFileWithoutExt(board) + "/";
+	else
+		path += arch + "/";
 	path += config + "/";
 
 	//Filename including pre/suffix

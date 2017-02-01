@@ -86,6 +86,6 @@ bool XilinxVivadoToolchain::Build(
 	map<string, string>& /*outputs*/,
 	string& /*stdout*/)
 {
-	LogDebug("XilinxVivadoToolchain::Build() not implemented\n");
+	LogError("XilinxVivadoToolchain::Build() not implemented\n");
 	return false;
 }

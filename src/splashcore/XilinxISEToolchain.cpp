@@ -107,6 +107,6 @@ bool XilinxISEToolchain::Build(
 {
 	//
 
-	LogDebug("XilinxISEToolchain::Build() not implemented\n");
+	LogError("XilinxISEToolchain::Build() not implemented\n");
 	return false;
 }

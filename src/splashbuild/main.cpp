@@ -310,8 +310,8 @@ bool RefreshCachedFile(Socket& sock, string hash, string fname)
  */
 void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 {
-	LogDebug("Got a dependency scan request\n");
-	LogIndenter li;
+	//LogDebug("Got a dependency scan request\n");
+	//LogIndenter li;
 
 	//Do setup stuff
 	Toolchain* chain = PrepBuild(rxm.toolchain());

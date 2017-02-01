@@ -75,7 +75,8 @@ public:
 		std::string config,
 		std::string arch,
 		std::string type,
-		std::string name);
+		std::string name,
+		std::string board = "");
 
 	std::string GetIntermediateFilePath(
 		std::string toolchain,

@@ -42,12 +42,13 @@ FPGABitstreamNode::FPGABitstreamNode(
 	string scriptpath,
 	string path,
 	string toolchain,
+	BoardInfoFile* binfo,
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
 	, m_scriptpath(scriptpath)
 {
-	//LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
-	//	toolchain.c_str(), path.c_str());
+	LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
+		toolchain.c_str(), path.c_str());
 	//LogIndenter li;
 
 	/*

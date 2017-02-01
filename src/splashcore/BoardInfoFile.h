@@ -30,6 +30,30 @@
 #ifndef BoardInfoFile_h
 #define BoardInfoFile_h
 
+class BoardInfoPin
+{
+public:
+	BoardInfoPin(std::string loc = "", std::string std = "")
+	: m_loc(loc)
+	, m_iostandard(std)
+	{}
+
+	std::string m_loc;
+	std::string m_iostandard;
+};
+
+class BoardInfoClock
+{
+public:
+	BoardInfoClock(double mhz = 0, double duty = 0)
+	: m_speedMhz(mhz)
+	, m_duty(duty)
+	{}
+
+	double m_speedMhz;
+	double m_duty;
+};
+
 /**
 	@brief Information about a PCB pinout for an FPGA
  */
@@ -39,10 +63,30 @@ public:
 	BoardInfoFile(std::string data);
 	virtual ~BoardInfoFile();
 
+	std::string GetTriplet()
+	{ return m_triplet; }
+
 protected:
-	void ProcessDevice(YAML::Node& node);
-	void ProcessIOs(YAML::Node& node);
-	void ProcessClocks(YAML::Node& node);
+	void ProcessDevice(const YAML::Node& node);
+	void ProcessIOs(const YAML::Node& node);
+	void ProcessClocks(const YAML::Node& node);
+
+	void Print();
+
+	///Architecture triplet
+	std::string m_triplet;
+
+	///Device speed grade
+	int m_speed;
+
+	///Device package designator
+	std::string m_package;
+
+	//Set of named pins
+	std::map<std::string, BoardInfoPin> m_pins;
+
+	//Set of named clock signals
+	std::map<std::string, BoardInfoClock> m_clocks;
 };
 
 #endif

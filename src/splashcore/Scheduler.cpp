@@ -201,9 +201,9 @@ DependencyScanJob* Scheduler::ScanDependenciesNonblocking(
 		m_running = true;
 	}
 
-	LogDebug("[%7.3f] Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
-		GetDT(), fname.c_str(), arch.c_str(), toolchain.c_str() );
-	LogIndenter li;
+	//LogDebug("[%7.3f] Scheduler::ScanDependencies (for source file %s, arch %s, toolchain %s)\n",
+	//	GetDT(), fname.c_str(), arch.c_str(), toolchain.c_str() );
+	//LogIndenter li;
 
 	//Need mutex locked during scheduling so that if the golden node leaves halfway through
 	//we remain in a consistent state

@@ -44,6 +44,7 @@ public:
 		std::string scriptpath,
 		std::string path,
 		std::string toolchain,
+		BoardInfoFile* binfo,
 		YAML::Node& node);
 	virtual ~FPGABitstreamNode();
 
