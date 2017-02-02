@@ -27,40 +27,38 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef HDLNetlistNode_h
-#define HDLNetlistNode_h
+#ifndef TopLevelPin_h
+#define TopLevelPin_h
 
 /**
-	@brief A post-synthesis netlist
+	@brief An I/O pin at the top level of a design
  */
-class HDLNetlistNode : public BuildGraphNode
+class TopLevelPin
 {
 public:
-	HDLNetlistNode(
-		BuildGraph* graph,
-		std::string arch,
-		std::string fname,
-		std::string path,
-		std::string toolchain,
-		std::string script,
-		std::set<BuildFlag> flags
-	);
-	virtual ~HDLNetlistNode();
+	TopLevelPin()
+	{}
 
-	/*void GetLibraryScanResults(
-		std::set<std::string>& libdeps,
-		std::set<BuildFlag>& libflags);*/
+	TopLevelPin(YAML::Node& node);
+	virtual ~TopLevelPin();
+
+	enum direction
+	{
+		DIR_IN = 1,
+		DIR_OUT = 2,
+		DIR_INOUT = DIR_IN | DIR_OUT,
+	};
+
+	unsigned int GetWidth()
+	{ return m_width; }
+
+	direction GetDirection()
+	{ return m_dir; }
 
 protected:
-	virtual void DoFinalize();
-	/*
-	std::string m_errors;
+	unsigned int	m_width;
 
-	DependencyScanJob* m_scanJob;
-
-	std::set<std::string> m_libdeps;
-	std::set<BuildFlag> m_libflags;
-	*/
+	direction		m_dir;
 };
 
 #endif

@@ -572,7 +572,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 		string base = GetDirOfFile(path);
 		for(auto it : nboards)
 		{
-			string fname = it.as<std::string>();
+			string fname = it.as<string>();
 			string basename = GetBasenameOfFile(fname);
 
 			//Get the YAML file name and make sure we have it

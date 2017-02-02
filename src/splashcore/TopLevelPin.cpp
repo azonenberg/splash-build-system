@@ -5,10 +5,10 @@
 * Copyright (c) 2016-2017 Andrew D. Zonenberg                                                                          *
 * All rights reserved.                                                                                                 *
 *                                                                                                                      *
-* Redistribution and use in source and binary forms, with or without modification, are permitted provided that the     *
+* Redistribution and use in Object and binary forms, with or without modification, are permitted provided that the     *
 * following conditions are met:                                                                                        *
 *                                                                                                                      *
-*    * Redistributions of source code must retain the above copyright notice, this list of conditions, and the         *
+*    * Redistributions of Object code must retain the above copyright notice, this list of conditions, and the         *
 *      following disclaimer.                                                                                           *
 *                                                                                                                      *
 *    * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the       *
@@ -27,41 +27,50 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#ifndef HDLNetlistNode_h
-#define HDLNetlistNode_h
+#include "splashcore.h"
 
-/**
-	@brief A post-synthesis netlist
- */
-class HDLNetlistNode : public BuildGraphNode
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Construction / destruction
+
+TopLevelPin::TopLevelPin(YAML::Node& node)
 {
-public:
-	HDLNetlistNode(
-		BuildGraph* graph,
-		std::string arch,
-		std::string fname,
-		std::string path,
-		std::string toolchain,
-		std::string script,
-		std::set<BuildFlag> flags
-	);
-	virtual ~HDLNetlistNode();
-
-	/*void GetLibraryScanResults(
-		std::set<std::string>& libdeps,
-		std::set<BuildFlag>& libflags);*/
-
-protected:
-	virtual void DoFinalize();
 	/*
-	std::string m_errors;
+		pins:
+			clk:
+				width: 1
+				dir: input
 
-	DependencyScanJob* m_scanJob;
+			led:
+				width: 1
+				dir: output
+	 */
+	if(node["width"])
+		m_width = node["width"].as<int>();
+	else
+		LogError("Pin missing width\n");
 
-	std::set<std::string> m_libdeps;
-	std::set<BuildFlag> m_libflags;
-	*/
-};
+	if(node["dir"])
+	{
+		auto d = node["dir"].as<string>();
 
-#endif
+		if(d == "input")
+			m_dir = DIR_IN;
 
+		else if(d == "output")
+			m_dir = DIR_OUT;
+
+		else if(d == "inout")
+			m_dir = DIR_INOUT;
+
+		else
+			LogError("Invalid pin direction\n");
+	}
+	else
+		LogError("Pin missing direction\n");
+}
+
+TopLevelPin::~TopLevelPin()
+{
+}

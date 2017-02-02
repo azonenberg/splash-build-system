@@ -66,6 +66,18 @@ public:
 	std::string GetTriplet()
 	{ return m_triplet; }
 
+	BoardInfoPin GetPin(std::string name)
+	{ return m_pins[name]; }
+
+	bool HasPin(std::string name)
+	{ return m_pins.find(name) != m_pins.end(); }
+
+	BoardInfoClock GetClock(std::string name)
+	{ return m_clocks[name]; }
+
+	bool HasClock(std::string name)
+	{ return m_clocks.find(name) != m_clocks.end(); }
+
 protected:
 	void ProcessDevice(const YAML::Node& node);
 	void ProcessIOs(const YAML::Node& node);

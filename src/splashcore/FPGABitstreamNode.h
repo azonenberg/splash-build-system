@@ -52,6 +52,16 @@ protected:
 	virtual void DoFinalize();
 	virtual void DoStartFinalization();
 
+	void GenerateConstraintFile(
+		std::map<std::string, TopLevelPin>& pins,
+		std::string path,
+		BoardInfoFile* binfo);
+
+	std::string GenerateUCFConstraintFile(
+		std::map<std::string, TopLevelPin>& pins,
+		std::string path,
+		BoardInfoFile* binfo);
+
 	void UpdateHash();
 	/*
 	//Internal dependency scanning stuff (used by ctor and DoFinalize only)
@@ -59,6 +69,7 @@ protected:
 	std::set<BuildFlag> m_libflags;
 	*/
 	std::string m_scriptpath;
+	std::string m_constrpath;
 
 	std::set<BuildGraphNode*> m_sourcenodes;
 	//std::set<CPPObjectNode*> m_objects;

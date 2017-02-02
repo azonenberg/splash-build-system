@@ -84,10 +84,10 @@ HDLNetlistNode::~HDLNetlistNode()
 /**
 	@brief Get the results of our library search
  */
-void HDLNetlistNode::GetLibraryScanResults(
+/*void HDLNetlistNode::GetLibraryScanResults(
 	set<string>& libdeps,
 	set<BuildFlag>& libflags)
-{
+{*/
 	/*
 	Finalize();
 
@@ -96,7 +96,7 @@ void HDLNetlistNode::GetLibraryScanResults(
 	for(auto f : m_libflags)
 		libflags.emplace(f);
 	*/
-}
+//}
 
 void HDLNetlistNode::DoFinalize()
 {

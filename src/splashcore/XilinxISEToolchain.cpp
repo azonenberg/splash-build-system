@@ -82,6 +82,7 @@ XilinxISEToolchain::XilinxISEToolchain(string basepath, int major, int minor)
 
 	//File format suffixes
 	m_fixes["bitstream"] = stringpair("", ".bit");
+	m_fixes["constraint"] = stringpair("", ".ucf");
 
 	//Generate the hash
 	m_hash = sha256(string("Xilinx ISE ") + m_stringVersion);

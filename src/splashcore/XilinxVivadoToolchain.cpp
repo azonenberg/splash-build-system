@@ -63,6 +63,7 @@ XilinxVivadoToolchain::XilinxVivadoToolchain(string basepath, int major, int min
 
 	//File format suffixes
 	m_fixes["bitstream"] = stringpair("", ".bit");
+	m_fixes["constraint"] = stringpair("", ".xdc");
 
 	//Generate the hash
 	m_hash = sha256(string("Xilinx Vivado ") + m_stringVersion);

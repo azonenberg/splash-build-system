@@ -58,6 +58,7 @@ add_library(splashcore SHARED
 	HDLNetlistNode.cpp
 	SourceFileNode.cpp
 	SystemLibraryNode.cpp
+	TopLevelPin.cpp
 
 	# Scheduling
 	BuildJob.cpp
