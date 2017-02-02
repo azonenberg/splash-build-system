@@ -95,7 +95,7 @@ BuildFlag::~BuildFlag()
 // Accessors
 
 /**
-	@brief Checks if this flag is used at a particular step in the build process
+	@brief Checks if this flag is used at a particular step in the build process.
  */
 bool BuildFlag::IsUsedAt(FlagUsage t)
 {

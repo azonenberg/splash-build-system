@@ -202,19 +202,19 @@ void FPGABitstreamNode::DoStartFinalization()
 	set<BuildFlag> synthFlags;
 	GetFlagsForUseAt(BuildFlag::SYNTHESIS_TIME, synthFlags);
 
-	set<BuildFlag> mapFlags;
-	GetFlagsForUseAt(BuildFlag::MAP_TIME, mapFlags);
+	//Map and PAR are sometimes the same step. Merge flags at this point of the process.
+	set<BuildFlag> mapAndParFlags;
+	GetFlagsForUseAt(BuildFlag::MAP_TIME, mapAndParFlags);
+	GetFlagsForUseAt(BuildFlag::PAR_TIME, mapAndParFlags);
 
-	set<BuildFlag> parFlags;
-	GetFlagsForUseAt(BuildFlag::PAR_TIME, parFlags);
-
+	//Bitstream generation is our job
 	set<BuildFlag> imageFlags;
 	GetFlagsForUseAt(BuildFlag::IMAGE_TIME, imageFlags);
 
 	//We now have the constraints and the source files. Generate all of the intermediate stages.
 	//TODO: Figure out how to adapt this for Vivado support
 
-	//First pass: Make the HDLNetlistNode
+	//Make the synthesized output
 	auto netpath = m_graph->GetIntermediateFilePath(
 		m_toolchain,
 		m_config,
@@ -244,6 +244,38 @@ void FPGABitstreamNode::DoStartFinalization()
 	m_dependencies.emplace(netpath);
 	set<string> ignored;
 	wc->UpdateFile(netpath, h, false, false, ignored);
+
+	//Make the physical netlist (translate and map if needed by our flow, then PAR)
+	auto pnetpath = m_graph->GetIntermediateFilePath(
+		m_toolchain,
+		m_config,
+		m_arch,
+		"circuit",
+		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar");
+	m_circuit = new PhysicalNetlistNode(
+		m_graph,
+		m_arch,
+		m_config,
+		m_name,
+		m_scriptpath,
+		pnetpath,
+		m_toolchain,
+		mapAndParFlags,
+		m_netlist);
+
+	//If we have a node for this hash already, delete it and use the existing one. Otherwise use this
+	h = m_circuit->GetHash();
+	if(m_graph->HasNodeWithHash(h))
+	{
+		delete m_circuit;
+		m_circuit = dynamic_cast<PhysicalNetlistNode*>(m_graph->GetNodeWithHash(h));
+	}
+	else
+		m_graph->AddNode(m_circuit);
+	m_dependencies.emplace(pnetpath);
+	wc->UpdateFile(pnetpath, h, false, false, ignored);
+
+	//TODO: What now?
 }
 
 /**

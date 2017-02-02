@@ -56,6 +56,7 @@ add_library(splashcore SHARED
 	FormalVerificationNode.cpp
 	FPGABitstreamNode.cpp
 	HDLNetlistNode.cpp
+	PhysicalNetlistNode.cpp
 	SourceFileNode.cpp
 	SystemLibraryNode.cpp
 	TopLevelPin.cpp

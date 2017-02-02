@@ -30,6 +30,9 @@
 #ifndef FPGABitstreamNode_h
 #define FPGABitstreamNode_h
 
+class HDLNetlistNode;
+class PhysicalNetlistNode;
+
 /**
 	@brief An FPGA bitstream
  */
@@ -74,6 +77,7 @@ protected:
 	std::set<BuildGraphNode*> m_sourcenodes;
 
 	HDLNetlistNode* m_netlist;
+	PhysicalNetlistNode* m_circuit;
 };
 
 #endif

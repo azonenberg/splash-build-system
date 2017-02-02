@@ -27,89 +27,43 @@
 *                                                                                                                      *
 ***********************************************************************************************************************/
 
-#include "splashcore.h"
+#ifndef PhysicalNetlistNode_h
+#define PhysicalNetlistNode_h
 
-using namespace std;
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Construction / destruction
-
-XilinxISEToolchain::XilinxISEToolchain(string basepath, int major, int minor)
-	: FPGAToolchain(basepath, TOOLCHAIN_ISE)
+/**
+	@brief A post-synthesis netlist
+ */
+class PhysicalNetlistNode : public BuildGraphNode
 {
-	//Save version info
-	m_majorVersion = major;
-	m_minorVersion = minor;
-	m_patchVersion = 0;
+public:
+	PhysicalNetlistNode(
+		BuildGraph* graph,
+		std::string arch,
+		std::string config,
+		std::string name,
+		std::string scriptpath,
+		std::string path,
+		std::string toolchain,
+		std::set<BuildFlag> flags,
+		HDLNetlistNode* netlist
+	);
+	virtual ~PhysicalNetlistNode();
 
-	//Format the full version
-	char tmp[128];
-	snprintf(tmp, sizeof(tmp), "Xilinx ISE %d.%d", m_majorVersion, m_minorVersion);
-	m_stringVersion = tmp;
+	/*void GetLibraryScanResults(
+		std::set<std::string>& libdeps,
+		std::set<BuildFlag>& libflags);*/
 
-	//Set the list of target architectures
-	//For now, only WebPack devices.
-	//TODO: determine if we have a full ISE license, add support for that
-	//TODO: add more ISE device families
+protected:
+	virtual void DoFinalize();
+	/*
+	std::string m_errors;
 
-	m_triplets.emplace("coolrunner2-xc2c32a");
-	m_triplets.emplace("coolrunner2-xc2c64a");
-	m_triplets.emplace("coolrunner2-xc2c128");
-	m_triplets.emplace("coolrunner2-xc2c256");
+	DependencyScanJob* m_scanJob;
 
-	m_triplets.emplace("spartan3a-xc3s50a");
-	m_triplets.emplace("spartan3a-xc3s200a");
+	std::set<std::string> m_libdeps;
+	std::set<BuildFlag> m_libflags;
+	*/
+};
 
-	m_triplets.emplace("spartan6-xc6slx4");
-	m_triplets.emplace("spartan6-xc6slx9");
-	m_triplets.emplace("spartan6-xc6slx16");
-	m_triplets.emplace("spartan6-xc6slx25");
-	m_triplets.emplace("spartan6-xc6slx25t");
-	m_triplets.emplace("spartan6-xc6slx45");
-	m_triplets.emplace("spartan6-xc6slx45t");
-	m_triplets.emplace("spartan6-xc6slx75");
-	m_triplets.emplace("spartan6-xc6slx75t");
+#endif
 
-	m_triplets.emplace("artix7-xc7a100t");
-	m_triplets.emplace("artix7-xc7a200t");
-
-	m_triplets.emplace("kintex7-xc7k70t");
-	m_triplets.emplace("kintex7-xc7k160t");
-
-	m_triplets.emplace("zynq7-xc7z010");
-	m_triplets.emplace("zynq7-xc7z020");
-	m_triplets.emplace("zynq7-xc7z030");
-
-	//File format suffixes
-	m_fixes["bitstream"] = stringpair("", ".bit");
-	m_fixes["constraint"] = stringpair("", ".ucf");
-	m_fixes["netlist"] = stringpair("", ".ngc");
-	m_fixes["circuit"] = stringpair("", ".ncd");
-
-	//Generate the hash
-	m_hash = sha256(string("Xilinx ISE ") + m_stringVersion);
-}
-
-XilinxISEToolchain::~XilinxISEToolchain()
-{
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Toolchain properties
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Actual compilation
-
-bool XilinxISEToolchain::Build(
-	string /*triplet*/,
-	set<string> /*sources*/,
-	string /*fname*/,
-	set<BuildFlag> /*flags*/,
-	map<string, string>& /*outputs*/,
-	string& /*stdout*/)
-{
-	//
-
-	LogError("XilinxISEToolchain::Build() not implemented\n");
-	return false;
-}
