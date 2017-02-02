@@ -36,23 +36,20 @@ using namespace std;
 
 HDLNetlistNode::HDLNetlistNode(
 	BuildGraph* graph,
-	string arch,
-	string fname,
-	string path,
-	string toolchain,
-	string script,
-	set<BuildFlag> flags/*,
-	set<string>& libdeps,
-	set<BuildFlag>& libflags*/)
-	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, fname, path, flags)
+	std::string arch,
+	std::string config,
+	std::string name,
+	std::string scriptpath,
+	std::string path,
+	std::string toolchain,
+	std::set<BuildFlag> flags,
+	std::set<BuildGraphNode*> sources)
+	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
 {
+	LogDebug("[%6.3f] Creating HDLNetlistNode %s\nfor arch %s, toolchain %s\n",
+		g_scheduler->GetDT(), path.c_str(), arch.c_str(), toolchain.c_str() );
+	LogIndenter li;
 	/*
-	m_script = script;
-
-	//LogDebug("[%6.3f] Creating HDLNetlistNode %s (from src %s)\nfor arch %s, toolchain %s\n",
-	//	g_scheduler->GetDT(), path.c_str(), fname.c_str(), arch.c_str(), toolchain.c_str() );
-	//LogIndenter li;
-
 	//Add an automatic dependency for the source file itself
 	auto wc = graph->GetWorkingCopy();
 	auto h = wc->GetFileHash(fname);

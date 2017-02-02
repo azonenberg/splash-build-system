@@ -72,7 +72,8 @@ protected:
 	std::string m_constrpath;
 
 	std::set<BuildGraphNode*> m_sourcenodes;
-	//std::set<CPPObjectNode*> m_objects;
+
+	HDLNetlistNode* m_netlist;
 };
 
 #endif

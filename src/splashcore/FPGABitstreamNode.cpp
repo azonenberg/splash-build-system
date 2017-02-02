@@ -46,6 +46,7 @@ FPGABitstreamNode::FPGABitstreamNode(
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
 	, m_scriptpath(scriptpath)
+	, m_netlist(NULL)
 {
 	LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
 		toolchain.c_str(), path.c_str());
@@ -214,57 +215,35 @@ void FPGABitstreamNode::DoStartFinalization()
 	//TODO: Figure out how to adapt this for Vivado support
 
 	//First pass: Make the HDLNetlistNode
-	LogError("FIXME: FPGABitstreamNode doesn't know how to make synthesis results node yet\n");
+	auto netpath = m_graph->GetIntermediateFilePath(
+		m_toolchain,
+		m_config,
+		m_arch,
+		"netlist",
+		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar");
+	m_netlist = new HDLNetlistNode(
+		m_graph,
+		m_arch,
+		m_config,
+		m_name,
+		m_scriptpath,
+		netpath,
+		m_toolchain,
+		synthFlags,
+		m_sourcenodes);
 
-	/*
-
-	//We have source nodes. Create the object nodes.
-	set<string> ignored;
-	for(auto s : m_sourcenodes)
+	//If we have a node for this hash already, delete it and use the existing one. Otherwise use this
+	string h = m_netlist->GetHash();
+	if(m_graph->HasNodeWithHash(h))
 	{
-		//Get the output file name
-		auto src = s->GetFilePath();
-		string fname = m_graph->GetIntermediateFilePath(
-			m_toolchain,
-			m_config,
-			m_arch,
-			"object",
-			src);
-
-		//Create a test node first to compute the hash.
-		//If another node with that hash already exists, delete it and use the old node instead.
-		//TODO: more efficient way of doing this? cache dependencies and do simpler parse or something?
-		auto obj = new CPPObjectNode(
-			m_graph,
-			m_arch,
-			src,
-			fname,
-			m_toolchain,
-			m_scriptpath,
-			compileFlags);
-
-		//If we have a node for this hash already, delete it and use the existing one
-		string h = obj->GetHash();
-		if(m_graph->HasNodeWithHash(h))
-		{
-			delete obj;
-			obj = dynamic_cast<CPPObjectNode*>(m_graph->GetNodeWithHash(h));
-		}
-
-		//It's new, keep it and add to the graph
-		else
-			m_graph->AddNode(obj);
-
-		//Either way we have the node now. Add to our list of sources.
-		m_objects.emplace(obj);
-		m_sources.emplace(fname);
-		m_dependencies.emplace(fname);
-
-		//Add the object file to our working copy.
-		//Don't worry about dirtying targets in other files, there shouldn't be any
-		wc->UpdateFile(fname, h, false, false, ignored);
+		delete m_netlist;
+		m_netlist = dynamic_cast<HDLNetlistNode*>(m_graph->GetNodeWithHash(h));
 	}
-	*/
+	else
+		m_graph->AddNode(m_netlist);
+	m_dependencies.emplace(netpath);
+	set<string> ignored;
+	wc->UpdateFile(netpath, h, false, false, ignored);
 }
 
 /**
@@ -353,9 +332,8 @@ void FPGABitstreamNode::DoFinalize()
 		else
 			LogError("NULL node for path %s (in %s)\n", d.c_str(), GetFilePath().c_str());
 	}
-
-	UpdateHash();
 	*/
+	UpdateHash();
 }
 
 FPGABitstreamNode::~FPGABitstreamNode()
@@ -367,5 +345,26 @@ FPGABitstreamNode::~FPGABitstreamNode()
  */
 void FPGABitstreamNode::UpdateHash()
 {
-	BuildGraphNode::UpdateHash_DefaultTarget();
+	//TODO: more advanced stuff related to our specific setup
+
+	//Look up the working copy we're part of
+	WorkingCopy* wc = m_graph->GetWorkingCopy();
+
+	//Calculate our hash.
+	//Dependencies and flags are obvious
+	string hashin;
+	for(auto d : m_dependencies)
+		hashin += wc->GetFileHash(d);
+	for(auto f : m_flags)
+		hashin += sha256(f);
+
+	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
+	hashin += g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
+	hashin += sha256(m_arch);
+
+	//Do not hash the output file name.
+	//Having multiple files with identical inputs merged into a single node is *desirable*.
+
+	//Done, calculate final hash
+	m_hash = sha256(hashin);
 }

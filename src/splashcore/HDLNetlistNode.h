@@ -39,11 +39,13 @@ public:
 	HDLNetlistNode(
 		BuildGraph* graph,
 		std::string arch,
-		std::string fname,
+		std::string config,
+		std::string name,
+		std::string scriptpath,
 		std::string path,
 		std::string toolchain,
-		std::string script,
-		std::set<BuildFlag> flags
+		std::set<BuildFlag> flags,
+		std::set<BuildGraphNode*> sources
 	);
 	virtual ~HDLNetlistNode();
 
