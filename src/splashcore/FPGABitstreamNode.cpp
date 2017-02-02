@@ -42,9 +42,11 @@ FPGABitstreamNode::FPGABitstreamNode(
 	string scriptpath,
 	string path,
 	string toolchain,
+	std::string board,
 	BoardInfoFile* binfo,
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
+	, m_board(board)
 	, m_scriptpath(scriptpath)
 	, m_netlist(NULL)
 {
@@ -108,6 +110,11 @@ void FPGABitstreamNode::GenerateConstraintFile(
 	g_cache->AddFile(GetBasenameOfFile(path), hash, hash, constrs, "");
 	set<string> ignored;
 	m_graph->GetWorkingCopy()->UpdateFile(path, hash, false, false, ignored);
+
+	//Create a source file node for it, if needed
+	auto wc = m_graph->GetWorkingCopy();
+	if(!m_graph->HasNodeWithHash(hash))
+		m_graph->AddNode(new SourceFileNode(m_graph, path, hash));
 }
 
 string FPGABitstreamNode::GenerateUCFConstraintFile(
@@ -229,6 +236,7 @@ void FPGABitstreamNode::DoStartFinalization()
 		m_scriptpath,
 		netpath,
 		m_toolchain,
+		m_board,
 		synthFlags,
 		m_sourcenodes);
 
@@ -261,7 +269,8 @@ void FPGABitstreamNode::DoStartFinalization()
 		pnetpath,
 		m_toolchain,
 		mapAndParFlags,
-		m_netlist);
+		m_netlist,
+		m_constrpath);
 
 	//If we have a node for this hash already, delete it and use the existing one. Otherwise use this
 	h = m_circuit->GetHash();
@@ -274,8 +283,6 @@ void FPGABitstreamNode::DoStartFinalization()
 		m_graph->AddNode(m_circuit);
 	m_dependencies.emplace(pnetpath);
 	wc->UpdateFile(pnetpath, h, false, false, ignored);
-
-	//TODO: What now?
 }
 
 /**

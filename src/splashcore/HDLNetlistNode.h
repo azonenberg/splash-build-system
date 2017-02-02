@@ -44,20 +44,18 @@ public:
 		std::string scriptpath,
 		std::string path,
 		std::string toolchain,
+		std::string board,
 		std::set<BuildFlag> flags,
 		std::set<BuildGraphNode*> sources
 	);
 	virtual ~HDLNetlistNode();
 
-	/*void GetLibraryScanResults(
-		std::set<std::string>& libdeps,
-		std::set<BuildFlag>& libflags);*/
-
 protected:
 	virtual void DoFinalize();
-	/*
-	std::string m_errors;
 
+	std::string m_board;
+	std::string m_errors;
+	/*
 	DependencyScanJob* m_scanJob;
 
 	std::set<std::string> m_libdeps;

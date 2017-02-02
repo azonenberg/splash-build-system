@@ -42,22 +42,24 @@ HDLNetlistNode::HDLNetlistNode(
 	std::string scriptpath,
 	std::string path,
 	std::string toolchain,
+	std::string board,
 	std::set<BuildFlag> flags,
 	std::set<BuildGraphNode*> sources)
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
+	, m_board(board)
 {
-	LogDebug("[%6.3f] Creating HDLNetlistNode %s\nfor arch %s, toolchain %s\n",
-		g_scheduler->GetDT(), path.c_str(), arch.c_str(), toolchain.c_str() );
+	LogDebug("[%6.3f] Creating HDLNetlistNode %s\nfor arch %s, toolchain %s, board %s\n",
+		g_scheduler->GetDT(), path.c_str(), arch.c_str(), toolchain.c_str(),
+		GetBasenameOfFileWithoutExt(board).c_str() );
 	LogIndenter li;
-	/*
-	//Add an automatic dependency for the source file itself
-	auto wc = graph->GetWorkingCopy();
-	auto h = wc->GetFileHash(fname);
-	if(!graph->HasNodeWithHash(h))
-		graph->AddNode(new SourceFileNode(graph, fname, h));
-	m_sources.emplace(fname);
-	m_dependencies.emplace(fname);
 
+	//Add an automatic dependency for the source files
+	for(auto src : sources)
+		m_dependencies.emplace(src->GetFilePath());
+
+	LogWarning("HDLNetlistNode: Not running dependency scanner on source files (not yet implemented)\n");
+
+	/*
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
 	//If the scan fails, declare us un-buildable
@@ -78,33 +80,16 @@ HDLNetlistNode::~HDLNetlistNode()
 {
 }
 
-/**
-	@brief Get the results of our library search
- */
-/*void HDLNetlistNode::GetLibraryScanResults(
-	set<string>& libdeps,
-	set<BuildFlag>& libflags)
-{*/
-	/*
-	Finalize();
-
-	for(auto d : m_libdeps)
-		libdeps.emplace(d);
-	for(auto f : m_libflags)
-		libflags.emplace(f);
-	*/
-//}
-
 void HDLNetlistNode::DoFinalize()
 {
-	/*
 	auto wc = m_graph->GetWorkingCopy();
 
 	//Block until the scan completes
-	set<string> deps;
-	set<BuildFlag> foundflags;
-	if(g_scheduler->BlockOnScanResults(m_scanJob, wc, deps, foundflags, m_errors))
+	//set<string> deps;
+	//set<BuildFlag> foundflags;
+	//if(g_scheduler->BlockOnScanResults(m_scanJob, wc, deps, foundflags, m_errors))
 	{
+		/*
 		//Dependencies scanned OK, update our stuff
 		//Update our flags with the HAVE_xx macros from the libraries we located
 		for(auto f : foundflags)
@@ -229,11 +214,8 @@ void HDLNetlistNode::DoFinalize()
 		//		d.c_str(),
 		//		h.c_str());
 		//}
+		*/
 	}
-
-	//DEBUG: Dump flag
-	//for(auto f : m_flags)
-	//	LogDebug("Flag: %s\n", static_cast<string>(f).c_str());
 
 	//Calculate our hash.
 	//Dependencies and flags are obvious
@@ -245,8 +227,10 @@ void HDLNetlistNode::DoFinalize()
 		hashin += sha256(f);
 
 	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
+	//Also hash board since pinout etc depend on that
 	hashin += g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
 	hashin += sha256(m_arch);
+	hashin += sha256(m_board);
 
 	//Do not hash the output file name.
 	//Having multiple files with identical inputs merged into a single node is *desirable*.
@@ -258,5 +242,4 @@ void HDLNetlistNode::DoFinalize()
 	//so we can query the result in the cache later on.
 	if(m_errors != "")
 		SetInvalidInput(m_errors);
-	*/
 }

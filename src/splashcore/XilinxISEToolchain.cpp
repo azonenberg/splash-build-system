@@ -106,10 +106,8 @@ bool XilinxISEToolchain::Build(
 	string /*fname*/,
 	set<BuildFlag> /*flags*/,
 	map<string, string>& /*outputs*/,
-	string& /*stdout*/)
+	string& stdout)
 {
-	//
-
-	LogError("XilinxISEToolchain::Build() not implemented\n");
+	stdout = "ERROR: XilinxISEToolchain::Build() not implemented\n";
 	return false;
 }

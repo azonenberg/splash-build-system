@@ -75,8 +75,8 @@ bool YosysToolchain::Build(
 	string /*fname*/,
 	set<BuildFlag> /*flags*/,
 	map<string, string>& /*outputs*/,
-	string& /*stdout*/)
+	string& stdout)
 {
-	LogDebug("YosysToolchain::Build() not implemented\n");
-	return false;
+	stdout = "WARNING: YosysToolchain::Build() not implemented (passing build for now so other stuff works)\n";
+	return true;
 }

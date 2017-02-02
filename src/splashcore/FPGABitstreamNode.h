@@ -47,6 +47,7 @@ public:
 		std::string scriptpath,
 		std::string path,
 		std::string toolchain,
+		std::string board,
 		BoardInfoFile* binfo,
 		YAML::Node& node);
 	virtual ~FPGABitstreamNode();
@@ -66,6 +67,10 @@ protected:
 		BoardInfoFile* binfo);
 
 	void UpdateHash();
+
+	//Name of our board
+	std::string m_board;
+
 	/*
 	//Internal dependency scanning stuff (used by ctor and DoFinalize only)
 	std::set<std::string> m_libdeps;

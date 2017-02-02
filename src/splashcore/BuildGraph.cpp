@@ -663,7 +663,7 @@ void BuildGraph::LoadTarget(YAML::Node& node, string name, string path)
 				auto bitpath = GetOutputFilePath(toolchain, c, arch, type, name, bfname);
 				//LogDebug("Output for config %s is %s\n", c.c_str(), bitpath.c_str());
 
-				auto target = new FPGABitstreamNode(this, arch, c, name, path, bitpath, toolchain, board, node);
+				auto target = new FPGABitstreamNode(this, arch, c, name, path, bitpath, toolchain, bfname, board, node);
 				GetTargetMap(ArchConfig(boardbase, c))[name] = target;
 				AddNode(target);
 			}
