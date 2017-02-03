@@ -167,7 +167,7 @@ bool XilinxISEToolchain::Synthesize(
 {
 	stdout = "";
 
-	LogDebug("XilinxISEToolchain::Synthesize for %s\n", fname.c_str());
+	//LogDebug("XilinxISEToolchain::Synthesize for %s\n", fname.c_str());
 	string base = GetBasenameOfFileWithoutExt(fname);
 
 	//Write the .prj file
@@ -232,7 +232,6 @@ bool XilinxISEToolchain::Synthesize(
 		speed,
 		package.c_str());
 	device = sdev;
-	LogDebug("Final device name: %s\n", device.c_str());
 
 	//Create the XST input script
 	//For now, top level module name must equal file base name
@@ -351,13 +350,28 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 {
 	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
 	{
-		if(flag.GetArgs() == "none")
-			return "-opt_level 0";
-		else if(flag.GetArgs() == "speed")
+		if(flag.GetFlag() == "none")
+			return "-opt_level 0\n-opt_mode speed";
+		else if(flag.GetFlag() == "speed")
 			return "-opt_level 1\n-opt_mode speed";
 		else
 		{
-			LogWarning("Don't know what to do with optimization flag %s\n", static_cast<string>(flag).c_str());
+			LogWarning("Don't know what to do with optimization flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
 			return "";
 		}
 	}
