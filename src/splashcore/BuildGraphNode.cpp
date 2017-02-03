@@ -151,7 +151,7 @@ BuildGraphNode::BuildGraphNode(
 			//If the flag is "global" pull in the upstream flags
 			string flag = it.as<std::string>();
 			if(flag == "global")
-				graph->GetFlags(toolchain, config, path, m_flags);
+				graph->GetFlags(toolchain, config, scriptpath, m_flags);
 			else
 				m_flags.emplace(BuildFlag(flag));
 		}
@@ -159,7 +159,7 @@ BuildGraphNode::BuildGraphNode(
 
 	//No flags specified, import base flags
 	else
-		graph->GetFlags(toolchain, config, path, m_flags);
+		graph->GetFlags(toolchain, config, scriptpath, m_flags);
 
 	//anything else is handled in base class (source files etc)
 
