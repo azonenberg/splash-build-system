@@ -70,7 +70,6 @@ protected:
 	 */
 	bool m_bInheritTriplets;
 
-
 	/**
 		@brief Architecture triplets
 	 */

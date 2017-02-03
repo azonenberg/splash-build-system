@@ -93,6 +93,14 @@ FPGABitstreamNode::FPGABitstreamNode(
 	//Create a flag for our package
 	snprintf(tmp, sizeof(tmp), "hardware/package/%s", binfo->GetPackage().c_str());
 	m_flags.emplace(BuildFlag(tmp));
+
+	//Look up all of our flags
+	LogDebug("Dumping flags for FPGABitstreamNode\n");
+	LogIndenter li;
+	for(auto f : m_flags)
+	{
+		LogDebug("%s\n", static_cast<string>(f).c_str());
+	}
 }
 
 void FPGABitstreamNode::GenerateConstraintFile(

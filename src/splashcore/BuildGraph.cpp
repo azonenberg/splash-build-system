@@ -479,7 +479,7 @@ void BuildGraph::LoadConfig(YAML::Node& node, bool recursive, string path)
 	}
 
 	//Configure that toolchain
-	m_toolchainSettings[node["toolchain"].as<std::string>()].LoadConfig(node, recursive, path);
+	m_toolchainSettings[node["toolchain"].as<string>()].LoadConfig(node, recursive, path);
 }
 
 /**
@@ -888,6 +888,8 @@ void BuildGraph::GetConfigNames(string toolchain, string path, set<string>& conf
 void BuildGraph::GetFlags(string toolchain, string config, string path, set<BuildFlag>& flags)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
+	if(m_toolchainSettings.find(toolchain) == m_toolchainSettings.end())
+		LogWarning("BuildGraph::GetFlags: Don't have any ToolchainSettings for chain %s\n", toolchain.c_str());
 	m_toolchainSettings[toolchain].GetFlags(config, path, flags);
 }
 
