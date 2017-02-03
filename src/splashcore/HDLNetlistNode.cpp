@@ -55,7 +55,10 @@ HDLNetlistNode::HDLNetlistNode(
 
 	//Add an automatic dependency for the source files
 	for(auto src : sources)
+	{
 		m_dependencies.emplace(src->GetFilePath());
+		m_sources.emplace(src->GetFilePath());
+	}
 
 	LogWarning("HDLNetlistNode: Not running dependency scanner on source files (not yet implemented)\n");
 
