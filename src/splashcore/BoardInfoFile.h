@@ -78,6 +78,12 @@ public:
 	bool HasClock(std::string name)
 	{ return m_clocks.find(name) != m_clocks.end(); }
 
+	int GetSpeed()
+	{ return m_speed; }
+
+	std::string GetPackage()
+	{ return m_package; }
+
 protected:
 	void ProcessDevice(const YAML::Node& node);
 	void ProcessIOs(const YAML::Node& node);

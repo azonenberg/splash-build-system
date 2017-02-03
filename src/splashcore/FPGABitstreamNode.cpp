@@ -45,7 +45,7 @@ FPGABitstreamNode::FPGABitstreamNode(
 	std::string board,
 	BoardInfoFile* binfo,
 	YAML::Node& node)
-	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
+	: BuildGraphNode(graph, BuildFlag::FPGA_TIME, toolchain, arch, config, name, scriptpath, path, node)
 	, m_board(board)
 	, m_scriptpath(scriptpath)
 	, m_netlist(NULL)
@@ -84,6 +84,15 @@ FPGABitstreamNode::FPGABitstreamNode(
 	LoadSourceFileNodes(node, scriptpath, name, path, m_sourcenodes);
 
 	//TODO: nocgen (and add to source nodes etc)
+
+	//Create a flag for our speed grade
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "hardware/speed/%d", binfo->GetSpeed());
+	m_flags.emplace(BuildFlag(tmp));
+
+	//Create a flag for our package
+	snprintf(tmp, sizeof(tmp), "hardware/package/%s", binfo->GetPackage().c_str());
+	m_flags.emplace(BuildFlag(tmp));
 }
 
 void FPGABitstreamNode::GenerateConstraintFile(

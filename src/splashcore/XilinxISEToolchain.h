@@ -48,6 +48,9 @@ public:
 		std::string& stdout);
 
 protected:
+	void CrunchSynthesisLog(const std::string& log, std::string& stdout);
+
+	std::string FlagToStringForSynthesis(BuildFlag flag);
 
 	bool Synthesize(
 		std::string triplet,

@@ -54,8 +54,12 @@ public:
 		PAR_TIME		= 0x10,		//HDL place-and-route
 		IMAGE_TIME		= 0x20,		//Firmware image creation time
 		PROOF_TIME		= 0x40,		//Formal verification solvers etc
+
+		FPGA_TIME		=			//All FPGA stuff
+			SYNTHESIS_TIME | MAP_TIME | PAR_TIME | IMAGE_TIME,
 		
-		NO_TIME			= 0x00		//placeholder
+		NO_TIME			= 0x00,		//placeholder
+		ALL_TIME		= 0xff
 	};
 	
 	/**
@@ -73,6 +77,7 @@ public:
 		TYPE_OUTPUT		= 8,		//control the output file (extension, soname, etc)
 		TYPE_LIBRARY	= 9,		//control linking of libraries, IP cores, etc
 		TYPE_DEFINE		= 10,		//define macros
+		TYPE_HARDWARE	= 11,		//flags that specify the hardware being targeted
 		
 		TYPE_INVALID	= 0			//placeholder
 	};
@@ -106,6 +111,7 @@ protected:
 	void LoadOutputFlag();
 	void LoadLibraryFlag();
 	void LoadDefineFlag();
+	void LoadHardwareFlag();
 	
 	/**
 		@brief Usage flags (bitmask of FlagUsage)

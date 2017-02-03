@@ -151,7 +151,7 @@ double GetTime();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Global functions
 
-void ParseLines(std::string str, std::vector<std::string>& lines, bool clearVector = false, char delim = '\n');
+void ParseLines(const std::string& str, std::vector<std::string>& lines, bool clearVector = false, char delim = '\n');
 std::string MakeStringLowercase(std::string str);
 
 std::string ShellCommand(std::string cmd, bool trimNewline = true);

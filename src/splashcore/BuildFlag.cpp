@@ -82,6 +82,8 @@ BuildFlag::BuildFlag(string flag)
 		LoadLibraryFlag();
 	else if(sgroup == "define")
 		LoadDefineFlag();
+	else if(sgroup == "hardware")
+		LoadHardwareFlag();
 	else
 		LogParseError("Unknown flag group \"%s\"\n", group);
 }
@@ -214,9 +216,32 @@ void BuildFlag::LoadOutputFlag()
 void BuildFlag::LoadDefineFlag()
 {
 	m_type = TYPE_DEFINE;
-	m_usage = COMPILE_TIME;
+	m_usage = COMPILE_TIME | SYNTHESIS_TIME;
 
 	//define/foo or define/foo/value
 	if(m_arg == "")
 		m_arg = "1";
+}
+
+void BuildFlag::LoadHardwareFlag()
+{
+	m_type = TYPE_HARDWARE;
+	m_usage = ALL_TIME;
+
+	//hardware/speed: specify device speed grade
+	if(m_flag == "speed")
+	{
+		if(m_arg == "")
+			LogParseError("hardware/speed requires an argument\n");
+	}
+
+	//hardware/package: specify device package
+	else if(m_flag == "package")
+	{
+		if(m_arg == "")
+			LogParseError("hardware/package requires an argument\n");
+	}
+
+	else
+		LogParseError("Flag \"hardware/%s\" is unknown\n", m_flag.c_str());
 }

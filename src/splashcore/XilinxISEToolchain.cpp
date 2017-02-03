@@ -155,112 +155,210 @@ bool XilinxISEToolchain::Synthesize(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "ERROR: XilinxISEToolchain::Synthesize() not implemented\n";
+	stdout = "";
 
-	/*
-	//Print the heading
-	DebugPrintfHeading(3, "Synthesizing NGC netlist file %s\n", output_filename.c_str());
-
-	//Get output directory
-	string path = GetDirOfFile(output_filename);
-	string base = GetBasenameOfFileWithoutExt(output_filename);
-
-	//Get the project root directory
-	string project_root = CanonicalizePath(path + "/../..");
+	LogDebug("XilinxISEToolchain::Synthesize for %s\n", fname.c_str());
+	string base = GetBasenameOfFileWithoutExt(fname);
 
 	//Write the .prj file
-	string prj_file = path + "/" + base + ".prj";
+	string prj_file = base + ".prj";
 	FILE* fp = fopen(prj_file.c_str(), "w");
 	if(!fp)
-		FatalError("Failed to create project file %s\n", prj_file.c_str());
-	for(size_t i=0; i<source_files.size(); i++)
-		fprintf(fp, "verilog work \"%s\"\n", source_files[i].c_str());
-	fprintf(fp, "verilog work \"%s/ISE_DS/ISE/verilog/src/glbl.v\"\n", m_rootpath.c_str());
+	{
+		stdout += string("ERROR: Failed to create project file ") + prj_file + "\n";
+		return false;
+	}
+	for(auto s : sources)
+		fprintf(fp, "verilog work \"%s\"\n", s.c_str());
+	fprintf(fp, "verilog work \"%s/ISE_DS/ISE/verilog/src/glbl.v\"\n", m_basepath.c_str());
 	fclose(fp);
 
 	//Generate file names and make temporary directories
-	string ngc_file = path + "/" + base + ".ngc";
-	string xst_file = path + "/" + base + ".xst";
-	string xst_dir = path + "/" + base + "_xst";
-	string xst_tmpdir = path + "/projnav.tmp";
+	string ngc_file = base + ".ngc";
+	string xst_file = base + ".xst";
+	string report_file = base + ".syr";
+	string xst_dir = base + "_xst";
+	string xst_tmpdir = "xst_tmp";
 	if( (0 != mkdir(xst_dir.c_str(), 0755)) && (errno != EEXIST) )
-		FatalError("Could not create XST directory %s\n", xst_dir.c_str());
+	{
+		stdout += string("ERROR: Failed to create XST directory ") + xst_dir + "\n";
+		return false;
+	}
 	if( (0 != mkdir(xst_tmpdir.c_str(), 0755)) && (errno != EEXIST) )
-		FatalError("Could not create XST temporary directory %s\n", xst_tmpdir.c_str());
+	{
+		stdout += string("ERROR: Failed to create XST directory ") + xst_tmpdir + "\n";
+		return false;
+	}
 
-	//Parse out the FPGA speed grade
-	//Speed grade is the first digit after the first dash in the device name
-	int speedgrade = 0;
-	if(1 != sscanf(device.c_str(), "%*[^-]-%d", &speedgrade))
-		FatalError("Unknown speed grade for device %s\n", device.c_str());
+	//Go over our flags and figure out our speed grade and package
+	int speed = 0;
+	string package;
+	for(auto f : flags)
+	{
+		if(f.GetType() != BuildFlag::TYPE_HARDWARE)
+			continue;
+
+		if(f.GetFlag() == "speed")
+			speed = atoi(f.GetArgs().c_str());
+		else if(f.GetFlag() == "package")
+			package = f.GetArgs();
+	}
+	if(speed <= 0)
+	{
+		stdout += string("ERROR: Device speed grade (for ") + fname + ") not specified\n";
+		return false;
+	}
+	if(package == "")
+	{
+		stdout += string("ERROR: Device package (for ") + fname + ") not specified\n";
+		return false;
+	}
+
+	//Format the part name
+	string device = triplet.substr(triplet.find("-") + 1);
+	char sdev[128];
+	snprintf(sdev, sizeof(sdev), "%s-%d%s",
+		device.c_str(),
+		speed,
+		package.c_str());
+	device = sdev;
+	LogDebug("Final device name: %s\n", device.c_str());
 
 	//Create the XST input script
+	//For now, top level module name must equal file base name
 	fp = fopen(xst_file.c_str(), "w");
 	if(!fp)
-		FatalError("Failed to create XST script %s\n", xst_file.c_str());
+	{
+		stdout += string("ERROR: Failed to create XST script ") + xst_file + "\n";
+		return false;
+	}
 	fprintf(fp, "set -tmpdir \"%s\"\n", xst_tmpdir.c_str());		//temporary directory
 	fprintf(fp, "set -xsthdpdir \"%s\"\n", xst_dir.c_str());		//work directory
 	fprintf(fp, "run\n");
 	fprintf(fp, "-ifn %s\n", prj_file.c_str());						//list of sources
-	fprintf(fp, "-ofn %s\n", ngc_file.c_str());						//netlist path
+	fprintf(fp, "-ofn %s\n", fname.c_str());						//netlist path
 	fprintf(fp, "-ofmt NGC\n");										//Xilinx NGC netlist format
 	fprintf(fp, "-p %s\n", device.c_str());							//part number
-	fprintf(fp, "-top %s\n", top_level.c_str());					//top level module
-	fprintf(fp, "-vlgincdir %s/generic/include\n", project_root.c_str());	//verilog include directory
+	fprintf(fp, "-top %s\n", base.c_str());							//top level module (file basename)
+	//fprintf(fp, "-vlgincdir %s/generic/include\n", project_root.c_str());	//verilog include directory
+																			//TODO: implement this
 	fprintf(fp, "-hierarchy_separator /\n");						//use / as hierarchy separator
 	fprintf(fp, "-bus_delimiter []\n");								//use [] as bus delimeter
 	fprintf(fp, "-case maintain\n");								//keep cases as is
 	fprintf(fp, "-rtlview no\n");									//do not generate RTL schematic
-	if(device.find("xc3s") == 0)
-		fprintf(fp, "-define {XILINX_FPGA XILINX_SPARTAN3 XILINX_SPEEDGRADE=%d}\n", speedgrade);
-	else if(device.find("xc6s") == 0)
-		fprintf(fp, "-define {XILINX_FPGA XILINX_SPARTAN6 XILINX_SPEEDGRADE=%d}\n", speedgrade);
-	else if(device.find("xc7a") == 0)
-		fprintf(fp, "-define {XILINX_FPGA XILINX_7SERIES XILINX_ARTIX7 XILINX_SPEEDGRADE=%d}\n", speedgrade);
-	else if(device.find("xc7k") == 0)
-		fprintf(fp, "-define {XILINX_FPGA XILINX_7SERIES XILINX_KINTEX7 XILINX_SPEEDGRADE=%d}\n", speedgrade);
-	else if(device.find("xc7v") == 0)
-		fprintf(fp, "-define {XILINX_FPGA XILINX_7SERIES XILINX_VIRTEX7 XILINX_SPEEDGRADE=%d}\n", speedgrade);
-	else if(device.find("xc2c") == 0)
-		fprintf(fp, "-define {XILINX_CPLD XILINX_COOLRUNNER2 XILINX_SPEEDGRADE=%d}\n", speedgrade);
-
-	if(device.find("xc2c") == string::npos)							//FPGA-specific flags
-	{
-		fprintf(fp, "-glob_opt AllClockNets\n");						//optimize clock periods
-	}
+	if(device.find("coolrunner2-") == string::npos)					//FPGA-specific flags
+		fprintf(fp, "-glob_opt AllClockNets\n");					//optimize clock periods
 	fprintf(fp, "-loop_iteration_limit 131072\n");					//loops can run up to 128K cycles
-	for(size_t i=0; i<flags.size(); i++)
-		fprintf(fp, "%s", flags[i]->toString(this).c_str());
+																	//TODO: figure out details?
+
+	//Add some `define flags of our own
+	string defines;
+	if(device.find("spartan3-") == 0)
+		defines += "XILINX_FPGA XILINX_SPARTAN3 ";
+	else if(device.find("spartan6-") == 0)
+		defines += "XILINX_FPGA XILINX_SPARTAN6 ";
+	else if(device.find("artix7-") == 0)
+		defines += "XILINX_FPGA XILINX_7SERIES XILINX_ARTIX7 ";
+	else if(device.find("kintex7-") == 0)
+		defines += "XILINX_FPGA XILINX_7SERIES XILINX_KINTEX7 ";
+	else if(device.find("virtex7-") == 0)
+		defines += "XILINX_FPGA XILINX_7SERIES XILINX_VIRTEX7 ";
+	else if(device.find("coolrunner2-") == 0)
+		defines += "XILINX_CPLD XILINX_COOLRUNNER2 ";
+	char tmp[128];
+	snprintf(tmp, sizeof(tmp), "XILINX_SPEEDGRADE=%d ", speed);
+
+	//Generate the `define flags separately (since we have to coalesce them)
+	for(auto f : flags)
+	{
+		if(f.GetType() != BuildFlag::TYPE_DEFINE)
+			continue;
+		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
+	}
+	fprintf(fp, "-define {%s}\n", defines.c_str());
+
+	for(auto f : flags)
+	{
+		//Ignore any non-synthesis flags
+		if(!f.IsUsedAt(BuildFlag::SYNTHESIS_TIME))
+			continue;
+
+		//Ignore any hardware/ or define/ flags as those were already processed
+		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
+			continue;
+		if(f.GetType() == BuildFlag::TYPE_DEFINE)
+			continue;
+
+		//Convert the meta-flag and write it verbatim
+		string fflag = FlagToStringForSynthesis(f);
+		fprintf(fp, "%s\n", fflag.c_str());
+	}
 	fclose(fp);
 
-	//Create the run-xst script
-	string xst_syr_file = path + "/" + base + ".syr";
-	string xst_runscript = path + "/" + base + "_xst.sh";
-	fp = fopen(xst_runscript.c_str(), "w");
-	if(!fp)
-		FatalError("Failed to create wrapper script %s\n", xst_runscript.c_str());
-	fprintf(fp, "#!/bin/bash\n");
-	fprintf(fp, "cd %s\n", path.c_str());
-	fprintf(fp, "%s -intstyle xflow -ifn %s -ofn %s\n",
-		m_xstpath.c_str(),
-		xst_file.c_str(),
-		xst_syr_file.c_str()
-		);
-	fprintf(fp, "if [ $? -ne 0 ]; then\n");
-	fprintf(fp, "    touch build_failed\n");
-	fprintf(fp, "    exit 1\n");
-	fprintf(fp, "else\n");
-	fprintf(fp, "    touch build_successful\n");
-	fprintf(fp, "fi\n");
-	fclose(fp);
-	if(0 != chmod(xst_runscript.c_str(), 0755))
-		FatalError("Failed to set execute permissions on XST run script %s\n", xst_runscript.c_str());
+	//Launch XST
+	string cmdline = m_binpath + "/xst -intstyle xflow -ifn " + xst_file + " -ofn " + report_file;
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
 
-	//Submit the batch script
-	return cluster->SubmitBatchJob(xst_runscript, cluster->m_fpgaBuildPartition, path, deps, 1, 1024);
-	*/
+	//Regardless of if results were successful or not, crunch the stdout log and print errors/warnings to client
+	CrunchSynthesisLog(output, stdout);
 
-	return false;
+	//Upload generated outputs (the .ngc and .syr are the interesting bits).
+	//Note that in case of a synthesis error the NGC may not exist.
+	if(DoesFileExist(ngc_file))
+		outputs[ngc_file] = sha256_file(ngc_file);
+	outputs[report_file] = sha256_file(report_file);
+
+	//Done
+	return ok;
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
+	@brief Converts a BuildFlag to an XST flag
+ */
+string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
+{
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		if(flag.GetArgs() == "none")
+			return "-opt_level 0";
+		else if(flag.GetArgs() == "speed")
+			return "-opt_level 1\n-opt_mode speed";
+		else
+		{
+			LogWarning("Don't know what to do with optimization flag %s\n", static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		//fprintf(fp, "%s", flags[i]->toString(this).c_str());
+		LogWarning("Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
 }
 
 /**

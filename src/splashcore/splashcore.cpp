@@ -221,7 +221,7 @@ string MakeStringLowercase(string str)
 /**
 	@brief Split a large string into an array of lines
  */
-void ParseLines(string str, vector<string>& lines, bool clearVector, char delim)
+void ParseLines(const string& str, vector<string>& lines, bool clearVector, char delim)
 {
 	if(clearVector)
 		lines.clear();
