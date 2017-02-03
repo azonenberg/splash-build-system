@@ -127,12 +127,22 @@ bool XilinxISEToolchain::Build(
 		return false;
 	}
 
-	//We have at least one source file, find the first one
+	//Check how many source files we have. See if we have a UCF and/or NGC as inputs.
 	string src = *sources.begin();
 	bool single_file = (sources.size() == 1);
+	bool double_file = (sources.size() == 2);
+	bool found_ucf = false;
+	bool found_ngc = false;
+	for(auto f : sources)
+	{
+		if(f.find(".ucf") != string::npos)
+			found_ucf = true;
+		if(f.find(".ngc") != string::npos)
+			found_ngc = true;
+	}
 
-	//If we have only one source and it's a .ngc we're map+PARing
-	if(single_file && (src.find(".ngc") != string::npos) )
+	//If we have two sources (a ucf and a ngc) we're map+PARing
+	if(double_file && found_ucf && found_ngc )
 		return MapAndPar(triplet, sources, fname, flags, outputs, stdout);
 
 	//If we have only one source and it's a .ncd we're bitgen'ing
