@@ -155,6 +155,53 @@ bool XilinxISEToolchain::Build(
 }
 
 /**
+	@brief Parses hardware/ flags to find the target part
+ */
+bool XilinxISEToolchain::GetTargetPartName(
+	set<BuildFlag> flags,
+	string& triplet,
+	string& part,
+	string& stdout,
+	string& fname,
+	int& speed)
+{
+	//Go over our flags and figure out our speed grade and package
+	speed = 0;
+	string package;
+	for(auto f : flags)
+	{
+		if(f.GetType() != BuildFlag::TYPE_HARDWARE)
+			continue;
+
+		if(f.GetFlag() == "speed")
+			speed = atoi(f.GetArgs().c_str());
+		else if(f.GetFlag() == "package")
+			package = f.GetArgs();
+	}
+	if(speed <= 0)
+	{
+		stdout += string("ERROR: Device speed grade (for ") + fname + ") not specified\n";
+		return false;
+	}
+	if(package == "")
+	{
+		stdout += string("ERROR: Device package (for ") + fname + ") not specified\n";
+		return false;
+	}
+
+	//Format the part name
+	string device = triplet.substr(triplet.find("-") + 1);
+	char sdev[128];
+	snprintf(sdev, sizeof(sdev), "%s-%d%s",
+		device.c_str(),
+		speed,
+		package.c_str());
+	part = sdev;
+
+	return true;
+}
+
+/**
 	@brief Synthesize a netlist
  */
 bool XilinxISEToolchain::Synthesize(
@@ -200,38 +247,11 @@ bool XilinxISEToolchain::Synthesize(
 		return false;
 	}
 
-	//Go over our flags and figure out our speed grade and package
-	int speed = 0;
-	string package;
-	for(auto f : flags)
-	{
-		if(f.GetType() != BuildFlag::TYPE_HARDWARE)
-			continue;
-
-		if(f.GetFlag() == "speed")
-			speed = atoi(f.GetArgs().c_str());
-		else if(f.GetFlag() == "package")
-			package = f.GetArgs();
-	}
-	if(speed <= 0)
-	{
-		stdout += string("ERROR: Device speed grade (for ") + fname + ") not specified\n";
-		return false;
-	}
-	if(package == "")
-	{
-		stdout += string("ERROR: Device package (for ") + fname + ") not specified\n";
-		return false;
-	}
-
 	//Format the part name
-	string device = triplet.substr(triplet.find("-") + 1);
-	char sdev[128];
-	snprintf(sdev, sizeof(sdev), "%s-%d%s",
-		device.c_str(),
-		speed,
-		package.c_str());
-	device = sdev;
+	string device;
+	int speed;
+	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
+		return false;
 
 	//Create the XST input script
 	//For now, top level module name must equal file base name
@@ -344,6 +364,48 @@ void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
 }
 
 /**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchTranslateLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
 	@brief Converts a BuildFlag to an XST flag
  */
 string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
@@ -396,9 +458,83 @@ bool XilinxISEToolchain::MapAndPar(
 	map<string, string>& outputs,
 	string& stdout)
 {
+	if(!Translate(triplet, sources, fname, flags, outputs, stdout))
+		return false;
 	if(!Map(triplet, sources, fname, flags, outputs, stdout))
 		return false;
 	return Par(triplet, sources, fname, flags, outputs, stdout);
+}
+
+/**
+	@brief Translation from NGC+UCF to NGD
+ */
+bool XilinxISEToolchain::Translate(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
+	string& stdout)
+{
+	stdout = "";
+
+	//Get NGD filename from NCD filename
+	string base = GetBasenameOfFileWithoutExt(fname);
+	fname = base + ".ngd";
+	string ngd_file = base + ".ngd";
+	string report_file = base + ".bld";
+	LogDebug("XilinxISEToolchain::Translate for %s\n", fname.c_str());
+
+	//Format the part name
+	string device;
+	int speed;
+	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
+		return false;
+
+	//Verify we have two sources, a UCF and a NGC. Find them.
+	string ucf;
+	string ngc;
+	for(auto s : sources)
+	{
+		if(s.find(".ucf") != string::npos)
+			ucf = s;
+		else if(s.find(".ngc") != string::npos)
+			ngc = s;
+		else
+		{
+			stdout += string("ERROR: XilinxISEToolchain got invalid input file ") + s + "\n";
+			return false;
+		}
+	}
+	if(ucf == "")
+	{
+		stdout += "ERROR: XilinxISEToolchain needs a constraint (.ucf) file\n";
+		return false;
+	}
+	if(ngc == "")
+	{
+		stdout += "ERROR: XilinxISEToolchain needs a netlist (.ngc) file\n";
+		return false;
+	}
+
+	//Launch ngdbuild
+	//TODO: flags here
+	string cmdline = m_binpath + "/ngdbuild -intstyle xflow -dd ngdbuild_tmp -nt on -p " + device +
+						" -uc " + ucf + " " + ngc;
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
+
+	//Regardless of if results were successful or not, crunch the stdout log and print errors/warnings to client
+	CrunchTranslateLog(output, stdout);
+
+	//Upload generated outputs (the .ngd and .bld are the interesting bits).
+	//Note that in case of a translation error the NGD may not exist.
+	if(DoesFileExist(ngd_file))
+		outputs[ngd_file] = sha256_file(ngd_file);
+	outputs[report_file] = sha256_file(report_file);
+
+	//Done
+	return ok;
 }
 
 /**
@@ -412,8 +548,106 @@ bool XilinxISEToolchain::Map(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "ERROR: XilinxISEToolchain::Map() not implemented\n";
-	return false;
+	stdout = "";
+
+	//Get mapped filenames from NCD filename
+	string base = GetBasenameOfFileWithoutExt(fname);
+	fname = base + "_map.ncd";
+	string ngd_file = base + ".ngd";
+	string pcf_file = base + ".pcf";
+	string report_file = base + ".mrp";
+	string report_file2 = base + ".map";
+	LogDebug("XilinxISEToolchain::Map for %s\n", fname.c_str());
+
+	//Format the part name
+	string device;
+	int speed;
+	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
+		return false;
+
+	//Figure out flags
+	for(auto f : flags)
+	{
+		//Ignore any non-synthesis flags
+		if(!f.IsUsedAt(BuildFlag::MAP_TIME))
+			continue;
+
+		//Ignore any hardware/ or define/ flags as those were already processed
+		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
+			continue;
+		if(f.GetType() == BuildFlag::TYPE_DEFINE)
+			continue;
+
+		LogWarning("Don't know what to do with map flag %s\n", static_cast<string>(f).c_str());
+
+		//Convert the meta-flag and write it verbatim
+		//string fflag = FlagToStringForSynthesis(f);
+		//fprintf(fp, "%s\n", fflag.c_str());
+
+
+		/*
+			optimize/speed:				-logic_opt on
+			optimize/none:				-logic_opt off
+
+			optimize/quick:				-ol std
+
+			optimize/pack/size:			-c 1
+			optimize/pack/speed:		-c 100
+
+			optimize/regmerge:			-equivalent_register_removal on
+			optimize/noregmerge:		-equivalent_register_removal off
+
+			optimize/regsplit:			-register_duplication on
+			optimize/noregsplit:		-register_duplication off
+
+			optimize/regpack/none:		-r off
+			optimize/regpack/single:	-r 4
+			optimize/regpack/double:	-r 8
+
+			optimize/global/speed:		-global_opt speed
+			optimize/global/size:		-global_opt area
+
+			optimize/lutmerge/size:		-lc area
+			optimize/lutmerge/balanced:	-lc auto
+			optimize/lutmerge/speed:	-lc off
+
+			optimize/iodff/input		-pr i
+			optimize/iodff/output		-pr o
+			optimize/iodff/all			-pr b
+			optimize/iodff/none			-pr off
+
+			TODO: power optimization options
+			TODO: smartguide
+			TODO: map seeds (cost tables)
+		 */
+	}
+
+	//TODO: Multithreading (-mt off|2) based on the job's focus on throughput or latency
+	//Multithreading not supported for spartan-3 so always leave it off there
+
+	//Launch map
+	//TODO: flags
+	string input_file = *sources.begin();
+	string cmdline = m_binpath + "/map -intstyle xflow -detail -ir off -p " + device + " -o " + fname + " "
+						+ ngd_file + " " + pcf_file;
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
+
+	//Regardless of if results were successful or not, crunch the stdout log and print errors/warnings to client
+	CrunchMapLog(output, stdout);
+
+	//Upload generated outputs (the .ncd, .pcf, .mrp, and .map are the interesting bits).
+	//Note that in case of a mapping error some files may not exist
+	if(DoesFileExist(fname))
+		outputs[fname] = sha256_file(fname);
+	if(DoesFileExist(pcf_file))
+		outputs[pcf_file] = sha256_file(pcf_file);
+	if(DoesFileExist(report_file))
+		outputs[report_file] = sha256_file(report_file);
+	outputs[report_file2] = sha256_file(report_file2);
+
+	//Done
+	return ok;
 }
 
 /**

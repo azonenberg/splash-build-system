@@ -48,9 +48,14 @@ public:
 		std::string& stdout);
 
 protected:
-	void CrunchSynthesisLog(const std::string& log, std::string& stdout);
 
-	std::string FlagToStringForSynthesis(BuildFlag flag);
+	bool GetTargetPartName(
+		std::set<BuildFlag> flags,
+		std::string& triplet,
+		std::string& part,
+		std::string& stdout,
+		std::string& fname,
+		int& speed);
 
 	bool Synthesize(
 		std::string triplet,
@@ -59,6 +64,8 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
+	std::string FlagToStringForSynthesis(BuildFlag flag);
+	void CrunchSynthesisLog(const std::string& log, std::string& stdout);
 
 	bool MapAndPar(
 		std::string triplet,
@@ -68,6 +75,15 @@ protected:
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
 
+	bool Translate(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
+	void CrunchTranslateLog(const std::string& log, std::string& stdout);
+
 	bool Map(
 		std::string triplet,
 		std::set<std::string> sources,
@@ -75,6 +91,7 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
+	void CrunchMapLog(const std::string& log, std::string& stdout);
 
 	bool Par(
 		std::string triplet,
