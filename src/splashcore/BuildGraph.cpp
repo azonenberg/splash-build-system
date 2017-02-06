@@ -1002,7 +1002,8 @@ string BuildGraph::GetIntermediateFilePath(
 	string config,
 	string arch,
 	string type,
-	string srcpath)
+	string srcpath,
+	string board)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -1023,7 +1024,10 @@ string BuildGraph::GetIntermediateFilePath(
 	}
 
 	string path = m_buildArtifactPath + "/";
-	path += arch + "/";
+	if(board != "")
+		path += GetBasenameOfFileWithoutExt(board) + "/";
+	else
+		path += arch + "/";
 	path += config + "/";
 
 	path += GetDirOfFile(srcpath);

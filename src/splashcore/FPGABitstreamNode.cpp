@@ -77,7 +77,8 @@ FPGABitstreamNode::FPGABitstreamNode(
 		config,
 		arch,
 		"constraint",
-		GetDirOfFile(scriptpath) + "/" + name + ".foobar");
+		GetDirOfFile(scriptpath) + "/" + name + ".foobar",
+		board);
 	GenerateConstraintFile(pins, m_constrpath, binfo);
 
 	//Look up all of the source files
@@ -244,7 +245,8 @@ void FPGABitstreamNode::DoStartFinalization()
 		m_config,
 		m_arch,
 		"netlist",
-		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar");
+		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar",
+		m_board);
 	m_netlist = new HDLNetlistNode(
 		m_graph,
 		m_arch,
@@ -276,7 +278,8 @@ void FPGABitstreamNode::DoStartFinalization()
 		m_config,
 		m_arch,
 		"circuit",
-		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar");
+		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar",
+		m_board);
 	m_circuit = new PhysicalNetlistNode(
 		m_graph,
 		m_arch,

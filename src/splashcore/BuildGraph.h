@@ -83,7 +83,8 @@ public:
 		std::string config,
 		std::string arch,
 		std::string type,
-		std::string srcpath);
+		std::string srcpath,
+		std::string board = "");
 
 	void GetTargets(std::set<std::string>& targets);
 	std::string GetTargetScript(std::string name);
