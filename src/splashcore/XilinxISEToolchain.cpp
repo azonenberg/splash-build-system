@@ -145,7 +145,7 @@ bool XilinxISEToolchain::Build(
 	if(double_file && found_ucf && found_ngc )
 		return MapAndPar(triplet, sources, fname, flags, outputs, stdout);
 
-	//If we have only one source and it's a .ncd we're bitgen'ing
+	//If we have only one source and it's a .ncd we're bitgen'ing.
 	else if(single_file && (src.find(".ncd") != string::npos) )
 		return GenerateBitstream(triplet, sources, fname, flags, outputs, stdout);
 
@@ -199,6 +199,132 @@ bool XilinxISEToolchain::GetTargetPartName(
 	part = sdev;
 
 	return true;
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchTranslateLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchParLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchBitgenLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchTimingLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
 }
 
 /**
@@ -343,91 +469,6 @@ bool XilinxISEToolchain::Synthesize(
 }
 
 /**
-	@brief Read through the report and figure out what's interesting
- */
-void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
-{
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
-	{
-		//TODO: Blacklist messages of no importance
-
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
-}
-
-/**
-	@brief Read through the report and figure out what's interesting
- */
-void XilinxISEToolchain::CrunchTranslateLog(const string& log, string& stdout)
-{
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
-	{
-		//TODO: Blacklist messages of no importance
-
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
-}
-
-/**
-	@brief Read through the report and figure out what's interesting
- */
-void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
-{
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
-	{
-		//TODO: Blacklist messages of no importance
-
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
-}
-
-/**
-	@brief Read through the report and figure out what's interesting
- */
-void XilinxISEToolchain::CrunchParLog(const string& log, string& stdout)
-{
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
-	{
-		//TODO: Blacklist messages of no importance
-
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
-}
-
-
-/**
 	@brief Converts a BuildFlag to an XST flag
  */
 string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
@@ -470,7 +511,7 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 }
 
 /**
-	@brief Helper function to call Map() and Par()
+	@brief Helper function to call Translate(), Map(), Par(), and StaticTiming()
  */
 bool XilinxISEToolchain::MapAndPar(
 	string triplet,
@@ -484,7 +525,9 @@ bool XilinxISEToolchain::MapAndPar(
 		return false;
 	if(!Map(triplet, sources, fname, flags, outputs, stdout))
 		return false;
-	return Par(triplet, sources, fname, flags, outputs, stdout);
+	if(!Par(triplet, sources, fname, flags, outputs, stdout))
+		return false;
+	return StaticTiming(triplet, sources, fname, flags, outputs, stdout);
 }
 
 /**
@@ -505,7 +548,7 @@ bool XilinxISEToolchain::Translate(
 	fname = base + ".ngd";
 	string ngd_file = base + ".ngd";
 	string report_file = base + ".bld";
-	LogDebug("XilinxISEToolchain::Translate for %s\n", fname.c_str());
+	//LogDebug("XilinxISEToolchain::Translate for %s\n", fname.c_str());
 
 	//Format the part name
 	string device;
@@ -579,7 +622,7 @@ bool XilinxISEToolchain::Map(
 	string pcf_file = base + ".pcf";
 	string report_file = base + ".mrp";
 	string report_file2 = base + ".map";
-	LogDebug("XilinxISEToolchain::Map for %s\n", fname.c_str());
+	//LogDebug("XilinxISEToolchain::Map for %s\n", fname.c_str());
 
 	//Format the part name
 	string device;
@@ -692,7 +735,7 @@ bool XilinxISEToolchain::Par(
 	string pcf_file = base + ".pcf";
 	string report_file = base + ".par";
 	string report_file2 = base + ".unroutes";
-	LogDebug("XilinxISEToolchain::Par for %s\n", fname.c_str());
+	//LogDebug("XilinxISEToolchain::Par for %s\n", fname.c_str());
 
 	//Format the part name
 	string device;
@@ -756,6 +799,49 @@ bool XilinxISEToolchain::Par(
 }
 
 /**
+	@brief Static timing analysis
+ */
+bool XilinxISEToolchain::StaticTiming(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
+	string& stdout)
+{
+	stdout = "";
+
+	//Get TWX filename from NCD filename
+	string base = GetBasenameOfFileWithoutExt(fname);
+	string ncd_file = base + ".ncd";
+	string report_file = base + ".twr";
+	string pcf_file = base + ".pcf";
+	string twx_file = base + ".twx";
+	LogDebug("XilinxISEToolchain::StaticTiming for %s\n", fname.c_str());
+
+	//Launch trce
+	//TODO: flags here
+	string cmdline = m_binpath + "/trce -v 10 -intstyle xflow -l 10 -fastpaths " +
+		ncd_file + " " + pcf_file + " -o " + report_file + " -xml " + twx_file;
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
+	LogDebug("TRCE command line: %s\n", cmdline.c_str());
+	LogDebug("TRCE results: %s\n", output.c_str());
+
+	//Regardless of if results were successful or not, crunch the stdout log and print errors/warnings to client
+	CrunchTimingLog(output, stdout);
+
+	//Upload generated outputs (the .twx and .twr are the interesting bits).
+	//Note that in case of an arg parsing error etc the TWX may not exist.
+	if(DoesFileExist(twx_file))
+		outputs[twx_file] = sha256_file(twx_file);
+	outputs[report_file] = sha256_file(report_file);
+
+	//Done
+	return ok;
+}
+
+/**
 	@brief Bitstream generation
  */
 bool XilinxISEToolchain::GenerateBitstream(
@@ -766,6 +852,6 @@ bool XilinxISEToolchain::GenerateBitstream(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "ERROR: XilinxISEToolchain::GenerateBitstream() not implemented\n";
+	stdout += "ERROR: XilinxISEToolchain::GenerateBitstream() not implemented\n";
 	return false;
 }

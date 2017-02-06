@@ -109,6 +109,16 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
+	void CrunchBitgenLog(const std::string& log, std::string& stdout);
+
+	bool StaticTiming(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
+	void CrunchTimingLog(const std::string& log, std::string& stdout);
 
 	std::string m_binpath;
 };

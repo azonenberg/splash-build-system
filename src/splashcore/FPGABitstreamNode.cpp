@@ -302,6 +302,7 @@ void FPGABitstreamNode::DoStartFinalization()
 	else
 		m_graph->AddNode(m_circuit);
 	m_dependencies.emplace(pnetpath);
+	m_sources.emplace(pnetpath);
 	wc->UpdateFile(pnetpath, h, false, false, ignored);
 }
 
@@ -310,74 +311,6 @@ void FPGABitstreamNode::DoStartFinalization()
  */
 void FPGABitstreamNode::DoFinalize()
 {
-	/*
-	//Update libdeps and libflags
-	//TODO: Can we do this per executable, and not separately for each object?
-	for(auto obj : m_objects)
-		obj->GetLibraryScanResults(m_libdeps, m_libflags);
-
-	//Collect the linker flags
-	set<BuildFlag> linkflags;
-	GetFlagsForUseAt(BuildFlag::LINK_TIME, linkflags);
-
-	//TODO: The toolchain specified for us is the OBJECT FILE generation toolchain.
-	//How do we find the LINKER to use?
-
-	//Add all linker flags OTHER than those linking to a library
-	m_flags.clear();
-	for(auto f : linkflags)
-	{
-		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
-			m_flags.emplace(f);
-	}
-
-	//Go over the set of link flags and see if any of them specify linking to a TARGET.
-	//If so, look up that target
-	for(auto f : linkflags)
-	{
-		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
-			continue;
-		if(f.GetFlag() != "target")
-			continue;
-
-		//Look up the target
-		set<BuildGraphNode*> nodes;
-		m_graph->GetTargets(nodes, f.GetArgs(), m_arch, m_config);
-		if(nodes.empty())
-		{
-			SetInvalidInput(
-				string("FPGABitstreamNode: Could not link to target ") + f.GetArgs() + " because it doesn't exist\n");
-			return;
-		}
-		//TODO: verify only one?
-
-		//We found the target, use it
-		BuildGraphNode* node = *nodes.begin();
-		string path = node->GetFilePath();
-		//LogDebug("Linking to target lib %s\n", path.c_str());
-		m_sources.emplace(path);
-		m_dependencies.emplace(path);
-
-		//Add a hint to the graph that we depend on it
-		m_graph->AddTargetDependencyHint(f.GetArgs(), m_scriptpath);
-	}
-
-	//Add our link-time dependencies.
-	//These are found by the OBJECT FILE dependency scan, since we need to know which libs exist at
-	//source file scan time in order to set the right -DHAVE_xxx flags
-	for(auto d : m_libdeps)
-	{
-		//LogDebug("[FPGABitstreamNode] Found library %s for %s\n", d.c_str(), GetFilePath().c_str());
-		//and to our dependencies
-		m_sources.emplace(d);
-		m_dependencies.emplace(d);
-	}
-	for(auto f : m_libflags)
-	{
-		//LogDebug("[FPGABitstreamNode] Found library flag %s\n", static_cast<string>(f).c_str());
-		m_flags.emplace(f);
-	}
-
 	//Finalize all of our dependencies
 	for(auto d : m_dependencies)
 	{
@@ -391,7 +324,7 @@ void FPGABitstreamNode::DoFinalize()
 		else
 			LogError("NULL node for path %s (in %s)\n", d.c_str(), GetFilePath().c_str());
 	}
-	*/
+
 	UpdateHash();
 }
 
