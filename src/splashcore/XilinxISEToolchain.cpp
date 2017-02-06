@@ -406,6 +406,28 @@ void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
 }
 
 /**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchParLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("ERROR:") == 0)
+			stdout += line + "\n";
+		if(line.find("WARNING:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+
+/**
 	@brief Converts a BuildFlag to an XST flag
  */
 string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
@@ -568,7 +590,7 @@ bool XilinxISEToolchain::Map(
 	//Figure out flags
 	for(auto f : flags)
 	{
-		//Ignore any non-synthesis flags
+		//Ignore any non-map flags
 		if(!f.IsUsedAt(BuildFlag::MAP_TIME))
 			continue;
 
@@ -644,7 +666,8 @@ bool XilinxISEToolchain::Map(
 		outputs[pcf_file] = sha256_file(pcf_file);
 	if(DoesFileExist(report_file))
 		outputs[report_file] = sha256_file(report_file);
-	outputs[report_file2] = sha256_file(report_file2);
+	if(DoesFileExist(report_file2))
+		outputs[report_file2] = sha256_file(report_file2);
 
 	//Done
 	return ok;
@@ -661,8 +684,75 @@ bool XilinxISEToolchain::Par(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "ERROR: XilinxISEToolchain::Par() not implemented\n";
-	return false;
+	stdout = "";
+
+	//Get mapped filenames from NCD filename
+	string base = GetBasenameOfFileWithoutExt(fname);
+	string map_file = base + "_map.ncd";
+	string pcf_file = base + ".pcf";
+	string report_file = base + ".par";
+	string report_file2 = base + ".unroutes";
+	LogDebug("XilinxISEToolchain::Par for %s\n", fname.c_str());
+
+	//Format the part name
+	string device;
+	int speed;
+	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
+		return false;
+
+	//Figure out flags
+	for(auto f : flags)
+	{
+		//Ignore any non-PAR flags
+		if(!f.IsUsedAt(BuildFlag::PAR_TIME))
+			continue;
+
+		//Ignore any hardware/ or define/ flags as those were already processed
+		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
+			continue;
+		if(f.GetType() == BuildFlag::TYPE_DEFINE)
+			continue;
+
+		LogWarning("Don't know what to do with PAR flag %s\n", static_cast<string>(f).c_str());
+
+		/*
+			optimize/quick:			-ol std -rl std
+			default:				-ol high -rl high
+
+			optimize/power:			-power on
+		 */
+
+		//Convert the meta-flag and write it verbatim
+		//string fflag = FlagToStringForSynthesis(f);
+		//fprintf(fp, "%s\n", fflag.c_str());
+	}
+
+	//TODO: Multithreading (-mt off|2|3|4) based on the job's focus on throughput or latency
+	//Multithreading not supported for spartan-3 so always leave it off there
+
+	//Launch part
+	//TODO: flags
+	string input_file = *sources.begin();
+
+	string cmdline = m_binpath + "/par -intstyle xflow " + map_file + " " + fname + " " + pcf_file;
+
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
+
+	//Regardless of if results were successful or not, crunch the stdout log and print errors/warnings to client
+	CrunchParLog(output, stdout);
+
+	//Upload generated outputs (the .ncd, .par, .unroutes are the interesting bits).
+	//Note that in case of a mapping error some files may not exist
+	if(DoesFileExist(fname))
+		outputs[fname] = sha256_file(fname);
+	if(DoesFileExist(report_file))
+		outputs[report_file] = sha256_file(report_file);
+	if(DoesFileExist(report_file2))
+		outputs[report_file2] = sha256_file(report_file2);
+
+	//Done
+	return ok;
 }
 
 /**

@@ -100,6 +100,7 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
+	void CrunchParLog(const std::string& log, std::string& stdout);
 
 	bool GenerateBitstream(
 		std::string triplet,

@@ -42,7 +42,7 @@ FPGABitstreamNode::FPGABitstreamNode(
 	string scriptpath,
 	string path,
 	string toolchain,
-	std::string board,
+	string board,
 	BoardInfoFile* binfo,
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::FPGA_TIME, toolchain, arch, config, name, scriptpath, path, node)
