@@ -81,6 +81,12 @@ int main(int argc, char* argv[])
 		printf("\n");
 	}
 
+	if(ctl_server == "")
+	{
+		LogError("Usage: splashbuild-launcher [options] ctl_server\n");
+		return 1;
+	}
+
 	//Create a UUID
 	string uuid = ShellCommand("uuidgen -r");
 
