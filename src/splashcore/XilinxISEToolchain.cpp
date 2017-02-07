@@ -817,7 +817,7 @@ bool XilinxISEToolchain::StaticTiming(
 	string report_file = base + ".twr";
 	string pcf_file = base + ".pcf";
 	string twx_file = base + ".twx";
-	LogDebug("XilinxISEToolchain::StaticTiming for %s\n", fname.c_str());
+	//LogDebug("XilinxISEToolchain::StaticTiming for %s\n", fname.c_str());
 
 	//Launch trce
 	//TODO: flags here
@@ -825,8 +825,6 @@ bool XilinxISEToolchain::StaticTiming(
 		ncd_file + " " + pcf_file + " -o " + report_file + " -xml " + twx_file;
 	string output;
 	bool ok = (0 == ShellCommand(cmdline, output));
-	LogDebug("TRCE command line: %s\n", cmdline.c_str());
-	LogDebug("TRCE results: %s\n", output.c_str());
 
 	//Regardless of if results were successful or not, crunch the stdout log and print errors/warnings to client
 	CrunchTimingLog(output, stdout);
@@ -852,6 +850,76 @@ bool XilinxISEToolchain::GenerateBitstream(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout += "ERROR: XilinxISEToolchain::GenerateBitstream() not implemented\n";
-	return false;
+	stdout = "";
+
+	//Look up the source file name
+	string ncd_file = *sources.begin();
+
+	//Get other filenames from BIT filename
+	string base = GetDirOfFile(ncd_file) + "/" + GetBasenameOfFileWithoutExt(ncd_file);
+	string report_file = base + ".bgn";
+	LogDebug("XilinxISEToolchain::GenerateBitstream for %s\n", fname.c_str());
+
+	//Figure out flags
+	string sflags = "-intstyle xflow -g DonePipe:Yes ";
+	if(triplet.find("spartan6-") == 0)
+		sflags += "-g INIT_9L:Yes ";
+	for(auto f : flags)
+	{
+		//Ignore any non-PAR flags
+		if(!f.IsUsedAt(BuildFlag::IMAGE_TIME))
+			continue;
+
+		//Ignore any hardware/ or define/ flags as those were already processed
+		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
+			continue;
+		if(f.GetType() == BuildFlag::TYPE_DEFINE)
+			continue;
+
+		LogWarning("Don't know what to do with bitgen flag %s\n", static_cast<string>(f).c_str());
+
+		//TODO: more flags here
+		/*
+			output/compress			-g Compress
+			output/bootfallback		-g ConfigFallBack
+			output/ConfigRate/x		-g ConfigRate:x
+			output/debugbit			-g DebugBitstream:Yes
+			output/jtaglock			-g DISABLE_JTAG:Yes
+			output/drivedone		-g DriveDone:Yes
+			output/thermalshutdown	-g XADCPowerDown:Enable
+			output/readback			-g ReadBack
+			output/readlock			-g Security:Level1
+			output/reconfiglock		-g Security:Level2
+			output/spiwidth/x		-g SPI_buswidth:x
+			output/spinegclk		-g SPI_Fall_Edge
+			output/unused/pulldown	-g UnusedPin:PullDown
+			output/unused/pullup	-g UnusedPin:PullUp
+			output/unused/float_t	-g UnusedPin:PullNone
+			output/usercode/$HEX	-g UserID:$HEX
+			output/userintcode/$HEX	-g USR_ACCESS:$HEX
+
+			TODO: bitfile encryption stuff
+		 */
+
+		//Convert the meta-flag and write it verbatim
+		//string fflag = FlagToStringForSynthesis(f);
+		//fprintf(fp, "%s\n", fflag.c_str());
+	}
+
+	//Launch bitgen
+	string cmdline = m_binpath + "/bitgen " + sflags + " " + ncd_file + " " + fname;
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
+
+	//Regardless of if results were successful or not, crunch the stdout log and print errors/warnings to client
+	CrunchBitgenLog(output, stdout);
+
+	//Upload generated outputs (the .bit and .bgn are the interesting bits).
+	//Note that in case of an arg parsing error etc the BIT may not exist.
+	if(DoesFileExist(fname))
+		outputs[fname] = sha256_file(fname);
+	outputs[report_file] = sha256_file(report_file);
+
+	//Done
+	return ok;
 }
