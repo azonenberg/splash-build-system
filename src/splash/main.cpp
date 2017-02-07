@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
 	else if(cmd == "list-toolchains")
 		return ProcessListToolchainsCommand(sock, args);
 	else
-		LogError("Unknown command \"%s\"", cmd.c_str());
+		LogError("Unknown command \"%s\"\n", cmd.c_str());
 
 	//Clean up and finish
 	delete g_cache;
