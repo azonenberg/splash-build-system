@@ -802,8 +802,8 @@ bool XilinxISEToolchain::Par(
 	@brief Static timing analysis
  */
 bool XilinxISEToolchain::StaticTiming(
-	string triplet,
-	set<string> sources,
+	string /*triplet*/,
+	set<string> /*sources*/,
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
