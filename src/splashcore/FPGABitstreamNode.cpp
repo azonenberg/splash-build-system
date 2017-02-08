@@ -50,8 +50,8 @@ FPGABitstreamNode::FPGABitstreamNode(
 	, m_scriptpath(scriptpath)
 	, m_netlist(NULL)
 {
-	LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
-		toolchain.c_str(), path.c_str());
+	//LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
+	//	toolchain.c_str(), path.c_str());
 
 	//If we specify a list of pins, read that
 	map<string, TopLevelPin> pins;
@@ -94,14 +94,6 @@ FPGABitstreamNode::FPGABitstreamNode(
 	//Create a flag for our package
 	snprintf(tmp, sizeof(tmp), "hardware/package/%s", binfo->GetPackage().c_str());
 	m_flags.emplace(BuildFlag(tmp));
-
-	//Look up all of our flags
-	LogDebug("Dumping flags for FPGABitstreamNode\n");
-	LogIndenter li;
-	for(auto f : m_flags)
-	{
-		LogDebug("%s\n", static_cast<string>(f).c_str());
-	}
 }
 
 void FPGABitstreamNode::GenerateConstraintFile(
@@ -140,7 +132,7 @@ string FPGABitstreamNode::GenerateUCFConstraintFile(
 		string path,
 		BoardInfoFile* binfo)
 {
-	LogDebug("Generating UCF file %s\n", path.c_str());
+	//LogDebug("Generating UCF file %s\n", path.c_str());
 
 	//Header
 	string retval;

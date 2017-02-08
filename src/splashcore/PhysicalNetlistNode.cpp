@@ -48,9 +48,9 @@ PhysicalNetlistNode::PhysicalNetlistNode(
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
 	, m_constraintPath(constraints)
 {
-	LogDebug("[%6.3f] Creating PhysicalNetlistNode %s\nfor arch %s, toolchain %s\n",
-		g_scheduler->GetDT(), path.c_str(), arch.c_str(), toolchain.c_str() );
-	LogIndenter li;
+	//LogDebug("[%6.3f] Creating PhysicalNetlistNode %s\nfor arch %s, toolchain %s\n",
+	//	g_scheduler->GetDT(), path.c_str(), arch.c_str(), toolchain.c_str() );
+	//LogIndenter li;
 
 	//Add an automatic dependency for the netlist file itself
 	auto fname = netlist->GetFilePath();
