@@ -36,15 +36,15 @@ using namespace std;
 
 HDLNetlistNode::HDLNetlistNode(
 	BuildGraph* graph,
-	std::string arch,
-	std::string config,
-	std::string name,
-	std::string scriptpath,
-	std::string path,
-	std::string toolchain,
-	std::string board,
-	std::set<BuildFlag> flags,
-	std::set<BuildGraphNode*> sources)
+	string arch,
+	string /*config*/,
+	string name,
+	string /*scriptpath*/,
+	string path,
+	string toolchain,
+	string board,
+	set<BuildFlag> flags,
+	set<BuildGraphNode*> sources)
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
 	, m_board(board)
 {
@@ -56,168 +56,96 @@ HDLNetlistNode::HDLNetlistNode(
 	//Add an automatic dependency for the source files
 	for(auto src : sources)
 	{
-		m_dependencies.emplace(src->GetFilePath());
-		m_sources.emplace(src->GetFilePath());
+		auto f = src->GetFilePath();
+		m_dependencies.emplace(f);
+		m_sources.emplace(f);
 	}
-
-	LogWarning("HDLNetlistNode: Not running dependency scanner on source files (not yet implemented)\n");
-
-	/*
-	//Run the dependency scanner on this file to see what other stuff we need to pull in.
-	//This will likely require pulling a lot of files from the golden node.
-	//If the scan fails, declare us un-buildable
-	m_scanJob = g_scheduler->ScanDependenciesNonblocking(
-		fname,
-		arch,
-		toolchain,
-		flags,
-		graph->GetWorkingCopy());
-	if(m_scanJob == NULL)
-	{
-		SetInvalidInput("Failed to start dependency scanner\n");
-	}
-	*/
 }
 
 HDLNetlistNode::~HDLNetlistNode()
 {
 }
 
+bool HDLNetlistNode::ScanDependencies(string fname)
+{
+	//Read the source code for this file
+	auto wc = m_graph->GetWorkingCopy();
+	if(!wc->HasFile(fname))
+	{
+		SetInvalidInput(string("ERROR: Couldn't find source file ") + fname + " for dependency scan\n");
+		return false;
+	}
+	string hash = wc->GetFileHash(fname);
+	string source = g_cache->ReadCachedFile(hash);
+
+	//Split the source file by lines
+	vector<string> lines;
+	ParseLines(source, lines);
+
+	//Do very minimal parsing of the lines to look for dependencies
+	for(auto line : lines)
+	{
+		//Eat spaces
+		while(!line.empty() && isspace(line[0]))
+			line = line.substr(1);
+
+		//TODO: Parse multiline comments
+
+		//Look for preprocessor commands
+		if(line[0] != '`')
+			continue;
+
+		//TODO: Implement `if etc
+		//For now, skip anything but include statements
+		if(line.find("`include") != 0)
+			continue;
+
+		//Look up the filename
+		size_t start = line.find("\"");
+		size_t end = line.find("\"", start+1);
+		if( (start == string::npos) || (end == string::npos) )
+		{
+			SetInvalidInput("ERROR: Malformed `include line\n");
+			return false;
+		}
+		string fpath = line.substr(start+1, end-(start+1));
+
+		//Canonicalize based on our working directory
+		string cpath = GetDirOfFile(fname) + "/" + fpath;
+		if(!CanonicalizePathThatMightNotExist(cpath))
+		{
+			SetInvalidInput(string("ERROR: Couldn't canonicalize include file ") + cpath + "\n");
+			return false;
+		}
+
+		LogDebug("Found include statement: %s (%s)\n", fpath.c_str(), cpath.c_str());
+
+		//See if it exists
+		if(!wc->HasFile(cpath))
+		{
+			SetInvalidInput(string("ERROR: Include file ") + cpath + " doesn't exist\n");
+			return false;
+		}
+
+		LogDebug("OK\n");
+
+		//Pull it in
+		m_dependencies.emplace(cpath);
+	}
+
+	return true;
+}
+
 void HDLNetlistNode::DoFinalize()
 {
 	auto wc = m_graph->GetWorkingCopy();
 
-	//Block until the scan completes
-	//set<string> deps;
-	//set<BuildFlag> foundflags;
-	//if(g_scheduler->BlockOnScanResults(m_scanJob, wc, deps, foundflags, m_errors))
+	//Run the dependency scanner once all nodes have been created
+	for(auto f : m_sources)
 	{
-		/*
-		//Dependencies scanned OK, update our stuff
-		//Update our flags with the HAVE_xx macros from the libraries we located
-		for(auto f : foundflags)
-			m_flags.emplace(f);
-
-		//Get the library extensions
-		string libpre;
-		string shlibsuf;
-		string statsuf;
-		string osuf;
-		{
-			lock_guard<NodeManager> lock(*g_nodeManager);
-			auto chain = g_nodeManager->GetAnyToolchainForName(m_arch, m_toolchain);
-			libpre = chain->GetPrefix("shlib");
-			shlibsuf = chain->GetSuffix("shlib");
-			statsuf = chain->GetSuffix("stlib");
-			osuf = chain->GetSuffix("object");
-		}
-
-		//Go over the list of libraries we asked for and remove any optional ones we don't have
-		//TODO: export library set to caller for link stage?
-		set<BuildFlag> flagsToErase;
-		for(auto f : m_flags)
-		{
-			if(f.GetType() != BuildFlag::TYPE_LIBRARY)
-				continue;
-
-			//Search for any file with a basename containing the lib name
-			bool found = false;
-			string base = libpre + f.GetArgs();
-			string libpath;
-			for(auto d : deps)
-			{
-				auto search = GetBasenameOfFile(d);
-				if(search.find(base) != 0)
-					continue;
-				if( (search.find(shlibsuf) != string::npos) || (search.find(statsuf) != string::npos) )
-				{
-					libpath = d;
-					//LogDebug("%s is a hit for %s\n", d.c_str(), static_cast<string>(f).c_str());
-					found = true;
-					break;
-				}
-			}
-
-			//If we did NOT find the library, remove from the list of libraries to link
-			if(!found)
-			{
-				//LogDebug("Did not find a hit for %s, removing\n", static_cast<string>(f).c_str());
-				flagsToErase.emplace(f);
-			}
-
-			//If we DID find it, add it as a dependency for the executable
-			else
-			{
-				m_libdeps.emplace(libpath);
-				m_libflags.emplace(f);
-
-				//REMOVE the library from OUR dependencies though, no point in pulling it down when compiling
-				deps.erase(libpath);
-
-				//If it wasn't already in the graph, create a node for it
-				string hash = wc->GetFileHash(libpath);
-				if(!m_graph->HasNodeWithHash(hash))
-				{
-					//LogDebug("[1] Creating SystemLibraryNode %s\n  with hash %s, graph %p\n",
-					//	libpath.c_str(), hash.c_str(), graph);
-					m_graph->AddNode(new SystemLibraryNode(m_graph, libpath, hash));
-				}
-			}
-		}
-
-		//can't do this in the loop above or iterators go bad
-		for(auto f : flagsToErase)
-			m_flags.erase(f);
-
-		//Make a note of any object or library files we have in the dependency list that were not specified by flags
-		for(auto d : deps)
-		{
-			if( (d.find(osuf) == string::npos) &&
-				(d.find(shlibsuf) == string::npos) &&
-				(d.find(statsuf) == string::npos) )
-			{
-				continue;
-			}
-
-			m_libdeps.emplace(d);
-			//LogDebug("found object/library dep %s\n", d.c_str());
-
-			//If it wasn't already in the graph, create a node for it
-			string hash = wc->GetFileHash(d);
-			if(!m_graph->HasNodeWithHash(hash))
-			{
-				//LogDebug("[2] Creating SystemLibraryNode %s\n  with hash %s, graph %p\n",
-				//	d.c_str(), hash.c_str(), graph);
-				m_graph->AddNode(new SystemLibraryNode(m_graph, d, hash));
-			}
-		}
-
-		//Add source nodes if we don't have them already
-		for(auto d : deps)
-		{
-			auto h = wc->GetFileHash(d);
-
-			//See what type of file we got as a dependency.
-
-			//Create a new node if needed
-			if(!m_graph->HasNodeWithHash(h))
-				m_graph->AddNode(new SourceFileNode(m_graph, d, h));
-
-			//Either way, we have the node now. Add it to our list of inputs.
-			m_dependencies.emplace(d);
-			//LogDebug("Adding %s as dependency to %s\n", d.c_str(), GetFilePath().c_str());
-		}
-
-
-		//Dump the output
-		//for(auto d : m_dependencies)
-		//{
-		//	auto h = wc->GetFileHash(d);
-		//	LogDebug("dependency %s (%s)\n",
-		//		d.c_str(),
-		//		h.c_str());
-		//}
-		*/
+		//Run the dependency scanner on this file to see what other stuff we need to pull in.
+		//For now, do not support recursive includes (i.e. we only scan this source file).
+		ScanDependencies(f);
 	}
 
 	//Calculate our hash.
@@ -240,9 +168,4 @@ void HDLNetlistNode::DoFinalize()
 
 	//Done, calculate final hash
 	m_hash = sha256(hashin);
-
-	//If the dependency scan failed, add a dummy cached file with the proper ID and stdout
-	//so we can query the result in the cache later on.
-	if(m_errors != "")
-		SetInvalidInput(m_errors);
 }

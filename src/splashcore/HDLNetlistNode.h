@@ -54,13 +54,8 @@ protected:
 	virtual void DoFinalize();
 
 	std::string m_board;
-	std::string m_errors;
-	/*
-	DependencyScanJob* m_scanJob;
 
-	std::set<std::string> m_libdeps;
-	std::set<BuildFlag> m_libflags;
-	*/
+	bool ScanDependencies(std::string fname);
 };
 
 #endif
