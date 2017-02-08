@@ -209,8 +209,8 @@ string FPGABitstreamNode::GenerateUCFConstraintFile(
  */
 void FPGABitstreamNode::DoStartFinalization()
 {
-	LogDebug("DoStartFinalization for %s\n", GetFilePath().c_str());
-	LogIndenter li;
+	//LogDebug("DoStartFinalization for %s\n", GetFilePath().c_str());
+	//LogIndenter li;
 
 	//Look up the working copy we're part of
 	WorkingCopy* wc = m_graph->GetWorkingCopy();

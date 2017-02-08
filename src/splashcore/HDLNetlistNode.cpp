@@ -48,10 +48,12 @@ HDLNetlistNode::HDLNetlistNode(
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
 	, m_board(board)
 {
+	/*
 	LogDebug("[%6.3f] Creating HDLNetlistNode %s\nfor arch %s, toolchain %s, board %s\n",
 		g_scheduler->GetDT(), path.c_str(), arch.c_str(), toolchain.c_str(),
 		GetBasenameOfFileWithoutExt(board).c_str() );
 	LogIndenter li;
+	*/
 
 	//Add an automatic dependency for the source files
 	for(auto src : sources)
