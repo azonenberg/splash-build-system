@@ -54,9 +54,10 @@ public:
 		PAR_TIME		= 0x10,		//HDL place-and-route
 		IMAGE_TIME		= 0x20,		//Firmware image creation time
 		PROOF_TIME		= 0x40,		//Formal verification solvers etc
+		ANALYSIS_TIME	= 0x80,		//Static timing analysis etc
 
 		FPGA_TIME		=			//All FPGA stuff
-			SYNTHESIS_TIME | MAP_TIME | PAR_TIME | IMAGE_TIME,
+			SYNTHESIS_TIME | MAP_TIME | PAR_TIME | IMAGE_TIME | ANALYSIS_TIME,
 		
 		NO_TIME			= 0x00,		//placeholder
 		ALL_TIME		= 0xff

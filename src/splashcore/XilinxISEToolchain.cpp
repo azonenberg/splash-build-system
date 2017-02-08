@@ -820,7 +820,25 @@ bool XilinxISEToolchain::StaticTiming(
 	//LogDebug("XilinxISEToolchain::StaticTiming for %s\n", fname.c_str());
 
 	//Launch trce
-	//TODO: flags here
+	//Figure out flags
+	for(auto f : flags)
+	{
+		//Ignore any non-analysis flags
+		if(!f.IsUsedAt(BuildFlag::ANALYSIS_TIME))
+			continue;
+
+		//Ignore any hardware/ or define/ flags as those were already processed
+		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
+			continue;
+		if(f.GetType() == BuildFlag::TYPE_DEFINE)
+			continue;
+
+		LogWarning("Don't know what to do with static timing flag %s\n", static_cast<string>(f).c_str());
+
+		//Convert the meta-flag and write it verbatim
+		//string fflag = FlagToStringForSynthesis(f);
+		//fprintf(fp, "%s\n", fflag.c_str());
+	}
 	string cmdline = m_binpath + "/trce -v 10 -intstyle xflow -l 10 -fastpaths " +
 		ncd_file + " " + pcf_file + " -o " + report_file + " -xml " + twx_file;
 	string output;
@@ -918,7 +936,8 @@ bool XilinxISEToolchain::GenerateBitstream(
 	//Note that in case of an arg parsing error etc the BIT may not exist.
 	if(DoesFileExist(fname))
 		outputs[fname] = sha256_file(fname);
-	outputs[report_file] = sha256_file(report_file);
+	if(DoesFileExist(report_file))
+		outputs[report_file] = sha256_file(report_file);
 
 	//Done
 	return ok;
