@@ -122,14 +122,13 @@ void FPGABitstreamNode::GenerateConstraintFile(
 	m_graph->GetWorkingCopy()->UpdateFile(path, hash, false, false, ignored);
 
 	//Create a source file node for it, if needed
-	auto wc = m_graph->GetWorkingCopy();
 	if(!m_graph->HasNodeWithHash(hash))
 		m_graph->AddNode(new SourceFileNode(m_graph, path, hash));
 }
 
 string FPGABitstreamNode::GenerateUCFConstraintFile(
 		map<string, TopLevelPin>& pins,
-		string path,
+		string /*path*/,
 		BoardInfoFile* binfo)
 {
 	//LogDebug("Generating UCF file %s\n", path.c_str());
