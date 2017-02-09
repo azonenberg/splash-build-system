@@ -56,15 +56,16 @@ protected:
 	virtual void DoFinalize();
 	virtual void DoStartFinalization();
 
-	void GenerateConstraintFile(
+	bool GenerateConstraintFile(
 		std::map<std::string, TopLevelPin>& pins,
 		std::string path,
 		BoardInfoFile* binfo);
 
-	std::string GenerateUCFConstraintFile(
+	bool GenerateUCFConstraintFile(
 		std::map<std::string, TopLevelPin>& pins,
 		std::string path,
-		BoardInfoFile* binfo);
+		BoardInfoFile* binfo,
+		std::string& constraints);
 
 	void UpdateHash();
 
