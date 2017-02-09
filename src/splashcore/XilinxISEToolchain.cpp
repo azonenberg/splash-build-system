@@ -418,6 +418,8 @@ bool XilinxISEToolchain::Synthesize(
 		defines += "XILINX_FPGA XILINX_7SERIES XILINX_KINTEX7 ";
 	else if(device.find("virtex7-") == 0)
 		defines += "XILINX_FPGA XILINX_7SERIES XILINX_VIRTEX7 ";
+	else if(device.find("zynq7-") == 0)
+		defines += "XILINX_FPGA XILINX_7SERIES XILINX_ZYNQ7 ";
 	else if(device.find("coolrunner2-") == 0)
 		defines += "XILINX_CPLD XILINX_COOLRUNNER2 ";
 	char tmp[128];
