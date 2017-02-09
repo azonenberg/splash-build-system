@@ -36,15 +36,15 @@ using namespace std;
 
 PhysicalNetlistNode::PhysicalNetlistNode(
 	BuildGraph* graph,
-	std::string arch,
-	std::string /*config*/,
-	std::string name,
-	std::string /*scriptpath*/,
-	std::string path,
-	std::string toolchain,
-	std::set<BuildFlag> flags,
+	string arch,
+	string /*config*/,
+	string name,
+	string /*scriptpath*/,
+	string path,
+	string toolchain,
+	set<BuildFlag> flags,
 	HDLNetlistNode* netlist,
-	std::string constraints)
+	string constraints)
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
 	, m_constraintPath(constraints)
 {
