@@ -37,9 +37,9 @@ using namespace std;
 PhysicalNetlistNode::PhysicalNetlistNode(
 	BuildGraph* graph,
 	std::string arch,
-	std::string config,
+	std::string /*config*/,
 	std::string name,
-	std::string scriptpath,
+	std::string /*scriptpath*/,
 	std::string path,
 	std::string toolchain,
 	std::set<BuildFlag> flags,
