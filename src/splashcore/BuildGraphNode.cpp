@@ -474,6 +474,14 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 			LogError("Dependency \"%s\" is not in working copy\n", d.c_str());
 			return NULL;
 		}
+
+		if(!m_graph->HasNodeWithHash(h))
+		{
+			string errors = string("ERROR: Unable to build due to missing input node ") + d + "\n";
+			g_cache->AddFailedFile(GetFilePath(), m_hash, errors);
+			return NULL;
+		}
+
 		auto n = m_graph->GetNodeWithHash(h);
 
 		if(n == this)
