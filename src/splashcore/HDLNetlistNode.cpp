@@ -93,34 +93,70 @@ bool HDLNetlistNode::ScanDependencies(string fname)
 
 		//TODO: Parse multiline comments
 
+		string cpath;
+
 		//Look for preprocessor commands
-		if(line[0] != '`')
-			continue;
-
-		//TODO: Implement `if etc
-		//For now, skip anything but include statements
-		if(line.find("`include") != 0)
-			continue;
-
-		//Look up the filename
-		size_t start = line.find("\"");
-		size_t end = line.find("\"", start+1);
-		if( (start == string::npos) || (end == string::npos) )
+		if(line[0] == '`')
 		{
-			SetInvalidInput("ERROR: Malformed `include line\n");
-			return false;
-		}
-		string fpath = line.substr(start+1, end-(start+1));
+			//TODO: Implement `if etc
+			//For now, skip anything but include statements
+			if(line.find("`include") != 0)
+				continue;
 
-		//Canonicalize based on our working directory
-		string cpath = GetDirOfFile(fname) + "/" + fpath;
-		if(!CanonicalizePathThatMightNotExist(cpath))
+			//Look up the filename
+			size_t start = line.find("\"");
+			size_t end = line.find("\"", start+1);
+			if( (start == string::npos) || (end == string::npos) )
+			{
+				SetInvalidInput("ERROR: Malformed `include line\n");
+				return false;
+			}
+			string fpath = line.substr(start+1, end-(start+1));
+
+			//Canonicalize based on our working directory
+			cpath = GetDirOfFile(fname) + "/" + fpath;
+			if(!CanonicalizePathThatMightNotExist(cpath))
+			{
+				SetInvalidInput(string("ERROR: Couldn't canonicalize include file ") + cpath + "\n");
+				return false;
+			}
+
+			//LogDebug("Found include statement: %s (%s)\n", fpath.c_str(), cpath.c_str());
+		}
+
+		//Look for system tasks
+		//FIXME: Doesn't process full HDL elaboration, will fail horribly if the filename is passed as a
+		//parameter to the module!
+		if(line[0] == '$')
 		{
-			SetInvalidInput(string("ERROR: Couldn't canonicalize include file ") + cpath + "\n");
-			return false;
+			//For now, skip anything but $readmem
+			if(line.find("$readmem") != 0)
+				continue;
+
+			//Look up the filename
+			size_t start = line.find("\"");
+			size_t end = line.find("\"", start+1);
+			if( (start == string::npos) || (end == string::npos) )
+			{
+				LogWarning("Couldn't parse $readmem argument (probably not hard coded): %s\n", line.c_str());
+				continue;
+			}
+			string fpath = line.substr(start+1, end-(start+1));
+
+			//Canonicalize based on our working directory
+			cpath = GetDirOfFile(fname) + "/" + fpath;
+			if(!CanonicalizePathThatMightNotExist(cpath))
+			{
+				SetInvalidInput(string("ERROR: Couldn't canonicalize $readmem file ") + cpath + "\n");
+				return false;
+			}
+
+			//LogDebug("Found readmem: %s (%s)\n", fpath.c_str(), cpath.c_str());
 		}
 
-		//LogDebug("Found include statement: %s (%s)\n", fpath.c_str(), cpath.c_str());
+		//Skip if we didn't find anything
+		if(cpath.empty())
+			continue;
 
 		//See if it exists
 		if(!wc->HasFile(cpath))
