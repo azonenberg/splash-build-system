@@ -503,6 +503,7 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Job* job, bool& ok)
 {
 	auto res = msg.nodebuildresults();
+	ok = res.success();
 	//LogIndenter li;
 
 	//Look up the build job
@@ -523,19 +524,8 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 
 	LogDebug("[%6.3f] Build results (for %s)\n", g_scheduler->GetDT(), fname.c_str());
 
-	//If the build failed, add a dummy cached file with the proper ID and stdout
-	//so we can query the result in the cache later on.
-	ok = res.success();
-	if(!ok)
-	{
-		g_cache->AddFailedFile(fname, nhash, stdout);
-		//LogError("Build failed!\n%s\n", res.stdout().c_str());
-		return true;
-	}
-
-	//Successful build if we get here
-
 	//Go over the files and see what we have
+	//Note that we want to process things EVEN IF THE BUILD FAILS so that the client can get logs etc
 	set<string> ignored;
 	for(int i=0; i<res.outputs_size(); i++)
 	{
@@ -559,6 +549,10 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		string shash;
 		if(GetBasenameOfFile(ffname) == base)
 		{
+			//If the build failed, skip it
+			if(!ok)
+				continue;
+
 			//LogDebug("This is the compiled output for node %s\n(path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;
 		}
@@ -574,6 +568,15 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		//Don't dirty any new build scripts, we only care about that when we change a script
 		//LogDebug("Adding %s to wc %p as %s\n", ffname.c_str(), node->GetGraph()->GetWorkingCopy(), shash.c_str());
 		node->GetGraph()->GetWorkingCopy()->UpdateFile(ffname, shash, false, false, ignored);
+	}
+
+	//If the build failed, add a dummy cached file with the proper ID and stdout
+	//so we can query the result in the cache later on.
+	if(!ok)
+	{
+		g_cache->AddFailedFile(fname, nhash, stdout);
+		//LogError("Build failed!\n%s\n", res.stdout().c_str());
+		return true;
 	}
 
 	return true;
