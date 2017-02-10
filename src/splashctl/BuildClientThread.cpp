@@ -545,8 +545,9 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		ffname = dir + "/" + ffname;
 		//LogDebug("Compiled file %s has hash %s\n", ffname.c_str(), hash.c_str());
 
-		//Main node output? Add to the cache using the node's hash
+		//Main node output? Add to the cache using the node's hash (and use the stdout)
 		string shash;
+		string sstdout;
 		if(GetBasenameOfFile(ffname) == base)
 		{
 			//If the build failed, skip it
@@ -555,6 +556,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 
 			//LogDebug("This is the compiled output for node %s\n(path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;
+			sstdout = stdout;
 		}
 
 		//Otherwise, add it to the cache using the content hash
@@ -562,7 +564,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 			shash = hash;
 
 		//Add to the cache once we know which hash to use
-		g_cache->AddFile(ffname, shash, hash, data, stdout);
+		g_cache->AddFile(ffname, shash, hash, data, sstdout);
 
 		//Add the node to the working copy
 		//Don't dirty any new build scripts, we only care about that when we change a script
