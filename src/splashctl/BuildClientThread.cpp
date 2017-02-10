@@ -557,6 +557,10 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 			//LogDebug("This is the compiled output for node %s\n(path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;
 			sstdout = stdout;
+
+			//If there was no stdout, print a generic error message
+			if(sstdout == "")
+				sstdout = "ERROR: Build step failed with no stdout\n";
 		}
 
 		//Otherwise, add it to the cache using the content hash
