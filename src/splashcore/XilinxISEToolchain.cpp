@@ -408,22 +408,28 @@ bool XilinxISEToolchain::Synthesize(
 
 	//Add some `define flags of our own
 	string defines;
-	if(device.find("spartan3-") == 0)
+	if(triplet.find("spartan3-") == 0)
 		defines += "XILINX_FPGA XILINX_SPARTAN3 ";
-	else if(device.find("spartan6-") == 0)
+	else if(triplet.find("spartan6-") == 0)
 		defines += "XILINX_FPGA XILINX_SPARTAN6 ";
-	else if(device.find("artix7-") == 0)
+	else if(triplet.find("artix7-") == 0)
 		defines += "XILINX_FPGA XILINX_7SERIES XILINX_ARTIX7 ";
-	else if(device.find("kintex7-") == 0)
+	else if(triplet.find("kintex7-") == 0)
 		defines += "XILINX_FPGA XILINX_7SERIES XILINX_KINTEX7 ";
-	else if(device.find("virtex7-") == 0)
+	else if(triplet.find("virtex7-") == 0)
 		defines += "XILINX_FPGA XILINX_7SERIES XILINX_VIRTEX7 ";
-	else if(device.find("zynq7-") == 0)
+	else if(triplet.find("zynq7-") == 0)
 		defines += "XILINX_FPGA XILINX_7SERIES XILINX_ZYNQ7 ";
-	else if(device.find("coolrunner2-") == 0)
+	else if(triplet.find("coolrunner2-") == 0)
 		defines += "XILINX_CPLD XILINX_COOLRUNNER2 ";
+	else
+	{
+		stdout += string("ERROR: Don't know what to do with device ") + device + " (" + triplet + ")\n";
+		return false;
+	}
 	char tmp[128];
 	snprintf(tmp, sizeof(tmp), "XILINX_SPEEDGRADE=%d ", speed);
+	defines += tmp;
 
 	//Generate the `define flags separately (since we have to coalesce them)
 	for(auto f : flags)
