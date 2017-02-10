@@ -129,6 +129,11 @@ bool HDLNetlistNode::ScanDependencies(string fname)
 			return false;
 		}
 
+		//Add a source file node for it (if we don't have one already)
+		auto h = wc->GetFileHash(cpath);
+		if(!m_graph->HasNodeWithHash(h))
+			m_graph->AddNode(new SourceFileNode(m_graph, cpath, h));
+
 		LogDebug("OK\n");
 
 		//Pull it in
