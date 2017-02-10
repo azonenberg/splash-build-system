@@ -120,7 +120,7 @@ bool HDLNetlistNode::ScanDependencies(string fname)
 			return false;
 		}
 
-		LogDebug("Found include statement: %s (%s)\n", fpath.c_str(), cpath.c_str());
+		//LogDebug("Found include statement: %s (%s)\n", fpath.c_str(), cpath.c_str());
 
 		//See if it exists
 		if(!wc->HasFile(cpath))
@@ -133,8 +133,6 @@ bool HDLNetlistNode::ScanDependencies(string fname)
 		auto h = wc->GetFileHash(cpath);
 		if(!m_graph->HasNodeWithHash(h))
 			m_graph->AddNode(new SourceFileNode(m_graph, cpath, h));
-
-		LogDebug("OK\n");
 
 		//Pull it in
 		m_dependencies.emplace(cpath);
