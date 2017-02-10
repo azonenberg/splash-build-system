@@ -217,8 +217,55 @@ void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
 		//Filter out errors and warnings
 		if(line.find("ERROR:") == 0)
 			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
+		else if(line.find("WARNING:") == 0)
 			stdout += line + "\n";
+
+		//Pretty-print $display messages
+		else if(line.find("$display") != string::npos)
+		{
+			//Extract file name (and fall back to pass-through if it's malformed)
+			if(line[0] != '\"')
+			{
+				stdout += line + "\n";
+				continue;
+			}
+			size_t epos = line.find('\"', 1);
+			if(epos == string::npos)
+			{
+				stdout += line + "\n";
+				continue;
+			}
+			string fname = line.substr(1, epos-1);
+
+			//Extract line number (everything from the quote until the $display)
+			size_t lstart = epos + 2;
+			size_t lend = line.find('$', lstart);
+			if( (lstart == string::npos) || (lend == string::npos))
+			{
+				stdout += line + "\n";
+				continue;
+			}
+			string lnum = line.substr(lstart, lend-lstart-1);
+
+			//Extract the actual message being printed
+			string msg = line.substr(lend + string("$display ").length());
+
+
+
+			//Now that we have the message, reformat it depending on the type of message
+			if(msg.find("ERROR:") == 0)
+			{
+				stdout += string("ERROR:HDLCfg:1 - \"") + fname + " " + lnum + " " +
+					msg.substr(string("ERROR: ").length()) + "\n";
+			}
+			else if(msg.find("WARNING:") == 0)
+			{
+				stdout += string("WARNING:HDLCfg:2 - \"") + fname + " " + lnum + " " +
+					msg.substr(string("WARNING: ").length()) + "\n";
+			}
+			else
+				stdout += string("INFO:HDLCfg:3 - \"") + fname + " " + lnum + " " + msg + "\n";
+		}
 	}
 }
 
