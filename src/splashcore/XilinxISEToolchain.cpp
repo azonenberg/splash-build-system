@@ -210,11 +210,50 @@ void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
 	vector<string> lines;
 	ParseLines(log, lines);
 
+	//List of messages we do NOT want to see
+	static const char* blacklist[]=
+	{
+		"/devlib/verilog/src/unimacro/",	//Skip warnings in Xilinx library sources
+
+		//Disable warnings related to use of custom verilog attributes
+		"WARNING:Xst:37",					//Unknown constraint, not supported
+
+		//Disable warnings which are common/unavoidable in parameterized code
+		"WARNING:Xst:638",					//conflict on KEEP property (signal is not optimized anyway)
+		"WARNING:Xst:647",					//Input signal not used / optimized out
+		"WARNING:Xst:653",					//Signal used but never assigned (lots of false positives)
+		"WARNING:HDLCompiler:1127",			//Assignment ignored since identifier is never used
+		"WARNING:Xst:1293",					//FF/latch has constant value
+		"WARNING:Xst:1336",					//more than 100% of device used
+											//Map optimization will sometimes make a borderline design fit
+											//If it does not fit, we get an error during map so dont warn twice
+		"WARNING:Xst:1426",					//init values hinder constant cleaning - usually intentional
+		"WARNING:Xst:1710",					//FF/latch without init value has constant value
+		"WARNING:Xst:1895",					//FF/latch without init value has constant value due to trimming
+		"WARNING:Xst:1896",					//FF/latch has constant value due to trimming
+		"WARNING:Xst:2404",					//FF/latch has constant value
+		"WARNING:Xst:2677",					//Value not used
+		"WARNING:Xst:2935",					//Signal is tied to initial value (constant outputs cause this)
+		"WARNING:Xst:2999",					//Signal is tied to initial value (inferred ROMs cause this)
+		"WARNING:Xst:2254",					//Area constraint not met (happens even if design fits when we're borderline)
+		"WARNING:Xst:1898",					//Signal unconnected due to constant pushing (optimization)
+
+		"ERROR:HDLCompiler:598",			//"module ignored due to errors" - we already know there are errors, STFU!
+	};
+
 	for(auto line : lines)
 	{
-		//TODO: Blacklist messages of no importance
+		//Blacklist messages of no importance
+		bool black = false;
+		for(auto search : blacklist)
+		{
+			if(line.find(search) != string::npos)
+				black = true;
+		}
+		if(black)
+			continue;
 
-		//Filter out errors and warnings
+		//Print errors and warnings
 		if(line.find("ERROR:") == 0)
 			stdout += line + "\n";
 		else if(line.find("WARNING:") == 0)
