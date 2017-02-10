@@ -368,8 +368,8 @@ void BuildGraphNode::SetRef()
 		else
 		{
 			LogError(
-				"Node %s (with hash %s) is a dependency of us\n"
-				"(%s), but not in graph\n",
+				"Node %s (with hash %s)\n"
+				"is a dependency of us (%s), but not in graph\n",
 				x.c_str(),
 				h.c_str(),
 				GetFilePath().c_str());
