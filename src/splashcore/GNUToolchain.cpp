@@ -370,8 +370,6 @@ bool GNUToolchain::ScanDependencies(
 
 	//Pull out some properties we need
 	string exe = chain->GetBasePath();
-	string libpre = chain->GetPrefix("shlib");
-	string libsuf = chain->GetSuffix("shlib");
 
 	//Make sure we're good on the flags
 	if(!VerifyFlags(triplet))
@@ -544,13 +542,9 @@ bool GNUToolchain::ScanDependencies(
 				break;
 			}
 
-			//It's an absolute path to a standard system include directory
+			//It's an absolute path to a standard system include directory. Trim off the prefix and go.
 			if(longest_prefix != "")
-			{
-				//Trim off the prefix and go
-				string old_f = f;
 				f = apath + "/" + f.substr(longest_prefix.length() + 1);
-			}
 
 			//If it's an absolute path but NOT in a system include dir, fail.
 			//Including random headers by absolute path is not portable!

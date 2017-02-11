@@ -222,8 +222,8 @@ DependencyScanJob* Scheduler::ScanDependenciesNonblocking(
 	auto id = g_nodeManager->GetGoldenNodeForToolchain(hash);
 	if(id.empty())
 		return NULL;
-	auto build_wc = g_nodeManager->GetWorkingCopy(id);
-	string hostname = build_wc->GetHostname();
+	//auto build_wc = g_nodeManager->GetWorkingCopy(id);
+	//string hostname = build_wc->GetHostname();
 	//LogDebug("Golden node for this toolchain is %s (%s)\n", id.c_str(), hostname.c_str());
 
 	//Create the scan job and submit it

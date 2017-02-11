@@ -82,7 +82,7 @@ ClientSettings::ClientSettings()
 				LoadConfigEntry(it.first.as<string>(), it.second);
 		}
 	}
-	catch(YAML::ParserException exc)
+	catch(YAML::ParserException& exc)
 	{
 		LogError("YAML parsing failed: %s\n", exc.what());
 		exit(1);

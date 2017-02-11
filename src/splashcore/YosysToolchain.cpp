@@ -39,7 +39,7 @@ YosysToolchain::YosysToolchain(string basepath)
 {
 	//Save version info
 	string sver = ShellCommand(basepath + " -V");
-	sscanf(sver.c_str(), "Yosys %d.%d+%d", &m_majorVersion, &m_minorVersion, &m_patchVersion);
+	sscanf(sver.c_str(), "Yosys %8d.%8d+%8d", &m_majorVersion, &m_minorVersion, &m_patchVersion);
 
 	char tmp[128];
 	snprintf(tmp, sizeof(tmp), "Yosys %d.%d+%d", m_majorVersion, m_minorVersion, m_patchVersion);

@@ -578,6 +578,8 @@ string GetFileContents(string path)
 	if(fsize != fread(buf, 1, fsize, fp))
 	{
 		LogWarning("GetFileContents: Could not read file \"%s\"\n", path.c_str());
+		delete[] buf;
+		fclose(fp);
 		return "";
 	}
 	fclose(fp);
@@ -909,7 +911,6 @@ bool ValidatePath(string fname)
 		return false;
 
 	//Complain if there's too many ..'s
-	string t = fname;
 	if(!CanonicalizePathThatMightNotExist(fname))
 		return false;
 

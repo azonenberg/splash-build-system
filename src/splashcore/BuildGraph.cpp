@@ -36,10 +36,9 @@ using namespace std;
 
 BuildGraph::BuildGraph(WorkingCopy* wc)
 	: m_workingCopy(wc)
+	, m_buildArtifactPath("build")			//TODO: make this configurable in the root Splashfile or something?
+	, m_sysIncludePath("__sysinclude__")
 {
-	//TODO: make this configurable in the root Splashfile or something?
-	m_buildArtifactPath = "build";
-	m_sysIncludePath = "__sysinclude__";
 }
 
 BuildGraph::~BuildGraph()
@@ -418,7 +417,7 @@ void BuildGraph::ParseScript(const string& script, string path, bool body, bool 
 		for(auto node : nodes)
 			LoadYAMLDoc(node, path, body, config, dirtyScripts);
 	}
-	catch(YAML::ParserException exc)
+	catch(YAML::ParserException& exc)
 	{
 		LogParseError("YAML parsing failed: %s\n", exc.what());
 	}

@@ -320,7 +320,7 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 
 	//Get the relative path of the source file
 	string fname = rxm.fname();
-	string basename = GetBasenameOfFile(fname);
+	//string basename = GetBasenameOfFile(fname);
 	string dir = GetDirOfFile(fname);
 	string adir = g_builddir + "/" + dir;
 	string aname = g_builddir + "/" + fname;

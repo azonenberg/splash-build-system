@@ -48,9 +48,11 @@ XilinxISEToolchain::XilinxISEToolchain(string basepath, int major, int minor)
 	m_stringVersion = tmp;
 
 	//Find toolchain binaries (TODO: non-Linux?)
-	string arch = "lin";
+	string arch;
 	#if __x86_64__
 		arch = "lin64";
+	#else
+		arch = "lin";
 	#endif
 	m_binpath = basepath + "/ISE_DS/ISE/bin/" + arch;
 
@@ -511,6 +513,7 @@ bool XilinxISEToolchain::Synthesize(
 	else
 	{
 		stdout += string("ERROR: Don't know what to do with device ") + device + " (" + triplet + ")\n";
+		fclose(fp);
 		return false;
 	}
 	char tmp[128];
@@ -701,7 +704,7 @@ bool XilinxISEToolchain::Translate(
  */
 bool XilinxISEToolchain::Map(
 	string triplet,
-	set<string> sources,
+	set<string> /*sources*/,
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
@@ -786,7 +789,6 @@ bool XilinxISEToolchain::Map(
 
 	//Launch map
 	//TODO: flags
-	string input_file = *sources.begin();
 	string cmdline = m_binpath + "/map -intstyle xflow -detail -ir off -p " + device + " -o " + fname + " "
 						+ ngd_file + " " + pcf_file;
 	string output;
@@ -815,7 +817,7 @@ bool XilinxISEToolchain::Map(
  */
 bool XilinxISEToolchain::Par(
 	string triplet,
-	set<string> sources,
+	set<string> /*sources*/,
 	string fname,
 	set<BuildFlag> flags,
 	map<string, string>& outputs,
@@ -867,10 +869,8 @@ bool XilinxISEToolchain::Par(
 	//TODO: Multithreading (-mt off|2|3|4) based on the job's focus on throughput or latency
 	//Multithreading not supported for spartan-3 so always leave it off there
 
-	//Launch part
+	//Launch par
 	//TODO: flags
-	string input_file = *sources.begin();
-
 	string cmdline = m_binpath + "/par -intstyle xflow " + map_file + " " + fname + " " + pcf_file;
 
 	string output;
