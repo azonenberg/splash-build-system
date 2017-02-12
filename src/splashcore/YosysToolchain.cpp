@@ -46,11 +46,7 @@ YosysToolchain::YosysToolchain(string basepath)
 	m_stringVersion = tmp;
 
 	//Set list of target architectures
-	//TODO: IceStorm stuff
-	m_triplets.emplace("generic-formal");
-	m_triplets.emplace("greenpak4-slg46140");
-	m_triplets.emplace("greenpak4-slg46620");
-	m_triplets.emplace("greenpak4-slg46621");
+	FindArchitectures();
 
 	//File format suffixes
 	m_fixes["formal"] = stringpair("", ".txt");
@@ -64,19 +60,94 @@ YosysToolchain::~YosysToolchain()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Search for other toolchains
+
+void YosysToolchain::FindArchitectures()
+{
+	//We always support formal targets b/c those don't need any extra tools
+	m_triplets.emplace("generic-formal");
+
+	//Get our search path
+	vector<string> dirs;
+	ParseSearchPath(dirs);
+
+	//TODO: IceStorm stuff
+
+	//Look for gp4par
+	m_gp4parPath = FindExecutable("gp4par", dirs);
+	if(m_gp4parPath != "")
+	{
+		m_triplets.emplace("greenpak4-slg46140");
+		m_triplets.emplace("greenpak4-slg46620");
+		m_triplets.emplace("greenpak4-slg46621");
+	}
+}
+
+/**
+	@brief Look for a binary anywhere in the search path
+ */
+string YosysToolchain::FindExecutable(string fname, vector<string>& dirs)
+{
+	for(auto dir : dirs)
+	{
+		string path = dir + "/" + fname;
+		if(DoesFileExist(path))
+			return path;
+	}
+
+	return "";
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Toolchain properties
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Actual compilation
 
 bool YosysToolchain::Build(
-	string /*triplet*/,
-	set<string> /*sources*/,
-	string /*fname*/,
-	set<BuildFlag> /*flags*/,
-	map<string, string>& /*outputs*/,
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "WARNING: YosysToolchain::Build() not implemented (passing build for now so other stuff works)\n";
-	return true;
+	//Switch on the triplet to decide how to handle it
+	if(triplet == "generic-formal")
+		return BuildFormal(triplet, sources, fname, flags, outputs, stdout);
+	else if(triplet.find("greenpak4-") == 0)
+		return BuildGreenPAK(triplet, sources, fname, flags, outputs, stdout);
+
+	else
+	{
+		stdout = string("ERROR: YosysToolchain doesn't know how to build for architecture ") + triplet + "\n";
+		return false;
+	}
+}
+
+/**
+	@brief Synthesize and run the formal model checker
+ */
+bool YosysToolchain::BuildFormal(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
+	string& stdout)
+{
+	stdout = "ERROR: YosysToolchain::BuildFormal() not implemented\n";
+	return false;
+}
+
+bool YosysToolchain::BuildGreenPAK(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
+	string& stdout)
+{
+	stdout = "ERROR: YosysToolchain::BuildGreenPAK() not implemented\n";
+	return false;
 }

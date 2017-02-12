@@ -31,7 +31,9 @@
 #define YosysToolchain_h
 
 /**
-	@brief A Yosys FPGA toolchain
+	@brief A Yosys FPGA toolchain.
+
+	May target multiple PAR back ends, formal, etc. TODO refactor this better?
  */
 class YosysToolchain : public FPGAToolchain
 {
@@ -48,6 +50,28 @@ public:
 		std::string& stdout);
 
 protected:
+	void FindArchitectures();
+
+	//Path to gp4par (if we can find it)
+	std::string m_gp4parPath;
+
+	//Look for an executable in $PATH
+	std::string FindExecutable(std::string fname, std::vector<std::string>& dirs);
+
+	virtual bool BuildFormal(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
+	virtual bool BuildGreenPAK(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
 };
 
 #endif
