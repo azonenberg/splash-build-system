@@ -217,8 +217,81 @@ bool YosysToolchain::CheckModel(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "ERROR: Model check not implemented\n";
-	return false;
+	stdout = "";
+
+	//TODO: Separate options to run base case and temporal induction??
+
+	//Look up the constraints and source file
+	string smt_file;
+	string constraints_file;
+	for(auto s : sources)
+	{
+		if(s.find(".smtc") != string::npos)
+			constraints_file = s;
+		else if(s.find(".smt2") != string::npos)
+			smt_file = s;
+		else
+		{
+			stdout = "ERROR: YosysToolchain::CheckModel: Don't know what to do with " + s  + "\n";
+			return false;
+		}
+	}
+
+	if(smt_file == "")
+	{
+		stdout = "ERROR: YosysToolchain: no SMT file specified\n";
+		return false;
+	}
+
+	string report_file = GetBasenameOfFile(fname);
+
+	//Format the bulk of the command line (beginning and end vary)
+	string num_steps = "20";
+	for(auto f : flags)
+	{
+		//TODO: Flags
+
+		/*
+		if(f.GetType() != BuildFlag::TYPE_DEFINE)
+			continue;
+		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
+		*/
+		stdout += string("WARNING: YosysToolchain::BuildFormal: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
+	}
+	string basename = GetBasenameOfFileWithoutExt(fname);
+	string vcd_file = basename + ".vcd";
+	string cmdline_meat = "-t " + num_steps + " --dump-vcd " + vcd_file + " ";
+	if(constraints_file != "")
+		cmdline_meat += string("--smtc ") + constraints_file + " ";
+	cmdline_meat += smt_file + " ";
+
+	//Run the inductive step first. Counterintuitive since it's meaningless w/o the base case!
+	//But it usually runs a lot faster than the base case, and the vast majority of errors can be caught here.
+	//This means we can skip the time-consuming base case and iterate faster during verification.
+	string cmdline = m_basepath + "-smtbmc -i " + cmdline_meat;
+	string report_induction;
+	bool ok = (0 == ShellCommand(cmdline, report_induction));
+
+	//Run the base case (append to the existing report)
+	cmdline = m_basepath + "-smtbmc " + cmdline_meat;
+	string report_base;
+	ok &= (0 == ShellCommand(cmdline, report_base));
+
+	//Write to the report file (TODO: be able to upload this directly?)
+	string report = report_induction + "\n\n\n\n\n" + report_base;
+	PutFileContents(report_file, report);
+
+	//Filter the results and print to stdout clientside
+	CrunchSMTLog(report, stdout);
+
+	//Upload the report
+	outputs[report_file] = sha256_file(report_file);
+	if(DoesFileExist(vcd_file))
+		outputs[vcd_file] = sha256_file(vcd_file);
+
+	//Done
+	return ok;
 }
 
 bool YosysToolchain::BuildGreenPAK(
@@ -253,6 +326,30 @@ void YosysToolchain::CrunchYosysLog(const string& log, string& stdout)
 		if(line.find("Warning:") == 0)
 			stdout += line + "\n";
 		if(line.find("Error:") == 0)
+			stdout += line + "\n";
+	}
+}
+
+void YosysToolchain::CrunchSMTLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	bool unfilter = false;
+	for(auto line : lines)
+	{
+		if(line.find("Assert failed") != string::npos)
+			stdout += string("ERROR: ") + line + "\n";
+
+		if(line.find("Traceback (most recent call last)") != string::npos)
+		{
+			stdout += "ERROR: Something went wrong (got a stack trace)\n";
+			unfilter = true;
+		}
+
+		//If we stopped filtering, copy everything
+		if(unfilter)
 			stdout += line + "\n";
 	}
 }

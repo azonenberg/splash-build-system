@@ -88,6 +88,14 @@ void FormalVerificationNode::DoStartFinalization()
 		synthFlags,
 		m_sourcenodes);
 
+	//Add constraints file (if we have one)
+	for(auto f : m_sourcenodes)
+	{
+		string path = f->GetFilePath();
+		if(path.find(".smtc") != string::npos)
+			m_sources.emplace(path);
+	}
+
 	//If we have a node for this hash already, delete it and use the existing one. Otherwise use this
 	string h = m_netlist->GetHash();
 	if(m_graph->HasNodeWithHash(h))
@@ -98,6 +106,7 @@ void FormalVerificationNode::DoStartFinalization()
 	else
 		m_graph->AddNode(m_netlist);
 	m_dependencies.emplace(netpath);
+	m_sources.emplace(netpath);
 	set<string> ignored;
 	wc->UpdateFile(netpath, h, false, false, ignored);
 }

@@ -550,9 +550,7 @@ bool ProcessBuildResults(Socket& /*s*/, string& /*hostname*/, SplashMsg& msg, Jo
 		string sstdout;
 		if(GetBasenameOfFile(ffname) == base)
 		{
-			//If the build failed, skip it
-			if(!ok)
-				continue;
+			//Include the binary even if it's a fail (might be partially routed netlist etc we can debug with)
 
 			//LogDebug("This is the compiled output for node %s\n(path %s)\n", nhash.c_str(), fname.c_str());
 			shash = nhash;

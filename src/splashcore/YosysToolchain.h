@@ -81,6 +81,7 @@ protected:
 		std::string& stdout);
 
 	void CrunchYosysLog(const std::string& log, std::string& stdout);
+	void CrunchSMTLog(const std::string& log, std::string& stdout);
 };
 
 #endif
