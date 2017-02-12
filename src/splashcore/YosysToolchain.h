@@ -65,6 +65,13 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
+	virtual bool CheckModel(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
 	virtual bool BuildGreenPAK(
 		std::string triplet,
 		std::set<std::string> sources,
@@ -72,6 +79,8 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
+
+	void CrunchYosysLog(const std::string& log, std::string& stdout);
 };
 
 #endif

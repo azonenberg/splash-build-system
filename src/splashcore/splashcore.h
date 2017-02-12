@@ -136,9 +136,9 @@ double GetTime();
 #include "CPPObjectNode.h"
 #include "CPPExecutableNode.h"
 #include "CPPSharedLibraryNode.h"
-#include "FormalVerificationNode.h"
 #include "FPGABitstreamNode.h"
 #include "HDLNetlistNode.h"
+#include "FormalVerificationNode.h"
 #include "PhysicalNetlistNode.h"
 
 #include "WorkingCopy.h"

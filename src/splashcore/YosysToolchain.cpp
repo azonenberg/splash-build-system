@@ -49,6 +49,8 @@ YosysToolchain::YosysToolchain(string basepath)
 	FindArchitectures();
 
 	//File format suffixes
+	m_fixes["netlist"] = stringpair("", ".json");
+	m_fixes["formal-netlist"] = stringpair("", ".smt2");
 	m_fixes["formal"] = stringpair("", ".txt");
 
 	//Generate the hash based on the full git ID etc
@@ -114,7 +116,15 @@ bool YosysToolchain::Build(
 {
 	//Switch on the triplet to decide how to handle it
 	if(triplet == "generic-formal")
-		return BuildFormal(triplet, sources, fname, flags, outputs, stdout);
+	{
+		//If the output file is a .smt2 we're building for the model checker
+		if(fname.find(".smt2") != string::npos)
+			return BuildFormal(triplet, sources, fname, flags, outputs, stdout);
+
+		//Otherwise we're running the checker
+		else
+			return CheckModel(triplet, sources, fname, flags, outputs, stdout);
+	}
 	else if(triplet.find("greenpak4-") == 0)
 		return BuildGreenPAK(triplet, sources, fname, flags, outputs, stdout);
 
@@ -126,7 +136,7 @@ bool YosysToolchain::Build(
 }
 
 /**
-	@brief Synthesize and run the formal model checker
+	@brief Synthesize for formal verification
  */
 bool YosysToolchain::BuildFormal(
 	string triplet,
@@ -136,7 +146,78 @@ bool YosysToolchain::BuildFormal(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "ERROR: YosysToolchain::BuildFormal() not implemented\n";
+	stdout = "";
+
+	LogDebug("YosysToolchain::BuildFormal for %s\n", fname.c_str());
+	string base = GetBasenameOfFileWithoutExt(fname);
+
+	//TODO: Flags
+	for(auto f : flags)
+	{
+		/*
+		if(f.GetType() != BuildFlag::TYPE_DEFINE)
+			continue;
+		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
+		*/
+		stdout += string("WARNING: YosysToolchain::BuildFormal: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
+	}
+
+	//Write the synthesis script
+	string ys_file = base + ".ys";
+	string smt_file = base + ".smt2";
+	FILE* fp = fopen(ys_file.c_str(), "w");
+	if(!fp)
+	{
+		stdout += string("ERROR: Failed to create synthesis script ") + ys_file + "\n";
+		return false;
+	}
+	for(auto s : sources)
+	{
+		//Ignore any non-Verilog sources
+		if(s.find(".v") != string::npos)
+			fprintf(fp, "read_verilog -formal \"%s\"\n", s.c_str());
+	}
+	fprintf(fp, "prep -nordff -top %s\n", base.c_str());
+	fprintf(fp, "check -assert\n");
+	fprintf(fp, "write_smt2 -wires %s", smt_file.c_str());
+	fclose(fp);
+
+	//Run synthesis
+	string report_file = base + ".log";
+	string cmdline = m_basepath + " -t -l " + report_file + " " + ys_file;
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
+
+	//Crunch the synthesis log
+	CrunchYosysLog(output, stdout);
+
+	//Done, return results
+	if(DoesFileExist(report_file))
+		outputs[report_file] = sha256_file(report_file);
+	if(DoesFileExist(smt_file))
+		outputs[smt_file] = sha256_file(smt_file);
+	else
+	{
+		stdout += "ERROR: No SMT file produced\n";
+		return false;
+	}
+
+	return ok;
+}
+
+/**
+	@brief Synthesize for formal verification
+ */
+bool YosysToolchain::CheckModel(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
+	string& stdout)
+{
+	stdout = "ERROR: Model check not implemented\n";
 	return false;
 }
 
@@ -150,4 +231,28 @@ bool YosysToolchain::BuildGreenPAK(
 {
 	stdout = "ERROR: YosysToolchain::BuildGreenPAK() not implemented\n";
 	return false;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Reporting helpers
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void YosysToolchain::CrunchYosysLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//TODO: Blacklist messages of no importance
+
+		//Filter out errors and warnings
+		if(line.find("Warning:") == 0)
+			stdout += line + "\n";
+		if(line.find("Error:") == 0)
+			stdout += line + "\n";
+	}
 }
