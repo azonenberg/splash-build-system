@@ -653,6 +653,13 @@ bool XilinxISEToolchain::Translate(
 	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
 		return false;
 
+	//TODO: Flags
+	for(auto f : flags)
+	{
+		stdout += string("WARNING: XilinxISEToolchain::Translate: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
+	}
+
 	//Verify we have two sources, a UCF and a NGC. Find them.
 	string ucf;
 	string ngc;
@@ -740,7 +747,8 @@ bool XilinxISEToolchain::Map(
 		if(f.GetType() == BuildFlag::TYPE_DEFINE)
 			continue;
 
-		LogWarning("Don't know what to do with map flag %s\n", static_cast<string>(f).c_str());
+		stdout += string("WARNING: XilinxISEToolchain::Map: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
 
 		//Convert the meta-flag and write it verbatim
 		//string fflag = FlagToStringForSynthesis(f);
@@ -852,7 +860,8 @@ bool XilinxISEToolchain::Par(
 		if(f.GetType() == BuildFlag::TYPE_DEFINE)
 			continue;
 
-		LogWarning("Don't know what to do with PAR flag %s\n", static_cast<string>(f).c_str());
+		stdout += string("WARNING: XilinxISEToolchain::Par: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
 
 		/*
 			optimize/quick:			-ol std -rl std
@@ -927,7 +936,8 @@ bool XilinxISEToolchain::StaticTiming(
 		if(f.GetType() == BuildFlag::TYPE_DEFINE)
 			continue;
 
-		LogWarning("Don't know what to do with static timing flag %s\n", static_cast<string>(f).c_str());
+		stdout += string("WARNING: XilinxISEToolchain::StaticTiming: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
 
 		//Convert the meta-flag and write it verbatim
 		//string fflag = FlagToStringForSynthesis(f);
@@ -988,7 +998,8 @@ bool XilinxISEToolchain::GenerateBitstream(
 		if(f.GetType() == BuildFlag::TYPE_DEFINE)
 			continue;
 
-		LogWarning("Don't know what to do with bitgen flag %s\n", static_cast<string>(f).c_str());
+		stdout += string("WARNING: XilinxISEToolchain::GenerateBitstream: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
 
 		//TODO: more flags here
 		/*
