@@ -724,8 +724,8 @@ bool XilinxISEToolchain::Map(
 	fname = base + "_map.ncd";
 	string ngd_file = base + ".ngd";
 	string pcf_file = base + ".pcf";
-	string report_file = base + ".mrp";
-	string report_file2 = base + ".map";
+	string report_file = base + "_map.mrp";
+	string report_file2 = base + "_map.map";
 	//LogDebug("XilinxISEToolchain::Map for %s\n", fname.c_str());
 
 	//Format the part name
