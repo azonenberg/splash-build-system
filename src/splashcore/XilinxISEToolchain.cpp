@@ -382,15 +382,30 @@ void XilinxISEToolchain::CrunchBitgenLog(const string& log, string& stdout)
 	vector<string> lines;
 	ParseLines(log, lines);
 
-	for(auto line : lines)
+	for(size_t i=0; i<lines.size(); i++)
 	{
+		string line = lines[i];
+
 		//TODO: Blacklist messages of no importance
 
 		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
+		if( (line.find("ERROR:") == 0) || (line.find("WARNING:") == 0) )
+		{
+			string wtext = line;
+
+			//If subsequent lines begin with 3 spaces, they're part of this message so merge them
+			while(i+1 < lines.size())
+			{
+				string nline = lines[i+1];
+				if(nline.find("   ") != 0)
+					break;
+
+				i++;
+				wtext += " " + nline.substr(3);
+			}
+
+			stdout += wtext + "\n";
+		}
 	}
 }
 
