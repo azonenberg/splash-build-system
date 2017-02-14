@@ -732,8 +732,6 @@ bool XilinxISEToolchain::Map(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "";
-
 	//Get mapped filenames from NCD filename
 	string base = GetBasenameOfFileWithoutExt(fname);
 	fname = base + "_map.ncd";
@@ -846,8 +844,6 @@ bool XilinxISEToolchain::Par(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "";
-
 	//Get mapped filenames from NCD filename
 	string base = GetBasenameOfFileWithoutExt(fname);
 	string map_file = base + "_map.ncd";
@@ -927,8 +923,6 @@ bool XilinxISEToolchain::StaticTiming(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "";
-
 	//Get TWX filename from NCD filename
 	string base = GetBasenameOfFileWithoutExt(fname);
 	string ncd_file = base + ".ncd";
