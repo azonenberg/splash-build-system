@@ -82,6 +82,7 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
+	std::string FlagToStringForTranslate(BuildFlag flag);
 	void CrunchTranslateLog(const std::string& log, std::string& stdout);
 
 	bool Map(

@@ -617,10 +617,55 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 	{
 		//Anything else isn't yet supported
 		//fprintf(fp, "%s", flags[i]->toString(this).c_str());
-		LogWarning("Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		LogWarning("XilinxISEToolchain::Synthesize: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
 		return "";
 	}
 }
+
+/**
+	@brief Converts a BuildFlag to a ngdbuild flag
+
+	TODO:
+		-a (add pads to top level signals)
+		-aul (allow unmatched LOCs)
+		-aut (allow unmatched timegroups)
+		-bm (block ram files)
+		-insert_keep_hierarchy (add keep hierarchy constraints)
+		-r (ignore LOCs)
+		-u (allow unexpanded blocks)
+		-verbose (lots of spam)
+ */
+string XilinxISEToolchain::FlagToStringForTranslate(BuildFlag flag)
+{
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		//Silently ignore all optimization flags (we don't do optimization at the translate phase)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		//fprintf(fp, "%s", flags[i]->toString(this).c_str());
+		LogWarning("XilinxISEToolchain::Translate: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
+}
+
 
 /**
 	@brief Helper function to call Translate(), Map(), Par(), and StaticTiming()
@@ -668,13 +713,6 @@ bool XilinxISEToolchain::Translate(
 	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
 		return false;
 
-	//TODO: Flags
-	for(auto f : flags)
-	{
-		stdout += string("WARNING: XilinxISEToolchain::Translate: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
-	}
-
 	//Verify we have two sources, a UCF and a NGC. Find them.
 	string ucf;
 	string ngc;
@@ -701,10 +739,14 @@ bool XilinxISEToolchain::Translate(
 		return false;
 	}
 
+	//Format flags
+	string sflags;
+	for(auto f : flags)
+		sflags += FlagToStringForTranslate(f);
+
 	//Launch ngdbuild
-	//TODO: flags here
-	string cmdline = m_binpath + "/ngdbuild -intstyle xflow -dd ngdbuild_tmp -nt on -p " + device +
-						" -uc " + ucf + " " + ngc;
+	string cmdline = m_binpath + "/ngdbuild -intstyle xflow -dd ngdbuild_tmp -nt on -p " + device + " " +
+						sflags + " " + " -uc " + ucf + " " + ngc;
 	string output;
 	bool ok = (0 == ShellCommand(cmdline, output));
 
@@ -989,7 +1031,7 @@ bool XilinxISEToolchain::GenerateBitstream(
 	//Get other filenames from BIT filename
 	string base = GetDirOfFile(ncd_file) + "/" + GetBasenameOfFileWithoutExt(ncd_file);
 	string report_file = base + ".bgn";
-	LogDebug("XilinxISEToolchain::GenerateBitstream for %s\n", fname.c_str());
+	//LogDebug("XilinxISEToolchain::GenerateBitstream for %s\n", fname.c_str());
 
 	//Figure out flags
 	string sflags = "-intstyle xflow -g DonePipe:Yes ";
