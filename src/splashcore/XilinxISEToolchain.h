@@ -93,6 +93,7 @@ protected:
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
 	void CrunchMapLog(const std::string& log, std::string& stdout);
+	std::string FlagToStringForMap(BuildFlag flag);
 
 	bool Par(
 		std::string triplet,
@@ -102,6 +103,7 @@ protected:
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
 	void CrunchParLog(const std::string& log, std::string& stdout);
+	std::string FlagToStringForPAR(BuildFlag flag);
 
 	bool GenerateBitstream(
 		std::string triplet,
@@ -111,6 +113,7 @@ protected:
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
 	void CrunchBitgenLog(const std::string& log, std::string& stdout);
+	std::string FlagToStringForBitgen(BuildFlag flag);
 
 	bool StaticTiming(
 		std::string triplet,
@@ -120,8 +123,11 @@ protected:
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
 	void CrunchTimingLog(const std::string& log, std::string& stdout);
+	std::string FlagToStringForTiming(BuildFlag flag);
 
 	std::string m_binpath;
+
+	void CrunchLog(const std::string& log, const std::vector<std::string>& blacklist, std::string& stdout);
 };
 
 #endif

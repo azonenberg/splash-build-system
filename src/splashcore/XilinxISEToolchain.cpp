@@ -204,47 +204,18 @@ bool XilinxISEToolchain::GetTargetPartName(
 }
 
 /**
-	@brief Read through the report and figure out what's interesting
+	@brief Filter a report and look for lines of interest
  */
-void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
+void XilinxISEToolchain::CrunchLog(const string& log, const std::vector<std::string>& blacklist, string& stdout)
 {
 	//Split the report up into lines
 	vector<string> lines;
 	ParseLines(log, lines);
 
-	//List of messages we do NOT want to see
-	static const char* blacklist[]=
+	for(size_t i=0; i<lines.size(); i++)
 	{
-		"/devlib/verilog/src/unimacro/",	//Skip warnings in Xilinx library sources
+		string line = lines[i];
 
-		//Disable warnings related to use of custom verilog attributes
-		"WARNING:Xst:37",					//Unknown constraint, not supported
-
-		//Disable warnings which are common/unavoidable in parameterized code
-		"WARNING:Xst:638",					//conflict on KEEP property (signal is not optimized anyway)
-		"WARNING:Xst:647",					//Input signal not used / optimized out
-		"WARNING:Xst:653",					//Signal used but never assigned (lots of false positives)
-		"WARNING:HDLCompiler:1127",			//Assignment ignored since identifier is never used
-		"WARNING:Xst:1293",					//FF/latch has constant value
-		"WARNING:Xst:1336",					//more than 100% of device used
-											//Map optimization will sometimes make a borderline design fit
-											//If it does not fit, we get an error during map so dont warn twice
-		"WARNING:Xst:1426",					//init values hinder constant cleaning - usually intentional
-		"WARNING:Xst:1710",					//FF/latch without init value has constant value
-		"WARNING:Xst:1895",					//FF/latch without init value has constant value due to trimming
-		"WARNING:Xst:1896",					//FF/latch has constant value due to trimming
-		"WARNING:Xst:2404",					//FF/latch has constant value
-		"WARNING:Xst:2677",					//Value not used
-		"WARNING:Xst:2935",					//Signal is tied to initial value (constant outputs cause this)
-		"WARNING:Xst:2999",					//Signal is tied to initial value (inferred ROMs cause this)
-		"WARNING:Xst:2254",					//Area constraint not met (happens even if design fits when we're borderline)
-		"WARNING:Xst:1898",					//Signal unconnected due to constant pushing (optimization)
-
-		"ERROR:HDLCompiler:598",			//"module ignored due to errors" - we already know there are errors, STFU!
-	};
-
-	for(auto line : lines)
-	{
 		//Blacklist messages of no importance
 		bool black = false;
 		for(auto search : blacklist)
@@ -255,14 +226,8 @@ void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
 		if(black)
 			continue;
 
-		//Print errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		else if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-
 		//Pretty-print $display messages
-		else if(line.find("$display") != string::npos)
+		if(line.find("$display") != string::npos)
 		{
 			//Extract file name (and fall back to pass-through if it's malformed)
 			if(line[0] != '\"')
@@ -291,8 +256,6 @@ void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
 			//Extract the actual message being printed
 			string msg = line.substr(lend + string("$display ").length());
 
-
-
 			//Now that we have the message, reformat it depending on the type of message
 			if(msg.find("ERROR:") == 0)
 			{
@@ -306,8 +269,67 @@ void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
 			}
 			else
 				stdout += string("INFO:HDLCfg:3 - \"") + fname + " " + lnum + " " + msg + "\n";
+
+			continue;
 		}
+
+		//Skip anything that isn't an error or warning
+		if( (line.find("ERROR:") != 0) && (line.find("WARNING:") != 0) )
+			continue;
+
+		//If subsequent lines begin with 3 spaces, they're part of this message so merge them
+		string wtext = line;
+		while(i+1 < lines.size())
+		{
+			string nline = lines[i+1];
+			if(nline.find("   ") != 0)
+				break;
+
+			i++;
+			wtext += " " + nline.substr(3);
+		}
+		stdout += wtext + "\n";
 	}
+
+}
+
+/**
+	@brief Read through the report and figure out what's interesting
+ */
+void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
+{
+	//List of messages we do NOT want to see
+	static vector<string> blacklist(
+	{
+		"/devlib/verilog/src/unimacro/",	//Skip warnings in Xilinx library sources
+
+		//Disable warnings related to use of custom verilog attributes
+		"WARNING:Xst:37",					//Unknown constraint, not supported
+
+		//Disable warnings which are common/unavoidable in parameterized code
+		"WARNING:Xst:638",					//conflict on KEEP property (signal is not optimized anyway)
+		"WARNING:Xst:647",					//Input signal not used / optimized out
+		"WARNING:Xst:653",					//Signal used but never assigned (lots of false positives)
+		"WARNING:HDLCompiler:1127",			//Assignment ignored since identifier is never used
+		"WARNING:Xst:1293",					//FF/latch has constant value
+		"WARNING:Xst:1336",					//more than 100% of device used
+											//Map optimization will sometimes make a borderline design fit
+											//If it does not fit, we get an error during map so dont warn twice
+		"WARNING:Xst:1426",					//init values hinder constant cleaning - usually intentional
+		"WARNING:Xst:1710",					//FF/latch without init value has constant value
+		"WARNING:Xst:1895",					//FF/latch without init value has constant value due to trimming
+		"WARNING:Xst:1896",					//FF/latch has constant value due to trimming
+		"WARNING:Xst:2404",					//FF/latch has constant value
+		"WARNING:Xst:2677",					//Value not used
+		"WARNING:Xst:2935",					//Signal is tied to initial value (constant outputs cause this)
+		"WARNING:Xst:2999",					//Signal is tied to initial value (inferred ROMs cause this)
+		"WARNING:Xst:2254",					//Area constraint not met (happens even if design fits when we're borderline)
+		"WARNING:Xst:1898",					//Signal unconnected due to constant pushing (optimization)
+
+		"ERROR:HDLCompiler:598"			//"module ignored due to errors" - we already know there are errors, STFU!
+	});
+
+	CrunchLog(log, blacklist, stdout);
 }
 
 /**
@@ -315,20 +337,18 @@ void XilinxISEToolchain::CrunchSynthesisLog(const string& log, string& stdout)
  */
 void XilinxISEToolchain::CrunchTranslateLog(const string& log, string& stdout)
 {
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
+	//List of messages we do NOT want to see
+	static vector<string> blacklist(
 	{
-		//TODO: Blacklist messages of no importance
+		"WARNING:NgdBuild:452",				//Logical net has no load (something got optimized out)
+		"WARNING:NgdBuild:483",				//Attribute INIT is on the wrong type of object
+											//This can be caused by cross-hierarchy optimization
 
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
+		"_reconfig was distributed to a",	//Hide warnings about partial reconfiguration clocks being used
+											//for PLL inputs, because they're not actually driving the PLL
+	});
+
+	CrunchLog(log, blacklist, stdout);
 }
 
 /**
@@ -336,20 +356,17 @@ void XilinxISEToolchain::CrunchTranslateLog(const string& log, string& stdout)
  */
 void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
 {
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
+	//List of messages we do NOT want to see
+	static vector<string> blacklist(
 	{
-		//TODO: Blacklist messages of no importance
+		"WARNING:Timing:3223",	//Timing constraint ignored (empty time group, etc)
+		"WARNING:Pack:2949",	//default DQS_BIAS ignored
+								//see http://forums.xilinx.com/t5/Implementation/DQS-BIAS-report-durning-implementation/td-p/350011
+		"WARNING:MapLib:41",	//All members of TNM group optimized out
+		"WARNING:MapLib:50"		//Timing group optimized out
+	});
 
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
+	CrunchLog(log, blacklist, stdout);
 }
 
 /**
@@ -357,20 +374,17 @@ void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
  */
 void XilinxISEToolchain::CrunchParLog(const string& log, string& stdout)
 {
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
+	//List of messages we do NOT want to see
+	static vector<string> blacklist(
 	{
-		//TODO: Blacklist messages of no importance
+		"WARNING:Par:283",					//Loadless signals, kinda obvious if we get this
+		"WARNING:Par:545",					//Multithreading not supported if no timing constraints
+		"WARNING:Timing:3223",				//Timing constraint ignored (empty time group, etc)
+		"RAMD_D1_O has no load",			//RAM32M with unused output
+		"RAMD_O has no load"				//RAM64M with unused output
+	});
 
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
+	CrunchLog(log, blacklist, stdout);
 }
 
 /**
@@ -585,6 +599,10 @@ bool XilinxISEToolchain::Synthesize(
  */
 string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 {
+	//Ignore any non-map flags
+	if(!flag.IsUsedAt(BuildFlag::SYNTHESIS_TIME))
+		return "";
+
 	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
 	{
 		if(flag.GetFlag() == "none")
@@ -616,7 +634,6 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 	else
 	{
 		//Anything else isn't yet supported
-		//fprintf(fp, "%s", flags[i]->toString(this).c_str());
 		LogWarning("XilinxISEToolchain::Synthesize: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
 		return "";
 	}
@@ -637,9 +654,19 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
  */
 string XilinxISEToolchain::FlagToStringForTranslate(BuildFlag flag)
 {
+	//Ignore any non-map flags
+	if(!flag.IsUsedAt(BuildFlag::MAP_TIME))
+		return "";
+
 	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
 	{
 		//Silently ignore all optimization flags (we don't do optimization at the translate phase)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_HARDWARE)
+	{
+		//Silently ignore all hardware flags (target device is already baked into the netlist)
 		return "";
 	}
 
@@ -660,12 +687,249 @@ string XilinxISEToolchain::FlagToStringForTranslate(BuildFlag flag)
 	else
 	{
 		//Anything else isn't yet supported
-		//fprintf(fp, "%s", flags[i]->toString(this).c_str());
 		LogWarning("XilinxISEToolchain::Translate: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
 		return "";
 	}
 }
 
+/**
+	@brief Converts a BuildFlag to a map flag
+
+	TODO:
+	-activityfile		(SAIF activity file for power etc optimization)
+	-bp					(map slice logic to unused BRAMs)
+	-c					(slice packing density)
+
+	optimize/speed:				-logic_opt on
+	optimize/none:				-logic_opt off
+
+	optimize/quick:				-ol std
+
+	optimize/pack/size:			-c 1
+	optimize/pack/speed:		-c 100
+
+	optimize/regmerge:			-equivalent_register_removal on
+	optimize/noregmerge:		-equivalent_register_removal off
+
+	optimize/regsplit:			-register_duplication on
+	optimize/noregsplit:		-register_duplication off
+
+	optimize/regpack/none:		-r off
+	optimize/regpack/single:	-r 4
+	optimize/regpack/double:	-r 8
+
+	optimize/global/speed:		-global_opt speed
+	optimize/global/size:		-global_opt area
+
+	optimize/lutmerge/size:		-lc area
+	optimize/lutmerge/balanced:	-lc auto
+	optimize/lutmerge/speed:	-lc off
+
+	optimize/iodff/input		-pr i
+	optimize/iodff/output		-pr o
+	optimize/iodff/all			-pr b
+	optimize/iodff/none			-pr off
+
+	TODO: power optimization options
+	TODO: smartguide
+	TODO: map seeds (cost tables)
+ */
+string XilinxISEToolchain::FlagToStringForMap(BuildFlag flag)
+{
+	//Ignore any non-map flags
+	if(!flag.IsUsedAt(BuildFlag::MAP_TIME))
+		return "";
+
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		LogWarning("XilinxISEToolchain::Map: Don't know what to do with optimization flag %s\n",
+			static_cast<string>(flag).c_str());
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_HARDWARE)
+	{
+		//Silently ignore all hardware flags (target device is already baked into the netlist)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("XilinxISEToolchain::Map: Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		LogWarning("XilinxISEToolchain::Map: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
+}
+
+/**
+	@brief Converts a BuildFlag to a PAR flag
+
+	optimize/quick:			-ol std -rl std
+	default:				-ol high -rl high
+
+	optimize/power:			-power on
+ */
+string XilinxISEToolchain::FlagToStringForPAR(BuildFlag flag)
+{
+	//Ignore any non-PAR flags
+	if(!flag.IsUsedAt(BuildFlag::PAR_TIME))
+		return "";
+
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		LogWarning("XilinxISEToolchain::PAR: Don't know what to do with optimization flag %s\n",
+			static_cast<string>(flag).c_str());
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_HARDWARE)
+	{
+		//Silently ignore all hardware flags (target device is already baked into the netlist)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("XilinxISEToolchain::PAR: Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		LogWarning("XilinxISEToolchain::PAR: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
+}
+
+/**
+	@brief Converts a BuildFlag to a bitgen flag
+
+	output/compress			-g Compress
+	output/bootfallback		-g ConfigFallBack
+	output/ConfigRate/x		-g ConfigRate:x
+	output/debugbit			-g DebugBitstream:Yes
+	output/jtaglock			-g DISABLE_JTAG:Yes
+	output/drivedone		-g DriveDone:Yes
+	output/thermalshutdown	-g XADCPowerDown:Enable
+	output/readback			-g ReadBack
+	output/readlock			-g Security:Level1
+	output/reconfiglock		-g Security:Level2
+	output/spiwidth/x		-g SPI_buswidth:x
+	output/spinegclk		-g SPI_Fall_Edge
+	output/unused/pulldown	-g UnusedPin:PullDown
+	output/unused/pullup	-g UnusedPin:PullUp
+	output/unused/float_t	-g UnusedPin:PullNone
+	output/usercode/$HEX	-g UserID:$HEX
+	output/userintcode/$HEX	-g USR_ACCESS:$HEX
+
+	TODO: bitfile encryption stuff
+ */
+string XilinxISEToolchain::FlagToStringForBitgen(BuildFlag flag)
+{
+	//Ignore any non-bitgen flags
+	if(!flag.IsUsedAt(BuildFlag::IMAGE_TIME))
+		return "";
+
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		LogWarning("XilinxISEToolchain::GenerateBitstream: Don't know what to do with optimization flag %s\n",
+			static_cast<string>(flag).c_str());
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_HARDWARE)
+	{
+		//Silently ignore all hardware flags (target device is already baked into the netlist)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("XilinxISEToolchain::GenerateBitstream: Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		LogWarning("XilinxISEToolchain::GenerateBitstream: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
+}
+
+/**
+	@brief Converts a BuildFlag to a trce flag
+ */
+string XilinxISEToolchain::FlagToStringForTiming(BuildFlag flag)
+{
+	//Ignore any non-trce flags
+	if(!flag.IsUsedAt(BuildFlag::ANALYSIS_TIME))
+		return "";
+
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		//ignore, it's way too late for optimization now
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_HARDWARE)
+	{
+		//Silently ignore all hardware flags (target device is already baked into the netlist)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("XilinxISEToolchain::StaticTiming: Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		LogWarning("XilinxISEToolchain::StaticTiming: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
+}
 
 /**
 	@brief Helper function to call Translate(), Map(), Par(), and StaticTiming()
@@ -789,71 +1053,18 @@ bool XilinxISEToolchain::Map(
 	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
 		return false;
 
-	//Figure out flags
+	//Format flags
+	string sflags;
 	for(auto f : flags)
-	{
-		//Ignore any non-map flags
-		if(!f.IsUsedAt(BuildFlag::MAP_TIME))
-			continue;
-
-		//Ignore any hardware/ or define/ flags as those were already processed
-		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
-			continue;
-		if(f.GetType() == BuildFlag::TYPE_DEFINE)
-			continue;
-
-		stdout += string("WARNING: XilinxISEToolchain::Map: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
-
-		//Convert the meta-flag and write it verbatim
-		//string fflag = FlagToStringForSynthesis(f);
-		//fprintf(fp, "%s\n", fflag.c_str());
-
-
-		/*
-			optimize/speed:				-logic_opt on
-			optimize/none:				-logic_opt off
-
-			optimize/quick:				-ol std
-
-			optimize/pack/size:			-c 1
-			optimize/pack/speed:		-c 100
-
-			optimize/regmerge:			-equivalent_register_removal on
-			optimize/noregmerge:		-equivalent_register_removal off
-
-			optimize/regsplit:			-register_duplication on
-			optimize/noregsplit:		-register_duplication off
-
-			optimize/regpack/none:		-r off
-			optimize/regpack/single:	-r 4
-			optimize/regpack/double:	-r 8
-
-			optimize/global/speed:		-global_opt speed
-			optimize/global/size:		-global_opt area
-
-			optimize/lutmerge/size:		-lc area
-			optimize/lutmerge/balanced:	-lc auto
-			optimize/lutmerge/speed:	-lc off
-
-			optimize/iodff/input		-pr i
-			optimize/iodff/output		-pr o
-			optimize/iodff/all			-pr b
-			optimize/iodff/none			-pr off
-
-			TODO: power optimization options
-			TODO: smartguide
-			TODO: map seeds (cost tables)
-		 */
-	}
+		sflags += FlagToStringForMap(f);
 
 	//TODO: Multithreading (-mt off|2) based on the job's focus on throughput or latency
 	//Multithreading not supported for spartan-3 so always leave it off there
 
 	//Launch map
 	//TODO: flags
-	string cmdline = m_binpath + "/map -intstyle xflow -detail -ir off -p " + device + " -o " + fname + " "
-						+ ngd_file + " " + pcf_file;
+	string cmdline = m_binpath + "/map -intstyle xflow -detail -ir off -p " + device + " " + sflags + " -o " +
+		fname + " " + ngd_file + " " + pcf_file;
 	string output;
 	bool ok = (0 == ShellCommand(cmdline, output));
 
@@ -900,40 +1111,17 @@ bool XilinxISEToolchain::Par(
 	if(!GetTargetPartName(flags, triplet, device, stdout, fname, speed))
 		return false;
 
-	//Figure out flags
+	//Format flags
+	string sflags;
 	for(auto f : flags)
-	{
-		//Ignore any non-PAR flags
-		if(!f.IsUsedAt(BuildFlag::PAR_TIME))
-			continue;
-
-		//Ignore any hardware/ or define/ flags as those were already processed
-		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
-			continue;
-		if(f.GetType() == BuildFlag::TYPE_DEFINE)
-			continue;
-
-		stdout += string("WARNING: XilinxISEToolchain::Par: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
-
-		/*
-			optimize/quick:			-ol std -rl std
-			default:				-ol high -rl high
-
-			optimize/power:			-power on
-		 */
-
-		//Convert the meta-flag and write it verbatim
-		//string fflag = FlagToStringForSynthesis(f);
-		//fprintf(fp, "%s\n", fflag.c_str());
-	}
+		sflags += FlagToStringForPAR(f);
 
 	//TODO: Multithreading (-mt off|2|3|4) based on the job's focus on throughput or latency
 	//Multithreading not supported for spartan-3 so always leave it off there
 
 	//Launch par
 	//TODO: flags
-	string cmdline = m_binpath + "/par -intstyle xflow " + map_file + " " + fname + " " + pcf_file;
+	string cmdline = m_binpath + "/par -intstyle xflow " + sflags + " " + map_file + " " + fname + " " + pcf_file;
 
 	string output;
 	bool ok = (0 == ShellCommand(cmdline, output));
@@ -975,26 +1163,10 @@ bool XilinxISEToolchain::StaticTiming(
 
 	//Launch trce
 	//Figure out flags
+	string sflags;
 	for(auto f : flags)
-	{
-		//Ignore any non-analysis flags
-		if(!f.IsUsedAt(BuildFlag::ANALYSIS_TIME))
-			continue;
-
-		//Ignore any hardware/ or define/ flags as those were already processed
-		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
-			continue;
-		if(f.GetType() == BuildFlag::TYPE_DEFINE)
-			continue;
-
-		stdout += string("WARNING: XilinxISEToolchain::StaticTiming: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
-
-		//Convert the meta-flag and write it verbatim
-		//string fflag = FlagToStringForSynthesis(f);
-		//fprintf(fp, "%s\n", fflag.c_str());
-	}
-	string cmdline = m_binpath + "/trce -v 10 -intstyle xflow -l 10 -fastpaths " +
+		sflags += FlagToStringForTiming(f);
+	string cmdline = m_binpath + "/trce -v 10 -intstyle xflow -l 10 -fastpaths " + sflags + " " +
 		ncd_file + " " + pcf_file + " -o " + report_file + " -xml " + twx_file;
 	string output;
 	bool ok = (0 == ShellCommand(cmdline, output));
@@ -1038,47 +1210,7 @@ bool XilinxISEToolchain::GenerateBitstream(
 	if(triplet.find("spartan6-") == 0)
 		sflags += "-g INIT_9L:Yes ";
 	for(auto f : flags)
-	{
-		//Ignore any non-PAR flags
-		if(!f.IsUsedAt(BuildFlag::IMAGE_TIME))
-			continue;
-
-		//Ignore any hardware/ or define/ flags as those were already processed
-		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
-			continue;
-		if(f.GetType() == BuildFlag::TYPE_DEFINE)
-			continue;
-
-		stdout += string("WARNING: XilinxISEToolchain::GenerateBitstream: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
-
-		//TODO: more flags here
-		/*
-			output/compress			-g Compress
-			output/bootfallback		-g ConfigFallBack
-			output/ConfigRate/x		-g ConfigRate:x
-			output/debugbit			-g DebugBitstream:Yes
-			output/jtaglock			-g DISABLE_JTAG:Yes
-			output/drivedone		-g DriveDone:Yes
-			output/thermalshutdown	-g XADCPowerDown:Enable
-			output/readback			-g ReadBack
-			output/readlock			-g Security:Level1
-			output/reconfiglock		-g Security:Level2
-			output/spiwidth/x		-g SPI_buswidth:x
-			output/spinegclk		-g SPI_Fall_Edge
-			output/unused/pulldown	-g UnusedPin:PullDown
-			output/unused/pullup	-g UnusedPin:PullUp
-			output/unused/float_t	-g UnusedPin:PullNone
-			output/usercode/$HEX	-g UserID:$HEX
-			output/userintcode/$HEX	-g USR_ACCESS:$HEX
-
-			TODO: bitfile encryption stuff
-		 */
-
-		//Convert the meta-flag and write it verbatim
-		//string fflag = FlagToStringForSynthesis(f);
-		//fprintf(fp, "%s\n", fflag.c_str());
-	}
+		sflags += FlagToStringForBitgen(f);
 
 	//Launch bitgen
 	string cmdline = m_binpath + "/bitgen " + sflags + " " + ncd_file + " " + fname;
