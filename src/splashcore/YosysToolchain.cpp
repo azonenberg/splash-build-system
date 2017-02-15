@@ -52,6 +52,7 @@ YosysToolchain::YosysToolchain(string basepath)
 	m_fixes["netlist"] = stringpair("", ".json");
 	m_fixes["formal-netlist"] = stringpair("", ".smt2");
 	m_fixes["formal"] = stringpair("", ".txt");
+	m_fixes["bitstream"] = stringpair("", ".txt");
 
 	//Generate the hash based on the full git ID etc
 	m_hash = sha256(sver);
