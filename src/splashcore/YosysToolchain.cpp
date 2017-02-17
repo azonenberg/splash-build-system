@@ -414,15 +414,15 @@ void YosysToolchain::CrunchYosysLog(const string& log, string& stdout)
 	for(auto line : lines)
 	{
 		//Blacklist messages of no importance
-		if(line.find("fraig_sweep"))				//some kind of ABC message about combinatorial logic
+		if(line.find("fraig_sweep") != string::npos)				//some kind of ABC message about combinatorial logic
 			continue;
 
 		//Filter out errors and warnings
-		size_t istart = line.find("ERROR");
+		size_t istart = line.find("ERROR:");
 		if(istart != string::npos)
 			stdout += line.substr(istart) + "\n";
 
-		istart = line.find("Warning");
+		istart = line.find("Warning:");
 		if(istart != string::npos)
 			stdout += line.substr(istart) + "\n";
 	}
