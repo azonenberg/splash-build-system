@@ -141,7 +141,7 @@ bool YosysToolchain::Build(
 	@brief Synthesize for formal verification
  */
 bool YosysToolchain::BuildFormal(
-	string triplet,
+	string /*triplet*/,
 	set<string> sources,
 	string fname,
 	set<BuildFlag> flags,
@@ -150,7 +150,7 @@ bool YosysToolchain::BuildFormal(
 {
 	stdout = "";
 
-	LogDebug("YosysToolchain::BuildFormal for %s\n", fname.c_str());
+	//LogDebug("YosysToolchain::BuildFormal for %s\n", fname.c_str());
 	string base = GetBasenameOfFileWithoutExt(fname);
 
 	//TODO: Flags
@@ -212,7 +212,7 @@ bool YosysToolchain::BuildFormal(
 	@brief Synthesize for formal verification
  */
 bool YosysToolchain::CheckModel(
-	string triplet,
+	string /*triplet*/,
 	set<string> sources,
 	string fname,
 	set<BuildFlag> flags,
@@ -304,7 +304,98 @@ bool YosysToolchain::BuildGreenPAK(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout = "ERROR: YosysToolchain::BuildGreenPAK() not implemented\n";
+	stdout = "";
+
+	if(!SynthGreenPAK(triplet, sources, fname, flags, outputs, stdout))
+		return false;
+
+	return PARGreenPAK(triplet, sources, fname, flags, outputs, stdout);
+}
+
+bool YosysToolchain::SynthGreenPAK(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
+	string& stdout)
+{
+	LogDebug("YosysToolchain::SynthGreenPAK for %s\n", fname.c_str());
+	string base = GetBasenameOfFileWithoutExt(fname);
+
+	//TODO: Flags
+	for(auto f : flags)
+	{
+		//Skip hardware flags (we have the part number in the triplet, and speed grade/package are irrelevant)
+		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
+			continue;
+
+		/*
+		if(f.GetType() != BuildFlag::TYPE_DEFINE)
+			continue;
+		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
+		*/
+		stdout += string("WARNING: YosysToolchain::SynthGreenPAK: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
+	}
+
+	//Look up the part
+	string part = triplet.substr(triplet.find("-")+1);
+	for(size_t i=0; i<part.length(); i++)
+		part[i] = toupper(part[i]);
+	part += "V";
+
+	//Write the synthesis script
+	string ys_file = base + ".ys";
+	string json_file = base + ".json";
+	FILE* fp = fopen(ys_file.c_str(), "w");
+	if(!fp)
+	{
+		stdout += string("ERROR: Failed to create synthesis script ") + ys_file + "\n";
+		return false;
+	}
+	for(auto s : sources)
+	{
+		//Ignore any non-Verilog sources
+		if(s.find(".v") != string::npos)
+			fprintf(fp, "read_verilog -formal \"%s\"\n", s.c_str());
+	}
+	fprintf(fp, "synth_greenpak4 -part %s\n", part.c_str());
+	fprintf(fp, "write_json %s", json_file.c_str());
+	fclose(fp);
+
+	//Run synthesis
+	string report_file = base + "_synth.log";
+	string cmdline = m_basepath + " -t -l " + report_file + " " + ys_file;
+	string output;
+	bool ok = (0 == ShellCommand(cmdline, output));
+
+	//Crunch the synthesis log
+	CrunchYosysLog(output, stdout);
+
+	//Done, return results
+	if(DoesFileExist(report_file))
+		outputs[report_file] = sha256_file(report_file);
+	if(DoesFileExist(json_file))
+		outputs[json_file] = sha256_file(json_file);
+	else
+	{
+		stdout += "ERROR: No JSON file produced\n";
+		return false;
+	}
+
+	return ok;
+}
+
+bool YosysToolchain::PARGreenPAK(
+	string triplet,
+	set<string> sources,
+	string fname,
+	set<BuildFlag> flags,
+	map<string, string>& outputs,
+	string& stdout)
+{
+	stdout += "ERROR: YosysToolchain::PARGreenPAK not implemented\n";
 	return false;
 }
 
@@ -322,13 +413,18 @@ void YosysToolchain::CrunchYosysLog(const string& log, string& stdout)
 
 	for(auto line : lines)
 	{
-		//TODO: Blacklist messages of no importance
+		//Blacklist messages of no importance
+		if(line.find("fraig_sweep"))				//some kind of ABC message about combinatorial logic
+			continue;
 
 		//Filter out errors and warnings
-		if(line.find("Warning:") == 0)
-			stdout += line + "\n";
-		if(line.find("Error:") == 0)
-			stdout += line + "\n";
+		size_t istart = line.find("ERROR");
+		if(istart != string::npos)
+			stdout += line.substr(istart) + "\n";
+
+		istart = line.find("Warning");
+		if(istart != string::npos)
+			stdout += line.substr(istart) + "\n";
 	}
 }
 

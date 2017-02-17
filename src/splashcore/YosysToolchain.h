@@ -80,6 +80,21 @@ protected:
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
 
+	virtual bool SynthGreenPAK(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
+	virtual bool PARGreenPAK(
+		std::string triplet,
+		std::set<std::string> sources,
+		std::string fname,
+		std::set<BuildFlag> flags,
+		std::map<std::string, std::string>& outputs,
+		std::string& stdout);
+
 	void CrunchYosysLog(const std::string& log, std::string& stdout);
 	void CrunchSMTLog(const std::string& log, std::string& stdout);
 };
