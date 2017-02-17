@@ -376,38 +376,62 @@ void FPGABitstreamNode::DoStartFinalization()
 	set<string> ignored;
 	wc->UpdateFile(netpath, h, false, false, ignored);
 
-	//Make the physical netlist (translate and map if needed by our flow, then PAR)
-	auto pnetpath = m_graph->GetIntermediateFilePath(
-		m_toolchain,
-		m_config,
-		m_arch,
-		"circuit",
-		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar",
-		m_board);
-	m_circuit = new PhysicalNetlistNode(
-		m_graph,
-		m_arch,
-		m_config,
-		m_name,
-		m_scriptpath,
-		pnetpath,
-		m_toolchain,
-		mapAndParFlags,
-		m_netlist,
-		m_constrpath);
-
-	//If we have a node for this hash already, delete it and use the existing one. Otherwise use this
-	h = m_circuit->GetHash();
-	if(m_graph->HasNodeWithHash(h))
+	//Look up a toolchain to query
+	lock_guard<NodeManager> lock2(*g_nodeManager);
+	Toolchain* chain = g_nodeManager->GetAnyToolchainForName(m_arch, m_toolchain);
+	if(chain == NULL)
 	{
-		delete m_circuit;
-		m_circuit = dynamic_cast<PhysicalNetlistNode*>(m_graph->GetNodeWithHash(h));
+		LogParseError("Could not find a toolchain of type %s targeting architecture arch %s\n",
+			m_toolchain.c_str(), m_arch.c_str());
+		return;
 	}
+
+	//If implementation and bitstream generation are separate steps, add a node for the physical netlist
+	if(chain->IsTypeValid("circuit"))
+	{
+		//Make the physical netlist (translate and map if needed by our flow, then PAR)
+		auto pnetpath = m_graph->GetIntermediateFilePath(
+			m_toolchain,
+			m_config,
+			m_arch,
+			"circuit",
+			GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar",
+			m_board);
+		m_circuit = new PhysicalNetlistNode(
+			m_graph,
+			m_arch,
+			m_config,
+			m_name,
+			m_scriptpath,
+			pnetpath,
+			m_toolchain,
+			mapAndParFlags,
+			m_netlist,
+			m_constrpath);
+
+		//If we have a node for this hash already, delete it and use the existing one. Otherwise use this
+		h = m_circuit->GetHash();
+		if(m_graph->HasNodeWithHash(h))
+		{
+			delete m_circuit;
+			m_circuit = dynamic_cast<PhysicalNetlistNode*>(m_graph->GetNodeWithHash(h));
+		}
+		else
+			m_graph->AddNode(m_circuit);
+		m_dependencies.emplace(pnetpath);
+		m_sources.emplace(pnetpath);
+		wc->UpdateFile(pnetpath, h, false, false, ignored);
+	}
+
+	//Implementation and bitstream are one step, just use the netlist and constraint file as our input
 	else
-		m_graph->AddNode(m_circuit);
-	m_dependencies.emplace(pnetpath);
-	m_sources.emplace(pnetpath);
-	wc->UpdateFile(pnetpath, h, false, false, ignored);
+	{
+		m_dependencies.emplace(netpath);
+		m_sources.emplace(netpath);
+
+		m_dependencies.emplace(m_constrpath);
+		m_sources.emplace(m_constrpath);
+	}
 }
 
 /**
