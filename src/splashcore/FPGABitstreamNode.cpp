@@ -54,14 +54,14 @@ FPGABitstreamNode::FPGABitstreamNode(
 	//	toolchain.c_str(), path.c_str());
 
 	//If we specify a list of pins, read that
-	map<string, TopLevelPin> pins;
+	map<string, int> pins;
 	if(node["pins"])
 	{
 		auto npins = node["pins"];
 		for(auto it : npins)
 		{
 			string pname = it.first.as<string>();
-			pins[pname] = TopLevelPin(it.second);
+			pins[pname] = it.second.as<int>();
 		}
 	}
 	else
@@ -98,7 +98,7 @@ FPGABitstreamNode::FPGABitstreamNode(
 }
 
 bool FPGABitstreamNode::GenerateConstraintFile(
-		map<string, TopLevelPin>& pins,
+		map<string, int>& pins,
 		string path,
 		BoardInfoFile* binfo)
 {
@@ -139,7 +139,7 @@ bool FPGABitstreamNode::GenerateConstraintFile(
 }
 
 bool FPGABitstreamNode::GenerateUCFConstraintFile(
-		map<string, TopLevelPin>& pins,
+		map<string, int>& pins,
 		string /*path*/,
 		BoardInfoFile* binfo,
 		string& constraints)
@@ -158,9 +158,8 @@ bool FPGABitstreamNode::GenerateUCFConstraintFile(
 	for(auto it : pins)
 	{
 		auto name = it.first;
-		auto tlp = it.second;
+		auto w = it.second;
 
-		int w = tlp.GetWidth();
 		for(int i=0; i<w; i++)
 		{
 			string sname = name;
@@ -196,10 +195,9 @@ bool FPGABitstreamNode::GenerateUCFConstraintFile(
 	for(auto it : pins)
 	{
 		auto name = it.first;
-		auto tlp = it.second;
 
 		//All clocks must be scalars (vector clock makes no sense)
-		if(tlp.GetWidth() != 1)
+		if(it.second != 1)
 			continue;
 
 		//If we don't have a matching clock, that's fine - just skip it

@@ -57,12 +57,12 @@ protected:
 	virtual void DoStartFinalization();
 
 	bool GenerateConstraintFile(
-		std::map<std::string, TopLevelPin>& pins,
+		std::map<std::string, int>& pins,
 		std::string path,
 		BoardInfoFile* binfo);
 
 	bool GenerateUCFConstraintFile(
-		std::map<std::string, TopLevelPin>& pins,
+		std::map<std::string, int>& pins,
 		std::string path,
 		BoardInfoFile* binfo,
 		std::string& constraints);
