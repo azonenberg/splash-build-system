@@ -67,6 +67,12 @@ protected:
 		BoardInfoFile* binfo,
 		std::string& constraints);
 
+	bool GeneratePCFConstraintFile(
+		std::map<std::string, int>& pins,
+		std::string path,
+		BoardInfoFile* binfo,
+		std::string& constraints);
+
 	void UpdateHash();
 
 	//Name of our board
