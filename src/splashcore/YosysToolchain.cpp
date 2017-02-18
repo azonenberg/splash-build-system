@@ -128,8 +128,15 @@ bool YosysToolchain::Build(
 			return CheckModel(triplet, sources, fname, flags, outputs, stdout);
 	}
 	else if(triplet.find("greenpak4-") == 0)
-		return BuildGreenPAK(triplet, sources, fname, flags, outputs, stdout);
+	{
+		//If the output file is a .json we're synthesizing
+		if(fname.find(".json") != string::npos)
+			return SynthGreenPAK(triplet, sources, fname, flags, outputs, stdout);
 
+		//Otherwise running gp4par
+		else
+			return PARGreenPAK(triplet, sources, fname, flags, outputs, stdout);
+	}
 	else
 	{
 		stdout = string("ERROR: YosysToolchain doesn't know how to build for architecture ") + triplet + "\n";
@@ -296,22 +303,6 @@ bool YosysToolchain::CheckModel(
 	return ok;
 }
 
-bool YosysToolchain::BuildGreenPAK(
-	string triplet,
-	set<string> sources,
-	string fname,
-	set<BuildFlag> flags,
-	map<string, string>& outputs,
-	string& stdout)
-{
-	stdout = "";
-
-	if(!SynthGreenPAK(triplet, sources, fname, flags, outputs, stdout))
-		return false;
-
-	return PARGreenPAK(triplet, sources, fname, flags, outputs, stdout);
-}
-
 bool YosysToolchain::SynthGreenPAK(
 	string triplet,
 	set<string> sources,
@@ -321,6 +312,7 @@ bool YosysToolchain::SynthGreenPAK(
 	string& stdout)
 {
 	LogDebug("YosysToolchain::SynthGreenPAK for %s\n", fname.c_str());
+	stdout = "";
 	string base = GetBasenameOfFileWithoutExt(fname);
 
 	//TODO: Flags
@@ -395,8 +387,73 @@ bool YosysToolchain::PARGreenPAK(
 	map<string, string>& outputs,
 	string& stdout)
 {
-	stdout += "ERROR: YosysToolchain::PARGreenPAK not implemented\n";
-	return false;
+	stdout = "";
+
+	//Look up the constraints and source file
+	string json_file;
+	string constraints_file;
+	for(auto s : sources)
+	{
+		if(s.find(".pcf") != string::npos)
+			constraints_file = s;
+		else if(s.find(".json") != string::npos)
+			json_file = s;
+		else
+		{
+			stdout = "ERROR: YosysToolchain::PARGreenPAK: Don't know what to do with " + s  + "\n";
+			return false;
+		}
+	}
+
+	if(json_file == "")
+	{
+		stdout = "ERROR: YosysToolchain: no JSON file specified\n";
+		return false;
+	}
+
+	string basename = GetBasenameOfFileWithoutExt(fname);
+	string bit_file = basename + ".txt";
+	string report_file = basename + "_par.log";
+
+	//Look up the part
+	string part = triplet.substr(triplet.find("-")+1);
+	for(size_t i=0; i<part.length(); i++)
+		part[i] = toupper(part[i]);
+	part += "V";
+
+	//TODO: unused_-pull, unused-drive
+
+	//Format flags
+	string sflags = "";
+	for(auto f : flags)
+	{
+		//TODO: Flags
+
+		/*
+		if(f.GetType() != BuildFlag::TYPE_DEFINE)
+			continue;
+		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
+		*/
+		stdout += string("WARNING: YosysToolchain::PARGreenPAK: Don't know what to do with flag ") +
+			static_cast<string>(f) + "\n";
+	}
+
+	string cmdline = m_gp4parPath + " --output " + bit_file + " -p " + part + " --constraints " + constraints_file
+		+ " " + json_file;
+	cmdline += " --debug";
+	string stdout_raw;
+	bool ok = (0 == ShellCommand(cmdline, stdout_raw));
+
+	//Filter the results and print to stdout clientside
+	CrunchGP4PARLog(stdout_raw, stdout);
+
+	//Upload the report
+	outputs[report_file] = sha256_file(report_file);
+	if(DoesFileExist(bit_file))
+		outputs[bit_file] = sha256_file(bit_file);
+
+	//Done
+	return ok;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -423,6 +480,25 @@ void YosysToolchain::CrunchYosysLog(const string& log, string& stdout)
 			stdout += line.substr(istart) + "\n";
 
 		istart = line.find("Warning:");
+		if(istart != string::npos)
+			stdout += line.substr(istart) + "\n";
+	}
+}
+
+void YosysToolchain::CrunchGP4PARLog(const string& log, string& stdout)
+{
+	//Split the report up into lines
+	vector<string> lines;
+	ParseLines(log, lines);
+
+	for(auto line : lines)
+	{
+		//Filter out errors and warnings
+		size_t istart = line.find("ERROR:");
+		if(istart != string::npos)
+			stdout += line.substr(istart) + "\n";
+
+		istart = line.find("WARNING:");
 		if(istart != string::npos)
 			stdout += line.substr(istart) + "\n";
 	}

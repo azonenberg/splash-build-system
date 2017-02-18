@@ -72,13 +72,7 @@ protected:
 		std::set<BuildFlag> flags,
 		std::map<std::string, std::string>& outputs,
 		std::string& stdout);
-	virtual bool BuildGreenPAK(
-		std::string triplet,
-		std::set<std::string> sources,
-		std::string fname,
-		std::set<BuildFlag> flags,
-		std::map<std::string, std::string>& outputs,
-		std::string& stdout);
+
 
 	virtual bool SynthGreenPAK(
 		std::string triplet,
@@ -97,6 +91,7 @@ protected:
 
 	void CrunchYosysLog(const std::string& log, std::string& stdout);
 	void CrunchSMTLog(const std::string& log, std::string& stdout);
+	void CrunchGP4PARLog(const std::string& log, std::string& stdout);
 };
 
 #endif
