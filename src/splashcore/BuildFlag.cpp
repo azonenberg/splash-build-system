@@ -45,7 +45,7 @@ BuildFlag::BuildFlag(string flag)
 		m_flag = "global";
 		return;
 	}
-	
+
 	//Try to get the info out of it
 	char group[32] = "";
 	char name[64] = "";
@@ -90,7 +90,7 @@ BuildFlag::BuildFlag(string flag)
 
 BuildFlag::~BuildFlag()
 {
-	
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -208,6 +208,24 @@ void BuildFlag::LoadOutputFlag()
 	//output/reloc: produce relocatable binaries
 	else if(m_flag == "reloc")
 		m_usage = COMPILE_TIME | LINK_TIME;
+
+	//output/unused: specify behavior of unused FPGA I/Os
+	else if(m_flag == "unused")
+	{
+		m_usage = IMAGE_TIME;
+
+		if( (m_arg != "down") && (m_arg != "up") && (m_arg != "none") && (m_arg != "float") )
+			LogParseError("output/unused argument \"%s\" must be down, up, or float\n", m_arg.c_str());
+	}
+
+	//output/pull: specify drive strength for pullups on unused FPGA I/Os
+	else if(m_flag == "pull")
+	{
+		m_usage = IMAGE_TIME;
+
+		if( (m_arg != "10k") && (m_arg != "100k") && (m_arg != "1M") )
+			LogParseError("output/pull argument \"%s\" must be 10k, 100k, or 1M\n", m_arg.c_str());
+	}
 
 	else
 		LogParseError("Flag \"output/%s\" is unknown\n", m_flag.c_str());

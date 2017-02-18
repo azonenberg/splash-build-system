@@ -38,10 +38,10 @@ class BuildFlag
 public:
 	BuildFlag(std::string flag);
 	virtual ~BuildFlag();
-	
+
 	bool operator==(const BuildFlag& rhs) const
 	{ return m_rawflag == rhs.m_rawflag; }
-	
+
 	/**
 		@brief Bitmask of when this flag can be used
 	 */
@@ -58,11 +58,11 @@ public:
 
 		FPGA_TIME		=			//All FPGA stuff
 			SYNTHESIS_TIME | MAP_TIME | PAR_TIME | IMAGE_TIME | ANALYSIS_TIME,
-		
+
 		NO_TIME			= 0x00,		//placeholder
 		ALL_TIME		= 0xff
 	};
-	
+
 	/**
 		@brief Major functional group describing roughly what this flag does
 	 */
@@ -75,11 +75,14 @@ public:
 		TYPE_DEBUG		= 5,		//enable/disable debug symbols or debugging features
 		TYPE_ANALYSIS	= 6,		//enable/disable profiling, tracing, etc
 		TYPE_DIALECT	= 7,		//control which dialect of a language is being used
-		TYPE_OUTPUT		= 8,		//control the output file (extension, soname, etc)
+		TYPE_OUTPUT		= 8,		//control the output file (extension, soname, etc).
+									//Also config bitstream parameters etc
 		TYPE_LIBRARY	= 9,		//control linking of libraries, IP cores, etc
 		TYPE_DEFINE		= 10,		//define macros
-		TYPE_HARDWARE	= 11,		//flags that specify the hardware being targeted
-		
+		TYPE_HARDWARE	= 11,		//Flags that specify the hardware being targeted.
+									//This is only for "describe the silicon" type flags!
+									//Do not use this category for things like boot config
+
 		TYPE_INVALID	= 0			//placeholder
 	};
 
@@ -99,7 +102,7 @@ public:
 	{ return m_arg; }
 
 	bool IsUsedAt(FlagUsage t);
-	
+
 protected:
 
 	//Helpers for initializing
@@ -113,24 +116,24 @@ protected:
 	void LoadLibraryFlag();
 	void LoadDefineFlag();
 	void LoadHardwareFlag();
-	
+
 	/**
 		@brief Usage flags (bitmask of FlagUsage)
-		
+
 		This is checked by toolchains to determine whether this flag is relevant to them or not
 	 */
 	uint32_t	m_usage;
-	
+
 	/**
 		@brief Functional group for the flag (used to determine what part of a complex tool should look at it)
 	 */
 	FlagType	m_type;
-	
+
 	/**
 		@brief Textual name of this flag (like "max" for TYPE_WARNING to enable all warnings)
 	 */
 	std::string	m_flag;
-	
+
 	/**
 		@brief Raw text of this flag (used for hash comparisons etc)
 	 */

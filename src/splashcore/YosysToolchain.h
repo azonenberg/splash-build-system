@@ -92,6 +92,9 @@ protected:
 	void CrunchYosysLog(const std::string& log, std::string& stdout);
 	void CrunchSMTLog(const std::string& log, std::string& stdout);
 	void CrunchGP4PARLog(const std::string& log, std::string& stdout);
+
+	std::string FlagToStringForSynthesis(BuildFlag flag);
+	std::string FlagToStringForGP4PAR(BuildFlag flag);
 };
 
 #endif

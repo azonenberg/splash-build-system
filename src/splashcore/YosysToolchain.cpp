@@ -315,22 +315,6 @@ bool YosysToolchain::SynthGreenPAK(
 	stdout = "";
 	string base = GetBasenameOfFileWithoutExt(fname);
 
-	//TODO: Flags
-	for(auto f : flags)
-	{
-		//Skip hardware flags (we have the part number in the triplet, and speed grade/package are irrelevant)
-		if(f.GetType() == BuildFlag::TYPE_HARDWARE)
-			continue;
-
-		/*
-		if(f.GetType() != BuildFlag::TYPE_DEFINE)
-			continue;
-		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
-		*/
-		stdout += string("WARNING: YosysToolchain::SynthGreenPAK: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
-	}
-
 	//Look up the part
 	string part = triplet.substr(triplet.find("-")+1);
 	for(size_t i=0; i<part.length(); i++)
@@ -353,7 +337,9 @@ bool YosysToolchain::SynthGreenPAK(
 			fprintf(fp, "read_verilog -formal \"%s\"\n", s.c_str());
 	}
 	fprintf(fp, "synth_greenpak4 -part %s\n", part.c_str());
-	fprintf(fp, "write_json %s", json_file.c_str());
+	fprintf(fp, "write_json %s\n", json_file.c_str());
+	for(auto f : flags)
+		fprintf(fp, "%s\n", FlagToStringForSynthesis(f).c_str());
 	fclose(fp);
 
 	//Run synthesis
@@ -426,21 +412,12 @@ bool YosysToolchain::PARGreenPAK(
 	//Format flags
 	string sflags = "";
 	for(auto f : flags)
-	{
-		//TODO: Flags
+		sflags += FlagToStringForGP4PAR(f);
 
-		/*
-		if(f.GetType() != BuildFlag::TYPE_DEFINE)
-			continue;
-		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
-		*/
-		stdout += string("WARNING: YosysToolchain::PARGreenPAK: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
-	}
-
-	string cmdline = m_gp4parPath + " --output " + bit_file + " -p " + part + " --constraints " + constraints_file
-		+ " " + json_file;
-	cmdline += " --debug";
+	//Format command line
+	string cmdline = m_gp4parPath + " " + sflags + " --output " + bit_file + " -p " + part + " --constraints " + constraints_file
+		+ " " + json_file + " --logfile " + report_file;
+	cmdline += " --debug --nocolors";
 	string stdout_raw;
 	bool ok = (0 == ShellCommand(cmdline, stdout_raw));
 
@@ -454,6 +431,105 @@ bool YosysToolchain::PARGreenPAK(
 
 	//Done
 	return ok;
+}
+
+string YosysToolchain::FlagToStringForGP4PAR(BuildFlag flag)
+{
+	//Ignore any flags we arent interested in
+	if(!flag.IsUsedAt(BuildFlag::IMAGE_TIME) && !flag.IsUsedAt(BuildFlag::PAR_TIME) && !flag.IsUsedAt(BuildFlag::MAP_TIME))
+		return "";
+
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		LogWarning("YosysToolchain::FlagToStringForGP4PAR: Don't know what to do with optimization flag %s\n",
+			static_cast<string>(flag).c_str());
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_HARDWARE)
+	{
+		//Silently ignore all hardware flags (target device is already baked into the netlist)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_OUTPUT)
+	{
+		if(flag.GetFlag() == "unused")
+			return "--unused-pull " + flag.GetArgs() + " ";
+
+		else if(flag.GetFlag() == "pull")
+			return "--unused-drive " + flag.GetArgs() + " ";
+
+		else
+		{
+			LogWarning("YosysToolchain::FlagToStringForGP4PAR: Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("YosysToolchain::FlagToStringForGP4PAR: Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		LogWarning("YosysToolchain::FlagToStringForGP4PAR: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
+}
+
+string YosysToolchain::FlagToStringForSynthesis(BuildFlag flag)
+{
+	//Ignore any flags we arent interested in
+	if(!flag.IsUsedAt(BuildFlag::SYNTHESIS_TIME))
+		return "";
+
+	if(flag.GetType() == BuildFlag::TYPE_OPTIMIZE)
+	{
+		LogWarning("YosysToolchain::FlagToStringForSynthesis: Don't know what to do with optimization flag %s\n",
+			static_cast<string>(flag).c_str());
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_HARDWARE)
+	{
+		//TODO: do we have to use anything here? Normally the triplet has all the info we need
+		//(speed/package are irrelevant for synth)
+		return "";
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_WARNING)
+	{
+		//we default to max warning level (absurdly verbose)
+		if(flag.GetFlag() == "max")
+			return "";
+
+		else
+		{
+			LogWarning("YosysToolchain::FlagToStringForSynthesis: Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else
+	{
+		//Anything else isn't yet supported
+		LogWarning("YosysToolchain::FlagToStringForSynthesis: Don't know what to do with flag %s\n", static_cast<string>(flag).c_str());
+		return "";
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -491,16 +567,48 @@ void YosysToolchain::CrunchGP4PARLog(const string& log, string& stdout)
 	vector<string> lines;
 	ParseLines(log, lines);
 
-	for(auto line : lines)
+	for(size_t i=0; i<lines.size(); i++)
 	{
+		string line = lines[i];
+
 		//Filter out errors and warnings
 		size_t istart = line.find("ERROR:");
-		if(istart != string::npos)
-			stdout += line.substr(istart) + "\n";
+		size_t jstart = line.find("Warning:");
 
-		istart = line.find("WARNING:");
+		string indent;
+
+		//Skip anything that isn't an error or warning
 		if(istart != string::npos)
-			stdout += line.substr(istart) + "\n";
+		{
+			indent = line.substr(0, istart);
+			line = line.substr(istart);
+		}
+		else if(jstart != string::npos)
+		{
+			indent = line.substr(0, jstart);
+			line = line.substr(jstart);
+		}
+		else
+			continue;
+
+		//If subsequent lines begin with indentation, they're part of this message so merge them
+		string wtext = line;
+		while(i+1 < lines.size())
+		{
+			string nline = lines[i+1];
+
+			//If it has a new error/warning, skip it
+			if( (nline.find("ERROR:") != string::npos) || (nline.find("Warning:") != string::npos) )
+				break;
+
+			//If not same indent level, skip it
+			if(nline.find(indent) != 0)
+				break;
+
+			i++;
+			wtext += " " + nline.substr(indent.length());
+		}
+		stdout += wtext + "\n";
 	}
 }
 
