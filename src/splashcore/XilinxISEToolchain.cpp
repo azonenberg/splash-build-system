@@ -392,35 +392,14 @@ void XilinxISEToolchain::CrunchParLog(const string& log, string& stdout)
  */
 void XilinxISEToolchain::CrunchBitgenLog(const string& log, string& stdout)
 {
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(size_t i=0; i<lines.size(); i++)
+	//List of messages we do NOT want to see
+	static vector<string> blacklist(
 	{
-		string line = lines[i];
+		"WARNING:PhysDesignRules:367",		//Loadless signal (if present, will be warned by PAR too)
+		"WARNING:PhysDesignRules:2410"		//Design is using a 9kbit block RAM (duplicates other messages)
+	});
 
-		//TODO: Blacklist messages of no importance
-
-		//Filter out errors and warnings
-		if( (line.find("ERROR:") == 0) || (line.find("WARNING:") == 0) )
-		{
-			string wtext = line;
-
-			//If subsequent lines begin with 3 spaces, they're part of this message so merge them
-			while(i+1 < lines.size())
-			{
-				string nline = lines[i+1];
-				if(nline.find("   ") != 0)
-					break;
-
-				i++;
-				wtext += " " + nline.substr(3);
-			}
-
-			stdout += wtext + "\n";
-		}
-	}
+	CrunchLog(log, blacklist, stdout);
 }
 
 /**
