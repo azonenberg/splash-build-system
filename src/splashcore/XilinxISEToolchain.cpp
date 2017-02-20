@@ -588,6 +588,8 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 			return "-opt_level 0\n-opt_mode speed";
 		else if(flag.GetFlag() == "speed")
 			return "-opt_level 1\n-opt_mode speed";
+		else if(flag.GetFlag() == "hierarchy")
+			return string("-keep_hierarchy ") + flag.GetArgs();
 		else
 		{
 			LogWarning("Don't know what to do with optimization flag %s\n",

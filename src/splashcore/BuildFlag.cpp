@@ -138,6 +138,15 @@ void BuildFlag::LoadOptimizeFlag()
 	else if(m_flag == "speed")
 		m_usage = COMPILE_TIME | LINK_TIME | SYNTHESIS_TIME | MAP_TIME | PAR_TIME;
 
+	//optimize/hierarchy: preserve hierarchy through implementation
+	else if(m_flag == "hierarchy")
+	{
+		m_usage = SYNTHESIS_TIME;
+
+		if( (m_arg != "flatten") && (m_arg != "keep") && (m_arg != "synth_only") )
+			LogParseError("Optimize/hierarchy argument \"%s\" is invalid\n", m_arg.c_str());
+	}
+
 	else
 		LogParseError("Flag \"optimize/%s\" is unknown\n", m_flag.c_str());
 }
