@@ -202,6 +202,10 @@ void BuildFlag::LoadLibraryFlag()
 	else if(m_flag == "target")
 		m_usage = LINK_TIME;
 
+	//library/__incdir: include directory (MUST be project-relative path)
+	else if(m_flag == "__incdir")
+		m_usage = SYNTHESIS_TIME | COMPILE_TIME;
+
 	else
 		LogParseError("Flag \"library/%s\" is unknown\n", m_flag.c_str());
 }
