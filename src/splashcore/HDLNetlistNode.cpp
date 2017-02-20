@@ -39,7 +39,7 @@ HDLNetlistNode::HDLNetlistNode(
 	string arch,
 	string /*config*/,
 	string name,
-	string /*scriptpath*/,
+	string scriptpath,
 	string path,
 	string toolchain,
 	string board,
@@ -54,6 +54,10 @@ HDLNetlistNode::HDLNetlistNode(
 		GetBasenameOfFileWithoutExt(board).c_str() );
 	LogIndenter li;
 	*/
+
+	//Include files in our working directory automatically
+	string incdir = GetDirOfFile(scriptpath);
+	m_flags.emplace(BuildFlag(string("library/__incdir/") + incdir));
 
 	//Add an automatic dependency for the source files
 	for(auto src : sources)
@@ -113,15 +117,21 @@ bool HDLNetlistNode::ScanDependencies(string fname)
 			}
 			string fpath = line.substr(start+1, end-(start+1));
 
-			//Canonicalize based on our working directory
-			cpath = GetDirOfFile(fname) + "/" + fpath;
-			if(!CanonicalizePathThatMightNotExist(cpath))
+			//Canonicalize based on our working directory and the original directory
+			string cpath_guess1 = GetDirOfFile(m_path) + "/" + fpath;
+			string cpath_guess2 = GetDirOfFile(fname) + "/" + fpath;
+
+			if(CanonicalizePathThatMightNotExist(cpath_guess1) && cpath_guess1 != "" && wc->HasFile(cpath_guess1))
 			{
-				SetInvalidInput(string("ERROR: Couldn't canonicalize include file ") + cpath + "\n");
-				return false;
+				cpath = cpath_guess1;
+				//LogDebug("Resolved include statement via project dir: %s (%s)\n", fpath.c_str(), cpath.c_str());
 			}
 
-			//LogDebug("Found include statement: %s (%s)\n", fpath.c_str(), cpath.c_str());
+			else if(CanonicalizePathThatMightNotExist(cpath_guess2) && cpath_guess2 != "" && wc->HasFile(cpath_guess2))
+			{
+				cpath = cpath_guess2;
+				//LogDebug("Resolved include statement via source file dir: %s (%s)\n", fpath.c_str(), cpath.c_str());
+			}
 		}
 
 		//Look for system tasks
