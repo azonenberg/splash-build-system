@@ -186,7 +186,9 @@ void HDLNetlistNode::DoFinalize()
 	{
 		//Run the dependency scanner on this file to see what other stuff we need to pull in.
 		//For now, do not support recursive includes (i.e. we only scan this source file).
-		ScanDependencies(f);
+		//If the scanner fails, immediately return and stay failed with our temporary hash
+		if(!ScanDependencies(f))
+			return;
 	}
 
 	//Calculate our hash.
