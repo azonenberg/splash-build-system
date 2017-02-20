@@ -147,6 +147,7 @@ int main(int argc, char* argv[])
 	LogVerbose("Enumerating compilers...\n");
 	{
 		LogIndenter li;
+		chdir(g_builddir.c_str());
 		FindLinkers();
 		FindCPPCompilers();
 		FindFPGACompilers();
