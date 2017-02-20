@@ -491,8 +491,6 @@ bool XilinxISEToolchain::Synthesize(
 	fprintf(fp, "-ofmt NGC\n");										//Xilinx NGC netlist format
 	fprintf(fp, "-p %s\n", device.c_str());							//part number
 	fprintf(fp, "-top %s\n", base.c_str());							//top level module (file basename)
-	//fprintf(fp, "-vlgincdir %s/generic/include\n", project_root.c_str());	//verilog include directory
-																			//TODO: implement this
 	fprintf(fp, "-hierarchy_separator /\n");						//use / as hierarchy separator
 	fprintf(fp, "-bus_delimiter []\n");								//use [] as bus delimeter
 	fprintf(fp, "-case maintain\n");								//keep cases as is
@@ -603,6 +601,20 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 		//we default to max warning level (absurdly verbose)
 		if(flag.GetFlag() == "max")
 			return "";
+
+		else
+		{
+			LogWarning("Don't know what to do with warning flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_LIBRARY)
+	{
+		//Specify include directory
+		if(flag.GetFlag() == "__incdir")
+			return string("-vlgincdir ") + flag.GetArgs();
 
 		else
 		{
