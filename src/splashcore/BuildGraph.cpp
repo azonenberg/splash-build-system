@@ -307,7 +307,7 @@ void BuildGraph::UpdateScript(string path, string hash, bool body, bool config, 
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	//LogDebug("Updating build script %s (body=%d, config=%d)\n", path.c_str(), body, config);
+	LogDebug("Updating build script %s (body=%d, config=%d)\n", path.c_str(), body, config);
 	//LogIndenter li;
 
 	//This is now a known script, keep track of it
@@ -459,7 +459,10 @@ void BuildGraph::LoadYAMLDoc(YAML::Node& doc, string path, bool body, bool confi
 
 			auto& targets = GetDependentScripts(name);
 			for(auto t : targets)
+			{
+				LogDebug("Dirty script %s added (from target %s)\n", t.c_str(), name.c_str());
 				dirtyScripts.emplace(t);
+			}
 		}
 	}
 }

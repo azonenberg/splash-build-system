@@ -151,6 +151,9 @@ bool OnBulkFileData(Socket& /*s*/, const BulkFileData& msg, string& /*hostname*/
  */
 bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, clientID id)
 {
+	LogDebug("BulkFileChanged\n");
+	LogIndenter li;
+
 	//Build the response
 	SplashMsg ack;
 	auto ackm = ack.mutable_bulkfileack();
