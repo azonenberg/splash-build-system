@@ -41,9 +41,13 @@ ConstantTableNode::ConstantTableNode(
 	const YAML::Node& node,
 	string table_fname,
 	string generator,
-	string yaml_hash)
+	string yaml_hash,
+	string scriptpath)
 	: BuildGraphNode(graph, BuildFlag::NO_TIME, fname, "")
 {
+	//Update build script path (since ctor won't do that automaticaly)
+	m_script = scriptpath;
+
 	//Add dependency for the source file
 	m_dependencies.emplace(table_fname);
 

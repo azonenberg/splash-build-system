@@ -845,7 +845,8 @@ bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, strin
 
 			//Create and add the node
 			//Do not touch any build scripts.
-			auto n = new ConstantTableNode(this, opath, name, it.second, rtpath, generator, sha256(table_yaml));
+			auto n = new ConstantTableNode(this, opath, name, it.second, rtpath,
+				generator, sha256(table_yaml), scriptpath);
 			AddNode(n);
 			m_workingCopy->UpdateFile(opath, n->GetHash(), false, false, ignored);
 		}

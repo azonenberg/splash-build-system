@@ -43,7 +43,8 @@ public:
 		const YAML::Node& node,
 		std::string table_fname,
 		std::string generator,
-		std::string yaml_hash);
+		std::string yaml_hash,
+		std::string scriptpath);
 	virtual ~ConstantTableNode();
 
 	static std::string GetOutputBasename(std::string basename, std::string generator);
