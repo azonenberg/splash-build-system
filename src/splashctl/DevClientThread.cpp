@@ -232,7 +232,7 @@ bool OnBulkFileChanged(Socket& s, const BulkFileChanged& msg, string& hostname, 
 	set<string> ignored;
 	for(auto f : dirtyScripts)
 	{
-		LogVerbose("Re-running script %s because it contains targets depending on a target we updated\n", f.c_str());
+		LogVerbose("Re-running script %s because it contains targets depending on a file we updated\n", f.c_str());
 		wc->UpdateFile(f, wc->GetFileHash(f), true, true, ignored);
 	}
 

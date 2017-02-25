@@ -123,9 +123,6 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config, s
 {
 	//LogDebug("WorkingCopy::UpdateFile %s (hash %s)\n", path.c_str(), hash.c_str());
 
-	string buildscript = GetDirOfFile(path) + "/build.yml";
-	bool has_script = HasFile(buildscript);
-
 	//See if we created a new file
 	//bool created = (m_fileMap.find(path) == m_fileMap.end());
 
@@ -142,13 +139,11 @@ void WorkingCopy::UpdateFile(string path, string hash, bool body, bool config, s
 	if(is_script)
 		m_graph.UpdateScript(path, hash, body, config, dirtyScripts);
 
-	//If we have a build.yml in the directory, re-run its targets even if we didn't make the file new
-	//(since we may have added an include statement, etc
-	if(has_script && !is_script && config)
-		m_graph.UpdateScript(buildscript, m_fileMap[buildscript], true, false, dirtyScripts);
-
-	//TODO: Have a list of nodes that depend on each file and add to the set of dirty scripts as needed?
-	//The current "rerun current dir" stuff only works if we do not allow pulling source from another directory!
+	//Look up what scripts this file depended on
+	LogIndenter li;
+	auto sourceScripts = m_graph.GetDependentScriptsForSourceFile(path);
+	for(auto s : sourceScripts)
+		dirtyScripts.emplace(s);
 }
 
 /**

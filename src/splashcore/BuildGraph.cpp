@@ -395,6 +395,10 @@ void BuildGraph::InternalRemove(string path)
 
 	//Remove references to the script itself
 	m_targetOrigins.erase(path);
+
+	//Remove dependencies of the script
+	for(auto& it : m_sourceFileDependencies)
+		it.second.erase(path);
 }
 
 /**
@@ -930,11 +934,21 @@ void BuildGraph::Rebuild()
 
 void BuildGraph::FinalizeCallback(BuildGraphNode* node, string old_hash)
 {
+	//Update the node to the new hash
 	string new_hash = node->GetHash();
 	if(old_hash != new_hash)
 	{
 		m_nodesByHash.erase(old_hash);
 		m_nodesByHash[new_hash] = node;
+	}
+
+	//Add dependencies to that node's script
+	string script = node->GetScript();
+	if(script != "")
+	{
+		auto deps = node->GetDependencies();
+		for(auto d : deps)
+			m_sourceFileDependencies[d].emplace(script);
 	}
 }
 

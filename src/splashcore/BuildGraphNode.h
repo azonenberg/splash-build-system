@@ -126,7 +126,7 @@ public:
 
 		No mutexing needed as this is static after object creation
 	 */
-	std::set<std::string>& GetDependencies()
+	const std::set<std::string>& GetDependencies() const
 	{ return m_dependencies; }
 
 	/**

@@ -163,7 +163,7 @@ void BuildChangeNotificationForFile(BulkFileChanged* msg, string path, bool body
 	else
 		LogWarning("Changed file %s is not within project root\n", path.c_str());
 
-	LogDebug("Sending change notification for %s\n", path.c_str());
+	//LogDebug("Sending change notification for %s\n", path.c_str());
 
 	//Tell the server it changed
 	auto mcg = msg->add_files();

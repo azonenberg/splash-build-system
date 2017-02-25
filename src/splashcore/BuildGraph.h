@@ -123,6 +123,12 @@ public:
 	const std::set<std::string>& GetDependentScripts(std::string target)
 	{ return m_dependentScripts[target]; }
 
+	/**
+		@brief Get the set of build scripts that have to be re-scanned if a given source file changes
+	 */
+	const std::set<std::string>& GetDependentScriptsForSourceFile(std::string fname)
+	{ return m_sourceFileDependencies[fname]; }
+
 protected:
 	void InternalRemove(std::string path);
 	void InternalUpdateScript(
@@ -172,6 +178,10 @@ protected:
 	//Build scripts that we know about
 	//Map from path to hash
 	std::map<std::string, std::string> m_buildScriptPaths;
+
+	//Dependencies of source files
+	//Map from source file to set<script>
+	std::map<std::string, std::set<std::string> > m_sourceFileDependencies;
 
 	//Track where targets were declared
 	//Map from path to target names (architecture doesn't matter)
