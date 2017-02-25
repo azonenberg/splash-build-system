@@ -53,8 +53,6 @@ protected:
 
 	void UpdateHash();
 
-	std::string m_scriptpath;
-
 	std::set<BuildGraphNode*> m_sourcenodes;
 	HDLNetlistNode* m_netlist;
 };

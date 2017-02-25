@@ -44,7 +44,6 @@ FormalVerificationNode::FormalVerificationNode(
 	string toolchain,
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::PROOF_TIME, toolchain, arch, config, name, scriptpath, path, node)
-	, m_scriptpath(scriptpath)
 {
 	LogDebug("Creating FormalVerificationNode (toolchain %s, output fname %s)\n",
 		toolchain.c_str(), path.c_str());
@@ -75,13 +74,13 @@ void FormalVerificationNode::DoStartFinalization()
 		m_config,
 		m_arch,
 		"formal-netlist",
-		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar");
+		GetDirOfFile(m_script) + "/" + m_name + ".foobar");
 	m_netlist = new HDLNetlistNode(
 		m_graph,
 		m_arch,
 		m_config,
 		m_name,
-		m_scriptpath,
+		m_script,
 		netpath,
 		m_toolchain,
 		"formal",

@@ -44,7 +44,6 @@ CPPExecutableNode::CPPExecutableNode(
 	string toolchain,
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::LINK_TIME, toolchain, arch, config, name, scriptpath, path, node)
-	, m_scriptpath(scriptpath)
 {
 	//LogDebug("Creating CPPExecutableNode (toolchain %s, output fname %s)\n",
 	//	toolchain.c_str(), path.c_str());
@@ -102,7 +101,7 @@ void CPPExecutableNode::DoStartFinalization()
 			src,
 			fname,
 			m_toolchain,
-			m_scriptpath,
+			m_script,
 			compileFlags);
 
 		//If we have a node for this hash already, delete it and use the existing one
@@ -181,7 +180,7 @@ void CPPExecutableNode::DoFinalize()
 		m_dependencies.emplace(path);
 
 		//Add a hint to the graph that we depend on it
-		m_graph->AddTargetDependencyHint(f.GetArgs(), m_scriptpath);
+		m_graph->AddTargetDependencyHint(f.GetArgs(), m_script);
 	}
 
 	//Add our link-time dependencies.

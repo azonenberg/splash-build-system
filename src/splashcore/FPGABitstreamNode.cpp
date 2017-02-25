@@ -47,7 +47,6 @@ FPGABitstreamNode::FPGABitstreamNode(
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::FPGA_TIME, toolchain, arch, config, name, scriptpath, path, node)
 	, m_board(board)
-	, m_scriptpath(scriptpath)
 	, m_netlist(NULL)
 {
 	//LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
@@ -349,14 +348,14 @@ void FPGABitstreamNode::DoStartFinalization()
 		m_config,
 		m_arch,
 		"netlist",
-		GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar",
+		GetDirOfFile(m_script) + "/" + m_name + ".foobar",
 		m_board);
 	m_netlist = new HDLNetlistNode(
 		m_graph,
 		m_arch,
 		m_config,
 		m_name,
-		m_scriptpath,
+		m_script,
 		netpath,
 		m_toolchain,
 		m_board,
@@ -395,14 +394,14 @@ void FPGABitstreamNode::DoStartFinalization()
 			m_config,
 			m_arch,
 			"circuit",
-			GetDirOfFile(m_scriptpath) + "/" + m_name + ".foobar",
+			GetDirOfFile(m_script) + "/" + m_name + ".foobar",
 			m_board);
 		m_circuit = new PhysicalNetlistNode(
 			m_graph,
 			m_arch,
 			m_config,
 			m_name,
-			m_scriptpath,
+			m_script,
 			pnetpath,
 			m_toolchain,
 			mapAndParFlags,

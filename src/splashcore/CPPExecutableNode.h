@@ -57,8 +57,6 @@ protected:
 	std::set<std::string> m_libdeps;
 	std::set<BuildFlag> m_libflags;
 
-	std::string m_scriptpath;
-
 	std::set<BuildGraphNode*> m_sourcenodes;
 	std::set<CPPObjectNode*> m_objects;
 };
