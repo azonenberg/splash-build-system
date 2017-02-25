@@ -86,6 +86,7 @@ BuildGraphNode::BuildGraphNode(
 	string toolchain,
 	string arch,
 	string name,
+	string scriptpath,
 	string path,
 	set<BuildFlag> flags)
 	: m_ref(false)
@@ -94,7 +95,7 @@ BuildGraphNode::BuildGraphNode(
 	, m_arch(arch)
 	, m_config("generic")
 	, m_name(name)
-	, m_script("")
+	, m_script(scriptpath)
 	, m_path(path)
 	, m_flags(flags)
 	, m_usage(usage)
@@ -329,6 +330,11 @@ void BuildGraphNode::Finalize()
 	//Don't re-scan anything, it's too late to change anything by this point
 	set<string> ignored;
 	m_graph->GetWorkingCopy()->UpdateFile(GetFilePath(), m_hash, false, false, ignored);
+
+	//If we have dependencies, we must be a generated node (not a source file)
+	//and thus be declared somewhere
+	if( (m_script == "") && (!m_dependencies.empty() ) )
+		LogWarning("Node \"%s\" has empty build script path, but has dependencies\n", GetFilePath().c_str());
 }
 
 /**

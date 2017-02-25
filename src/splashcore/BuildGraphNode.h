@@ -51,6 +51,7 @@ public:
 		std::string toolchain,
 		std::string arch,
 		std::string name,
+		std::string scriptpath,
 		std::string path,
 		std::set<BuildFlag> flags
 		);

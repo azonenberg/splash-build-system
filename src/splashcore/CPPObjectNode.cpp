@@ -44,7 +44,7 @@ CPPObjectNode::CPPObjectNode(
 	set<BuildFlag> flags/*,
 	set<string>& libdeps,
 	set<BuildFlag>& libflags*/)
-	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, fname, path, flags)
+	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, fname, script, path, flags)
 {
 	m_script = script;
 

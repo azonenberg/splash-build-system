@@ -39,13 +39,13 @@ PhysicalNetlistNode::PhysicalNetlistNode(
 	string arch,
 	string /*config*/,
 	string name,
-	string /*scriptpath*/,
+	string scriptpath,
 	string path,
 	string toolchain,
 	set<BuildFlag> flags,
 	HDLNetlistNode* netlist,
 	string constraints)
-	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
+	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, scriptpath, path, flags)
 	, m_constraintPath(constraints)
 {
 	//LogDebug("[%6.3f] Creating PhysicalNetlistNode %s\nfor arch %s, toolchain %s\n",

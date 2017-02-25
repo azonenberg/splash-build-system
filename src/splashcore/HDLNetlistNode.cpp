@@ -45,7 +45,7 @@ HDLNetlistNode::HDLNetlistNode(
 	string board,
 	set<BuildFlag> flags,
 	set<BuildGraphNode*> sources)
-	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, path, flags)
+	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, scriptpath, path, flags)
 	, m_board(board)
 {
 	/*
