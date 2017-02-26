@@ -47,6 +47,8 @@ public:
 
 	void FindDefaultIncludePaths(std::vector<std::string>& paths, std::string exe, bool cpp, std::string arch);
 
+	std::string ParseStringVersion(std::string basepath);
+
 	bool ScanDependencies(
 		Toolchain* chain,
 		std::string triplet,

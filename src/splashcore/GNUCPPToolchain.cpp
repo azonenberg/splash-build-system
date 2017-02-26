@@ -39,7 +39,7 @@ GNUCPPToolchain::GNUCPPToolchain(string basepath, string triplet)
 	, GNUToolchain(triplet, basepath, GNU_CPP)
 {
 	//Get the full compiler version
-	m_stringVersion = string("GNU C++") + ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
+	m_stringVersion = string("GNU C++ ") + ParseStringVersion(basepath);
 
 	//Parse it
 	if(3 != sscanf(m_stringVersion.c_str(), "GNU C++ %4d.%4d.%4d",

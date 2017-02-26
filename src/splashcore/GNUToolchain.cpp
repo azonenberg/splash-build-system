@@ -232,6 +232,26 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 	rmdir(tmpdir.c_str());
 }
 
+string GNUToolchain::ParseStringVersion(string basepath)
+{
+	//Get the full compiler version
+	//Example strings:
+	//* gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-11)
+	//* gcc (Debian 4.9.2-10) 4.9.2
+	string sver = ShellCommand(basepath + " --version | head -n 1 | cut -d \")\" -f 2");
+
+	//Trim off leading spaces
+	while(!sver.empty() && isspace(sver[0]))
+		sver = sver.substr(1);
+
+	//Trim off any parenthetical blob at the end (if present
+	size_t pos = sver.find("(");
+	if(pos != string::npos)
+		sver = sver.substr(0, pos-2);
+
+	return sver;
+}
+
 bool GNUToolchain::HasValidArches()
 {
 	return !m_archflags.empty();
