@@ -250,14 +250,19 @@ void FindYosysCompilers()
 	LogDebug("Searching for Yosys compilers...\n");
 	LogIndenter li;
 
-	//Only look in $PATH for now
-	string basepath = ShellCommand("which yosys");
-	if(!DoesFileExist(basepath))
+	//Find all directories that normally have executables in them
+	vector<string> path;
+	ParseSearchPath(path);
+	for(auto dir : path)
 	{
-		LogDebug("No %s found, giving up\n", basepath.c_str());
-		return;
+		string basepath = dir + "/yosys";
+		if(DoesFileExist(basepath))
+		{
+			auto chain = new YosysToolchain(basepath);
+			g_toolchains[chain->GetHash()] = chain;
+			return;
+		}
 	}
 
-	auto chain = new YosysToolchain(basepath);
-	g_toolchains[chain->GetHash()] = chain;
+	LogDebug("Could not find Yosys in search path\n");
 }
