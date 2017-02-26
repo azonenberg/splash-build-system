@@ -9,6 +9,16 @@ set(EXTRA_WARNINGS "${EXTRA_WARNINGS} -Wswitch -Wwrite-strings ")
 set( CMAKE_CXX_FLAGS "-Wall -Wextra ${EXTRA_WARNINGS} -std=c++11 -fPIC -shared-libgcc -ggdb -O2")
 set( CMAKE_LINK_FLAGS "-ggdb")
 
+
+#Differentiate between crypto++ and cryptopp libraries on different distros
+if(EXISTS "/usr/include/crypto++")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCRYPTOPP_DIR_PLUS")
+elseif(EXISTS "/usr/include/cryptopp")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCRYPTOPP_DIR_P")
+else()
+	message(FATAL_ERROR "crypto++/cryptopp include directory not found.")
+endif()
+
 #Search for Google protocol buffers
 find_package(Protobuf REQUIRED)
 
