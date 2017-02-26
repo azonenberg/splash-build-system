@@ -37,6 +37,8 @@ void FindYosysCompilers();
 void FindXilinxISECompilers();
 void FindXilinxVivadoCompilers();
 
+string GetXilinxDirectory();
+
 /**
 	@brief Search for all C/C++ compilers (of any type) on the current system.
  */
@@ -164,20 +166,31 @@ void FindClangCompilers()
 	LogDebug("Not implemented yet\n");
 }
 
+string GetXilinxDirectory()
+{
+	//Look in /opt/Xilinx but override with environment variable if present
+	string xilinxdir = getenv("XILINX");
+	if(xilinxdir == "")
+		xilinxdir = "/opt/Xilinx";
+
+	if(!DoesDirectoryExist(xilinxdir))
+	{
+		LogDebug("No %s found, giving up\n", xilinxdir.c_str());
+		return "";
+	}
+
+	//Canonicalize the path in case /opt is a symlink to NFS etc
+	return CanonicalizePath(xilinxdir);
+}
+
 void FindXilinxISECompilers()
 {
 	LogDebug("Searching for Xilinx ISE compilers...\n");
 	LogIndenter li;
 
-	//TODO: add an environment variable, argument, etc to override this if anybody is weird and installed elsewhere
-	//Canonicalize the path in case /opt is a symlink to NFS etc
-	string xilinxdir = "/opt/Xilinx";
-	if(!DoesDirectoryExist(xilinxdir))
-	{
-		LogDebug("No %s found, giving up\n", xilinxdir.c_str());
+	string xilinxdir = GetXilinxDirectory();
+	if(xilinxdir == "")
 		return;
-	}
-	xilinxdir = CanonicalizePath(xilinxdir);
 
 	//Search for all subdirectories and see if any of them look like ISE
 	vector<string> dirs;
@@ -213,15 +226,9 @@ void FindXilinxVivadoCompilers()
 	LogDebug("Searching for Xilinx Vivado compilers...\n");
 	LogIndenter li;
 
-	//TODO: add an environment variable, argument, etc to override this if anybody is weird and installed elsewhere
-	//Canonicalize the path in case /opt is a symlink to NFS etc
-	string xilinxdir = "/opt/Xilinx/Vivado";
-	if(!DoesDirectoryExist(xilinxdir))
-	{
-		LogDebug("No %s found, giving up\n", xilinxdir.c_str());
+	string xilinxdir = GetXilinxDirectory();
+	if(xilinxdir == "")
 		return;
-	}
-	xilinxdir = CanonicalizePath(xilinxdir);
 
 	//Search for all subdirectories and see if any of them look like Vivado
 	vector<string> dirs;
