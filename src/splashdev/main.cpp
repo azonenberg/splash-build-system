@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 	//Send the devInfo
 	SplashMsg devi;
 	auto devim = devi.mutable_devinfo();
-	devim->set_arch(ShellCommand("dpkg-architecture -l | grep DEB_HOST_GNU_TYPE | cut -d '=' -f 2", true));
+	devim->set_arch(GetTargetTriplet());
 	if(!SendMessage(sock, devi))
 		return 1;
 

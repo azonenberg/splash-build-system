@@ -207,6 +207,16 @@ int ShellCommand(string cmd, string& stdout)
 	return code >> 8;
 }
 
+
+/**
+	@brief Return the GNU Target Triplet
+ */
+string GetTargetTriplet ()
+{
+	/* FIXME: in the future when gcc is not required to be installed (such as an FPGA or clang only build host) this will fail */
+	return ShellCommand("gcc -v 2>&1 | grep Target | cut -d ' ' -f 2", true);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // String manipulation helpers
 

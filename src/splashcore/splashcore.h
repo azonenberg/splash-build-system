@@ -163,6 +163,8 @@ std::string MakeStringLowercase(std::string str);
 std::string ShellCommand(std::string cmd, bool trimNewline = true);
 int ShellCommand(std::string cmd, std::string& stdout);
 
+std::string GetTargetTriplet ();
+
 std::string str_replace(const std::string& search, const std::string& replace, std::string subject);
 
 void ParseSearchPath(std::vector<std::string>& dirs);
