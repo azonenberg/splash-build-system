@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 		FindCPPCompilers();
 		FindFPGACompilers();
 	}
-	LogVerbose("%d compilers found\n", g_toolchains.size());
+	LogVerbose("%zu compilers found\n", g_toolchains.size());
 
 	//Get some basic metadata about our hardware and tell the server
 	SplashMsg binfo;
