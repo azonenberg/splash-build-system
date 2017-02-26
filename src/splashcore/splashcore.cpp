@@ -262,18 +262,23 @@ void ParseSearchPath(vector<string>& dirs)
 {
 	string path = getenv("PATH");
 
+	//Sanity check: make sure that the directory exists before looking in it.
+	//This should never happen in a sane OS, but Red Hat based distros add
+	// ~/.local/bin and ~/bin to $PATH even if they don't exist!
+
 	string dir = "";
 	for(size_t i=0; i<path.length(); i++)
 	{
 		if(path[i] == ':')
 		{
-			dirs.push_back(dir);
+			if(DoesDirectoryExist(dir))
+				dirs.push_back(dir);
 			dir = "";
 		}
 		else
 			dir += path[i];
 	}
-	if(dir != "")
+	if(dir != "" && DoesDirectoryExist(dir))
 		dirs.push_back(dir);
 }
 
