@@ -39,7 +39,7 @@ GNULinkerToolchain::GNULinkerToolchain(string basepath, string triplet)
 	, GNUToolchain(triplet, basepath, GNU_LD)
 {
 	//Get the full toolchain version
-	m_stringVersion = string("GNU Linker ") + m_stringVersion = ParseStringVersion(basepath);
+	m_stringVersion = string("GNU Linker ") + ParseStringVersion(basepath);
 
 	//Parse it
 	if(2 != sscanf(m_stringVersion.c_str(), "GNU Linker %4d.%4d",
