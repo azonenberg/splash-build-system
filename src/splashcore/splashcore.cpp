@@ -434,7 +434,10 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 {
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
-		LogFatal("Directory %s could not be opened\n", dir.c_str());
+	{
+		LogWarning("Directory %s could not be opened\n", dir.c_str());
+		return;
+	}
 
 	dirent ent;
 	dirent* pent;
@@ -464,7 +467,10 @@ void FindFilesBySubstring(string dir, string sub, vector<string>& files)
 {
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
-		LogFatal("Directory %s could not be opened\n", dir.c_str());
+	{
+		LogWarning("Directory %s could not be opened\n", dir.c_str());
+		return;
+	}
 
 	dirent ent;
 	dirent* pent;
@@ -497,7 +503,10 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 {
 	DIR* hdir = opendir(dir.c_str());
 	if(!hdir)
-		LogFatal("Directory %s could not be opened\n", dir.c_str());
+	{
+		LogWarning("Directory %s could not be opened\n", dir.c_str());
+		return;
+	}
 
 	dirent ent;
 	dirent* pent;
