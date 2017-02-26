@@ -83,6 +83,8 @@ public:
 		std::string& output,
 		bool cpp);
 
+	bool HasValidArches();
+
 protected:
 	std::string FlagToString(BuildFlag flag);
 	bool VerifyFlags(std::string triplet);

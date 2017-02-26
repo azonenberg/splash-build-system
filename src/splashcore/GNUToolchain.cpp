@@ -126,6 +126,7 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 
 	set<BuildFlag> flags;
 
+	set<string> badarches;
 	for(auto it : m_archflags)
 	{
 		string arch = it.first;
@@ -139,12 +140,14 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 		if(!Compile(NULL, exe, arch, sources, oout, flags, unused, sout, (type == GNU_CPP)))
 		{
 			LogError("Test compilation failed for toolchain %s\n", exe.c_str());
+			badarches.emplace(arch);
 			continue;
 		}
 		sout = "";
 		if(!Link(NULL, exe, arch, objects, fout, flags, unused, sout, (type == GNU_CPP)))
 		{
-			LogError("Test link failed for toolchain %s:\n%s\n", exe.c_str(), sout.c_str());
+			LogError("Test link failed for toolchain %s:\n%s", exe.c_str(), sout.c_str());
+			badarches.emplace(arch);
 			continue;
 		}
 
@@ -153,6 +156,7 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 		if(0 != ShellCommand(string("readelf -d -W ") + fout, out))
 		{
 			LogError("readelf failed for toolchain %s\n", exe.c_str());
+			badarches.emplace(arch);
 			continue;
 		}
 		vector<string> outs;
@@ -217,11 +221,20 @@ GNUToolchain::GNUToolchain(string arch, string exe, GNUType type)
 			m_internalLibs += sha256_file(libcns_fname);
 	}
 
+	//Remove architectures we couldn't compile for during discovery
+	for(auto a : badarches)
+		m_archflags.erase(a);
+
 	//Clean up
 	unlink(cfn.c_str());
 	unlink(oout.c_str());
 	unlink(fout.c_str());
 	rmdir(tmpdir.c_str());
+}
+
+bool GNUToolchain::HasValidArches()
+{
+	return !m_archflags.empty();
 }
 
 void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bool cpp, string arch)
@@ -880,7 +893,7 @@ bool GNUToolchain::Link(
 	//Run the link itself
 	if(0 != ShellCommand(cmdline, output))
 	{
-		LogDebug("link failed\n");
+		//LogDebug("link failed\n");
 		//LogError("%s\n", output.c_str());
 		return false;
 	}

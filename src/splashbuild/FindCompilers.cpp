@@ -118,41 +118,66 @@ void FindGCCCompilers()
 	for(auto dir : path)
 	{
 		//Find all files in this directory that have gcc- in the name.
-		//Note that this will often include things like nm, as, etc so we have to then search for numbers at the end to confirm
 		vector<string> exes;
-		FindFilesBySubstring(dir, "gcc-", exes);
+		FindFilesBySubstring(dir, "-gcc", exes);
 		for(auto exe : exes)
 		{
-			//Trim off the directory and see if we have a name of the format [maybe arch triplet-]gcc-%d.%d
+			//Trim off the directory and see if we have a name of the format [maybe arch triplet]-gcc[maybe more stuff]
 			string base = GetBasenameOfFile(exe);
-			size_t offset = base.find("gcc");
+			size_t offset = base.find("-gcc");
+
+			//If we have any binutils names in the filename we're not a compiler
+			if( (base.find("gcc-ar") != string::npos) ||
+				(base.find("gcc-nm") != string::npos) ||
+				(base.find("gcc-ranlib") != string::npos) )
+			{
+				continue;
+			}
 
 			//If no triplet found ("gcc" at start of string), or no "gcc" found, this is the system default gcc
 			//Ignore that, it's probably a symlink to/from an arch specific gcc anyway
 			if( (offset == 0) || (offset == string::npos) )
 				continue;
-			string triplet = base.substr(0, offset-1);
+			string triplet = base.substr(0, offset);
 
-			//The text after the triplet should be of the form gcc-major.minor or gcc-major
-			string remainder = base.substr(offset);
-			int major;
-			int minor;
-			if(2 != sscanf(remainder.c_str(), "gcc-%4d.%4d", &major, &minor))
-			{
-				if(1 != sscanf(remainder.c_str(), "gcc-%4d", &major))
-					continue;
-			}
+			//Skip triplet "afl", this is for fuzzing (not yet supported in splash)
+			if(triplet == "afl")
+				continue;
+
+			//Skip triplets "c89" and "c99", these aren't real architectures
+			if( (triplet == "c89") || (triplet == "c99") )
+				continue;
+
+			//Don't require a version number since Red Hat et al don't always have one
+
+			//Red Hat triplets are weird. Normalize to standard GNU triplets
+			if(triplet.find("redhat-linux") != string::npos)
+				triplet = str_replace("redhat-linux", "linux-gnu", triplet);
 
 			//Create the toolchain object
 			auto gcc = new GNUCToolchain(exe, triplet);
-			g_toolchains[gcc->GetHash()] = gcc;
+			if(gcc->HasValidArches())
+				g_toolchains[gcc->GetHash()] = gcc;
+			else
+			{
+				delete gcc;
+				LogWarning("Toolchain \"%s\" has no valid target architectures, skipping it\n", exe.c_str());
+				continue;
+			}
 
 			//See if we have a matching G++ for the same triplet and version
-			string gxxpath = str_replace("gcc-", "g++-", exe);
+			string gxxpath = str_replace("gcc", "g++", exe);
 			if(DoesFileExist(gxxpath))
 			{
 				auto gxx = new GNUCPPToolchain(gxxpath, triplet);
-				g_toolchains[gxx->GetHash()] = gxx;
+				if(gxx->HasValidArches())
+					g_toolchains[gxx->GetHash()] = gxx;
+				else
+				{
+					delete gxx;
+					LogWarning("Toolchain \"%s\" has no valid target architectures, skipping it\n", gxxpath.c_str());
+					continue;
+				}
 			}
 		}
 	}
