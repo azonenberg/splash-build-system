@@ -169,9 +169,10 @@ void FindClangCompilers()
 string GetXilinxDirectory()
 {
 	//Look in /opt/Xilinx but override with environment variable if present
-	string xilinxdir = getenv("XILINX");
-	if(xilinxdir == "")
-		xilinxdir = "/opt/Xilinx";
+	string xilinxdir = "/opt/Xilinx";
+	char* evar = getenv("XILINX");
+	if(evar != NULL)
+		xilinxdir = evar;
 
 	if(!DoesDirectoryExist(xilinxdir))
 	{
