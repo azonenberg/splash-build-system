@@ -493,7 +493,7 @@ bool GNUToolchain::ScanDependencies(
 		cmdline += "-x c ";
 	cmdline += path;
 	cmdline += " 2>&1";
-	//LogDebug("Dep command line: %s\n", cmdline.c_str());
+	LogTrace("Dep command line: %s\n", cmdline.c_str());
 
 	//Run it
 	string makerule;
@@ -541,19 +541,19 @@ bool GNUToolchain::ScanDependencies(
 
 	//First entry is always the source file itself, so we can skip that
 	//Loop over the other entries and convert them to system/project relative paths
-	//LogDebug("Absolute paths:\n");
-	//LogIndenter li;
+	LogTrace("Absolute paths:\n");
+	LogIndenter li;
 	for(size_t i=1; i<files.size(); i++)
 	{
 		string f = files[i];
 
-		//LogDebug("%s\n", f.c_str());
+		LogTrace("%s\n", f.c_str());
 		LogIndenter li;
 
 		//If the path begins with our working copy directory, trim it off and call the rest the relative path
 		if(f.find(root) == 0)
 		{
-			//LogDebug("        local dir\n");
+			LogTrace("local dir\n");
 			f = f.substr(root.length() + 1);
 		}
 
@@ -597,20 +597,20 @@ bool GNUToolchain::ScanDependencies(
 					output += string("Couldn't canonicalize path ") + fname + "\n";
 					return false;
 				}
-				//LogDebug("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
+				LogTrace("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
 
 				//It seems like sometimes #include <> (vs "") doesn't resolve to an absolute path sometimes :(
 				//Check if we have the file in the working directory
 				if(DoesFileExist(fname))
 				{
-					//LogDebug("Resolved relative %s to current directory\n", fname.c_str());
+					LogTrace("Resolved relative %s to current directory\n", fname.c_str());
 					files[i] = fname;
 					f = fname;
 				}
 
 				else
 				{
-					//LogDebug("Unable to resolve include %s\n", f.c_str());
+					LogTrace("Unable to resolve include %s\n", f.c_str());
 					missingFiles.emplace(fname);
 					continue;
 				}
@@ -634,24 +634,22 @@ bool GNUToolchain::ScanDependencies(
 		dephashes[f] = hash;
 	}
 
-	/*
-	LogDebug("    Project-relative dependency paths (is_shared = %d):\n", is_shared);
+	LogTrace("    Project-relative dependency paths:\n");
 	for(auto f : deps)
 	{
 		if(f.find("sysinclude") != string::npos)
 			continue;
 
-		LogDebug("        %s\n", f.c_str());
+		LogTrace("        %s\n", f.c_str());
 	}
-	*/
 
 	//Debug profiling: Dump total # of times each thing was scanned
-	/*
-	LogDebug("Total scan count:\n");
-	LogIndenter li;
-	for(auto it : m_timesScanned)
-		LogDebug("%-80s: %d\n", it.first.c_str(), it.second);
-	*/
+	LogTrace("Total scan count:\n");
+	{
+		LogIndenter li;
+		for(auto it : m_timesScanned)
+			LogTrace("%-80s: %d\n", it.first.c_str(), it.second);
+	}
 
 	return true;
 }
