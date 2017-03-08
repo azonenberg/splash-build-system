@@ -637,8 +637,8 @@ bool GNUToolchain::ScanDependencies(
 	LogTrace("    Project-relative dependency paths:\n");
 	for(auto f : deps)
 	{
-		if(f.find("sysinclude") != string::npos)
-			continue;
+		//if(f.find("sysinclude") != string::npos)
+		//	continue;
 
 		LogTrace("        %s\n", f.c_str());
 	}
