@@ -558,7 +558,7 @@ bool GrabSourceFile(Socket& sock, string fname, string hash)
 	MakeDirectoryRecursive(path, 0700);
 	string data = g_cache->ReadCachedFile(hash);
 	string fpath = g_builddir + "/" + fname;
-	//LogDebug("Writing input file %s\n", fpath.c_str());
+	LogTrace("Writing input file %s\n", fpath.c_str());
 	if(!PutFileContents(fpath, data))
 		return false;
 
@@ -598,7 +598,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(auto it : sources)
 	{
 		string fname = it.first;
-		//LogDebug("source %s\n", fname.c_str());
+		LogTrace("source %s\n", fname.c_str());
 		if(!GrabSourceFile(sock, fname, it.second))
 			return;
 		fnames.emplace(g_builddir + "/" + fname);
@@ -620,7 +620,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(int i=0; i<rxm.flags_size(); i++)
 	{
 		string flag = rxm.flags(i);
-		//LogDebug("Flag: %s\n", flag.c_str());
+		LogTrace("Flag: %s\n", flag.c_str());
 		flags.emplace(BuildFlag(flag));
 	}
 
@@ -660,7 +660,7 @@ void ProcessBuildRequest(Socket& sock, const NodeBuildRequest& rxm)
 	for(auto it : outputs)
 	{
 		auto bf = replym->add_outputs();
-		//LogDebug("Output file %s\n", it.first.c_str());
+		LogTrace("Output file %s\n", it.first.c_str());
 		bf->set_fname(it.first);
 		bf->set_hash(it.second);
 		bf->set_data(GetFileContents(it.first));
