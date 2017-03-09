@@ -644,12 +644,14 @@ bool GNUToolchain::ScanDependencies(
 	}
 
 	//Debug profiling: Dump total # of times each thing was scanned
+	/*
 	LogTrace("Total scan count:\n");
 	{
 		LogIndenter li;
 		for(auto it : m_timesScanned)
 			LogTrace("%-80s: %d\n", it.first.c_str(), it.second);
 	}
+	*/
 
 	return true;
 }
@@ -793,8 +795,8 @@ bool GNUToolchain::Compile(
 			return Link(chain, exe, triplet, sources, fname, flags, outputs, output, cpp);
 	}
 
-	//LogDebug("Compile for arch %s\n", triplet.c_str());
-	//LogIndenter li;
+	LogTrace("Compile for arch %s\n", triplet.c_str());
+	LogIndenter li;
 
 	if(!VerifyFlags(triplet))
 		return false;
@@ -820,11 +822,14 @@ bool GNUToolchain::Compile(
 	cmdline += "-c ";
 	for(auto s : sources)
 		cmdline += s + " ";
-	//LogDebug("Compile command line: %s\n", cmdline.c_str());
+	LogTrace("Compile command line: %s\n", cmdline.c_str());
 
 	//Run the compile itself
 	if(0 != ShellCommand(cmdline, output))
+	{
+		LogTrace("Build failed!\n%s\n", output.c_str());
 		return false;
+	}
 
 	//Get the outputs
 	vector<string> files;
@@ -834,6 +839,7 @@ bool GNUToolchain::Compile(
 	for(auto f : files)
 	{
 		f = GetBasenameOfFile(f);
+		LogTrace("Build output: %s\n", f.c_str());
 		outputs[f] = sha256_file(f);
 	}
 
