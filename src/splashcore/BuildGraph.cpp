@@ -808,8 +808,16 @@ bool BuildGraph::ProcessConstantTables(const YAML::Node& node, string path)
  */
 bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, string generator)
 {
-	//Create project-relative path for the table
-	string rtpath = GetDirOfFile(scriptpath) + "/" + tablepath;
+	//If it begins with a /, it's an absolute path (relative to project root)
+	string rtpath;
+	if(tablepath[0] == '/')
+		rtpath = tablepath.substr(1);
+
+	//Assume relative path
+	else
+		rtpath = GetDirOfFile(scriptpath) + "/" + tablepath;
+
+	//Either way we have to canonicalize it
 	if(!CanonicalizePathThatMightNotExist(rtpath))
 	{
 		LogError("Couldn't canonicalize constant table (bad path?)\n");
