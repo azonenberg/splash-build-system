@@ -551,7 +551,12 @@ bool GNUToolchain::ScanDependencies(
 	LogIndenter li;
 	for(size_t i=1; i<files.size(); i++)
 	{
+		//Canonicalize the path since Red Hat looooves symlinks!
+		//We need to make sure we resolve files to system include paths even if the actual system path
+		//is written differently, as long as the point to the same spot
 		string f = files[i];
+		if(DoesFileExist(f))
+			f = CanonicalizePath(f);
 
 		LogTrace("%s\n", f.c_str());
 		LogIndenter li;
