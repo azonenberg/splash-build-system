@@ -295,12 +295,18 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 		if(line[0] == '#')
 			continue;
 
+		string searchdir;
+
 		//Some compilers end paths with a dot. Trim it off
 		if(line[line.length() - 1] == '.')
-			paths.push_back(line.substr(1, line.length() - 2));
+			searchdir = line.substr(1, line.length() - 2);
 
 		else
-			paths.push_back(line.substr(1));
+			searchdir = line.substr(1);
+
+		//Canonicalize the path. This is important b/c Red Hat etc sometimes have symlinks in these paths
+		//and we need to make sure we're looking in the canonical directory
+		paths.push_back(CanonicalizePath(searchdir));
 	}
 
 	//Debug dump
