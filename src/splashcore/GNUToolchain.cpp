@@ -578,7 +578,8 @@ bool GNUToolchain::ScanDependencies(
 				if(f.find(dir) != 0)
 					continue;
 
-				//Don't match longer prefixes if they have "backward" in them
+				//Don't match longer prefixes if they have "backward" in them.
+				//(some kind of weird glibc quirk)
 				if(dir.find("backward") == string::npos)
 				{
 					if(dir.length() > longest_prefix.length())
