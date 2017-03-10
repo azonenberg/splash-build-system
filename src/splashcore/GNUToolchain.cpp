@@ -578,12 +578,16 @@ bool GNUToolchain::ScanDependencies(
 				if(f.find(dir) != 0)
 					continue;
 
-				//if(dir.length() > longest_prefix.length())
-				//	longest_prefix = dir;
+				//Don't match longer prefixes if they have "backward" in them
+				if(dir.find("backward") == string::npos)
+				{
+					if(dir.length() > longest_prefix.length())
+						longest_prefix = dir;
+				}
 
-				//Match the FIRST directory
-				longest_prefix = dir;
-				break;
+				//Match the first prefix we find regardless
+				if(longest_prefix == "")
+					longest_prefix = dir;
 			}
 
 			//It's an absolute path to a standard system include directory. Trim off the prefix and go.
