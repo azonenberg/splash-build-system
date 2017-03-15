@@ -167,7 +167,16 @@ void BuildFlag::LoadAnalysisFlag()
 {
 	m_type = TYPE_ANALYSIS;
 
-	LogParseError("Flag \"analysis/%s\" is unknown\n", m_flag.c_str());
+	if(m_flag == "sanitize")
+	{
+		m_usage = COMPILE_TIME;
+
+		if( (m_arg != "address") )
+			LogParseError("analysis/sanitize argument \"%s\" is invalid\n", m_arg.c_str());
+	}
+
+	else
+		LogParseError("Flag \"analysis/%s\" is unknown\n", m_flag.c_str());
 }
 
 void BuildFlag::LoadDialectFlag()

@@ -344,6 +344,10 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	else if(s == "output/reloc")
 		return "-fPIC";
 
+	//Dynamic analysis
+	else if(s == "analysis/sanitize/address")
+		return "-fsanitize=address";
+
 	//Libraries
 	else if(flag.GetType() == BuildFlag::TYPE_LIBRARY)
 	{
