@@ -253,7 +253,8 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			//TODO: set executable bit more sanely
 			auto res = resultm->add_results();
 			res->set_fname(f);
-			res->set_hash(hash);
+			res->set_idhash(hash);
+			res->set_contenthash(g_cache->GetContentHash(hash));
 			res->set_stdout(g_cache->ReadCachedLog(hash));
 			res->set_executable(true);
 			res->set_ok(true);

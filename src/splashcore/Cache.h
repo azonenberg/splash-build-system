@@ -70,6 +70,8 @@ public:
 	std::string ReadCachedFile(std::string id);
 	std::string ReadCachedLog(std::string id);
 
+	std::string GetContentHash(std::string id);
+
 protected:
 
 	std::string GetStoragePath(std::string id);

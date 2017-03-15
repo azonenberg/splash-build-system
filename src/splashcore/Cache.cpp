@@ -101,6 +101,27 @@ Cache::~Cache()
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Status queries
 
+/**
+	@brief Gets the content hash of a file, given its ID hash.
+
+	TODO: cache this in RAM so we don't have to hit disk?
+ */
+string Cache::GetContentHash(string id)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+
+	//If the directory doesn't exist, obviously we have nothing useful there
+	string dir = GetStoragePath(id);
+	if(!DoesDirectoryExist(dir))
+	{
+		LogWarning("GetContentHash: Couldn't find ID %s\n", id.c_str());
+		return "";
+	}
+
+	//All good, look it up
+	return GetFileContents(dir + "/hash");
+}
+
 NodeInfo::NodeState Cache::GetState(string id)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);

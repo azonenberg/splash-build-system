@@ -324,11 +324,12 @@ message NodeBuildResults
 message BuildResult
 {
 				string		fname		= 1;	//Name of the file
-				string		hash		= 2;	//Hash
+				string		idhash		= 2;	//ID hash of the file
 				string		stdout		= 3;	//TODO: maybe cache this clientside?
 				bool		executable	= 4;	//Check if this file should be chmodded +x
 				bool		ok			= 5;	//true if file was built successfully
 				bool		sync		= 6;	//true if file should be synced to client
+				string		contenthash	= 7;	//Content hash of the file
 }
 
 //Summary of a completed compile

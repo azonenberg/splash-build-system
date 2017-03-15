@@ -214,7 +214,8 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	{
 		auto r = result.results(i);
 		auto f = r.fname();
-		auto h = r.hash();
+		auto h = r.idhash();
+		auto c = r.contenthash();
 
 		if(!ValidatePath(f))
 		{
@@ -232,6 +233,24 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		//Node built OK, grab the contents from somewhere (unless the file is marked no-sync)
 		else if(r.sync())
 		{
+			//See if the file is any different from what we have locally
+			string ourhash = sha256_file(f);
+			if(ourhash == c)
+			{
+				//LogNotice("Skipping sync of file %s because it didn't change\n", f.c_str());
+				continue;
+			}
+			else
+			{
+				/*
+				LogNotice("Syncing file %s\n    current hash = %s\n    new hash = %s\n    idhash = %s\n",
+					f.c_str(),
+					ourhash.c_str(),
+					c.c_str(),
+					h.c_str());
+				*/
+			}
+
 			//See if we have the file in our local cache.
 			//If not, download it
 			string edat;
