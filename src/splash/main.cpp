@@ -254,7 +254,7 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 			//LogDebug("Downloading file %s\n", f.c_str());
 			if(!PutFileContents(f, edat))
 			{
-				LogError("Failed to write file \"%s\"", f.c_str());
+				LogError("Failed to write file \"%s\"\n", f.c_str());
 				continue;
 			}
 
