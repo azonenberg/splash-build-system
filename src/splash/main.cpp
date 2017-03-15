@@ -248,6 +248,16 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 			else
 				edat = g_cache->ReadCachedFile(h);
 
+			//Delete the file first.
+			//This is ABSOLUTELY CRITICAL when writing to a .so or executable that might currently be
+			//running memory mapped! Deleting and re-creating forces us to get a new inode number and thus
+			//makes the new binary independent of the running app's mapping.
+			if(DoesFileExist(f))
+			{
+				if(0 != unlink(f.c_str()))
+					LogWarning("Tried to delete file %s before replacing it, but failed\n", f.c_str());
+			}
+
 			//Make the directory if needed, then write the file
 			string path = GetDirOfFile(f);
 			MakeDirectoryRecursive(path, 0700);
