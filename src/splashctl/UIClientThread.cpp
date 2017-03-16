@@ -218,17 +218,17 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 	//Create a sorted list of output paths of ALL graph nodes, even those which are not targets
 	set<string> paths;
-	//LogDebug("Dumping graph for wc %p\n", wc);
+	//LogTrace("Dumping graph for wc %p\n", wc);
 	for(auto it : *wc)
 	{
-		//string fname = it.first;
-		//LogDebug("%s\n", fname.c_str());
-		paths.emplace(it.first);
+		string fname = it.first;
+		//LogTrace("%s\n", fname.c_str());
+		paths.emplace(fname);
 	}
 
 	//Filter out those not in the build directory (TODO: can we do this faster than O(n)?)
 	//and send the whole list to the client for syncing.
-	//LogDebug("Build dir list\n");
+	LogDebug("Build dir list\n");
 	resultm->set_status(!failed);
 	string bapath = graph.GetBuildArtifactPath() + "/";
 	for(auto f : paths)
@@ -245,31 +245,42 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		//(not hash of the file content)
 		string hash = wc->GetFileHash(f);
 
+		//We're adding a result either way
+		//TODO: set executable bit more sanely
+		//TODO: Don't list source files? Waste of bandwidth...
+		auto res = resultm->add_results();
+		res->set_fname(f);
+		res->set_executable(true);
+		res->set_sync(in_build_dir);
+		LogTrace("%s (%d)\n", f.c_str(), in_build_dir);
+
 		//If cached successfully, add the result
+		string log;
 		if(g_cache->IsCached(hash))
 		{
 			//Add the file
-			//TODO: supply stdout only if asked and have client cache it?
-			//TODO: set executable bit more sanely
-			auto res = resultm->add_results();
-			res->set_fname(f);
+			//TODO: supply stdout only if asked and have client cache it clientside?
 			res->set_idhash(hash);
 			res->set_contenthash(g_cache->GetContentHash(hash));
-			res->set_stdout(g_cache->ReadCachedLog(hash));
-			res->set_executable(true);
 			res->set_ok(true);
-			res->set_sync(in_build_dir);
+
+			if(!g_cache->ReadCachedLog(hash, log))
+				LogWarning("Couldn't read log for file %s\n", f.c_str());
+			res->set_stdout(log);
+			if(log != "")
+				LogTrace("Cached success for %s: %s\n", f.c_str(), log.c_str());
 		}
 
 		//If cached fail, add that result
 		else if(g_cache->IsFailed(hash))
 		{
-			auto res = resultm->add_results();
 			res->set_fname(f);
-			res->set_stdout(g_cache->ReadCachedLog(hash));
-			res->set_executable(true);
+			res->set_stdout(log);
 			res->set_ok(false);
-			res->set_sync(in_build_dir);
+
+			if(!g_cache->ReadCachedLog(hash, log))
+				LogWarning("Couldn't read log for file %s\n", f.c_str());
+			res->set_stdout(log);
 		}
 	}
 

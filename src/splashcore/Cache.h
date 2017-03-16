@@ -68,7 +68,7 @@ public:
 	void AddFailedFile(std::string basename, std::string id, std::string log);
 
 	std::string ReadCachedFile(std::string id);
-	std::string ReadCachedLog(std::string id);
+	bool ReadCachedLog(std::string id, std::string& log);
 
 	std::string GetContentHash(std::string id);
 

@@ -511,7 +511,11 @@ Job* BuildGraphNode::Build(Job::Priority prio)
 
 			//LogError("Dependency \"%s\" failed to build, we cannot be built\n", d.c_str());
 			string errors = string("ERROR: Unable to build due to failed input ") + d + "\n";
-			errors += g_cache->ReadCachedLog(h);
+			string tmp;
+			if(g_cache->ReadCachedLog(h, tmp))
+				errors += tmp;
+			else
+				errors += "[no log in cache]\n";
 			g_cache->AddFailedFile(GetFilePath(), m_hash, errors);
 
 			return NULL;

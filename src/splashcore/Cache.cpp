@@ -234,7 +234,7 @@ string Cache::ReadCachedFile(string id)
 /**
 	@brief Reads the log from a file from the cache
  */
-string Cache::ReadCachedLog(string id)
+bool Cache::ReadCachedLog(string id, string& log)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
@@ -242,13 +242,13 @@ string Cache::ReadCachedLog(string id)
 	if(!IsCached(id) && !IsFailed(id))
 	{
 		LogError("Requested log %s is not in cache\n", id.c_str());
-		return "";
+		return false;
 	}
 
 	//Read the file
-	string ret = GetFileContents(GetStoragePath(id) + "/log");
+	log = GetFileContents(GetStoragePath(id) + "/log");
 
-	return ret;
+	return true;
 }
 
 /**
