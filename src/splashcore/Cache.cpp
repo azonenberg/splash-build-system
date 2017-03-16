@@ -85,15 +85,12 @@ Cache::Cache(string cachename)
 
 				//TODO: load fail records too
 
-				//Cache entry is valid, add to the cache table
-				m_cacheIndex.emplace(oid);
-
 				//Add to the map of content hashes
 				m_contentHashes[oid] = GetFileContents(dir + "/hash");
 			}
 		}
 
-		LogVerbose("%d cache entries loaded\n", (int)m_cacheIndex.size());
+		LogVerbose("%d cache entries loaded\n", (int)m_contentHashes.size());
 	}
 }
 
@@ -145,7 +142,7 @@ bool Cache::IsCached(string id)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	if(m_cacheIndex.find(id) != m_cacheIndex.end())
+	if(m_contentHashes.find(id) != m_contentHashes.end())
 		return true;
 
 	return false;
@@ -351,7 +348,6 @@ void Cache::AddFile(string basename, string id, string hash, string data, string
 	//TODO: write the atime file?
 
 	//Remember that we have this file cached
-	m_cacheIndex.emplace(id);
 	m_contentHashes[id] = hash;
 
 	//TODO: add this file's size to the cache, if we went over the cap delete the LRU file

@@ -81,9 +81,6 @@ protected:
 	//Mutex to control access to all global cache state
 	std::recursive_mutex m_mutex;
 
-	//Set of hashes we have in the cache
-	std::unordered_set<std::string> m_cacheIndex;
-
 	//Set of hashes we have in the cache that failed to build
 	std::unordered_set<std::string> m_cacheFails;
 
