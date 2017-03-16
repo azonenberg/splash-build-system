@@ -217,6 +217,17 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		auto h = r.idhash();
 		auto c = r.contenthash();
 
+		//See if the file changed vs our local copy
+		bool dirty = true;
+		if(DoesFileExist(f))
+		{
+			if(sha256_file(f) == c)
+			{
+				//LogNotice("Skipping sync of file %s because it didn't change\n", f.c_str());
+				dirty = false;
+			}
+		}
+
 		if(!ValidatePath(f))
 		{
 			LogError("Filename \"%s\" is invalid, skipping\n", f.c_str());
@@ -230,26 +241,17 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 			unlink(f.c_str());
 		}
 
-		//Node built OK, grab the contents from somewhere (unless the file is marked no-sync)
-		else if(r.sync())
+		//Node built OK, grab the contents from somewhere
+		//(unless the file is marked no-sync, or we already have a copy clientside)
+		else if(r.sync() && !dirty)
 		{
-			//See if the file is any different from what we have locally
-			string ourhash = sha256_file(f);
-			if(ourhash == c)
-			{
-				//LogNotice("Skipping sync of file %s because it didn't change\n", f.c_str());
-				continue;
-			}
-			else
-			{
-				/*
+			/*
 				LogNotice("Syncing file %s\n    current hash = %s\n    new hash = %s\n    idhash = %s\n",
 					f.c_str(),
 					ourhash.c_str(),
 					c.c_str(),
 					h.c_str());
-				*/
-			}
+			 */
 
 			//See if we have the file in our local cache.
 			//If not, download it
