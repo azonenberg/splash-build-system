@@ -74,6 +74,8 @@ public:
 
 protected:
 
+	//TODO: Garbage collection (the cache grows without bound for now!)
+
 	std::string GetStoragePath(std::string id);
 
 	//Mutex to control access to all global cache state
@@ -84,6 +86,9 @@ protected:
 
 	//Set of hashes we have in the cache that failed to build
 	std::unordered_set<std::string> m_cacheFails;
+
+	//Map of ID hashes to content hashes
+	std::map<std::string, std::string> m_contentHashes;
 
 	//TODO: map<string, time_t>		mapping hashes to last-used times
 

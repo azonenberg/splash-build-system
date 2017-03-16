@@ -87,6 +87,9 @@ Cache::Cache(string cachename)
 
 				//Cache entry is valid, add to the cache table
 				m_cacheIndex.emplace(oid);
+
+				//Add to the map of content hashes
+				m_contentHashes[oid] = GetFileContents(dir + "/hash");
 			}
 		}
 
@@ -103,23 +106,18 @@ Cache::~Cache()
 
 /**
 	@brief Gets the content hash of a file, given its ID hash.
-
-	TODO: cache this in RAM so we don't have to hit disk?
  */
 string Cache::GetContentHash(string id)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 
-	//If the directory doesn't exist, obviously we have nothing useful there
-	string dir = GetStoragePath(id);
-	if(!DoesDirectoryExist(dir))
+	if(!IsCached(id))
 	{
 		LogWarning("GetContentHash: Couldn't find ID %s\n", id.c_str());
 		return "";
 	}
 
-	//All good, look it up
-	return GetFileContents(dir + "/hash");
+	return m_contentHashes[id];
 }
 
 NodeInfo::NodeState Cache::GetState(string id)
@@ -354,6 +352,7 @@ void Cache::AddFile(string basename, string id, string hash, string data, string
 
 	//Remember that we have this file cached
 	m_cacheIndex.emplace(id);
+	m_contentHashes[id] = hash;
 
 	//TODO: add this file's size to the cache, if we went over the cap delete the LRU file
 }
