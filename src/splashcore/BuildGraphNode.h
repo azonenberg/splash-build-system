@@ -80,7 +80,6 @@ public:
 	BuildGraph* GetGraph()
 	{ return m_graph; }
 
-
 	/**
 		@brief Get the hash of the node
 
@@ -88,6 +87,15 @@ public:
 	 */
 	std::string GetHash()
 	{ return m_hash; }
+
+	/**
+		@brief Get the name of the node
+
+		No mutexing needed as this is static after object creation
+	 */
+	std::string GetName()
+	{ return m_name; }
+
 
 	/**
 		@brief Get the script of the node

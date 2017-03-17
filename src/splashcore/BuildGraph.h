@@ -98,7 +98,12 @@ public:
 	std::recursive_mutex& GetMutex()
 	{ return m_mutex; }
 
-	void GetTargets(std::set<BuildGraphNode*>& nodes, std::string target, std::string arch, std::string config);
+	void GetTargets(
+		std::set<BuildGraphNode*>& nodes,
+		std::string target,
+		std::string arch,
+		std::string config,
+		bool libs_too);
 
 	std::string GetBuildArtifactPath()
 	{ return m_buildArtifactPath; }
@@ -158,6 +163,8 @@ protected:
 	bool ProcessConstantTable(std::string scriptpath, std::string tablepath, std::string generator);
 
 	void CollectGarbage();
+
+	void GetLibrariesForTarget(BuildGraphNode* target, std::set<BuildGraphNode*>& nodes);
 
 	void GetConfigNames(
 		std::string toolchain,

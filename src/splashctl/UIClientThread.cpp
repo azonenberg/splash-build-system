@@ -130,7 +130,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		lock_guard<recursive_mutex> lock(graph.GetMutex());
 
 		//Find the targets for the requested build options
-		graph.GetTargets(nodes, msg.target(), msg.arch(), msg.config());
+		graph.GetTargets(nodes, msg.target(), msg.arch(), msg.config(), true);
 
 		//See which ones are out of date
 		set<BuildGraphNode*> missingtargets;
@@ -156,7 +156,6 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 				default:
 					break;
 			}
-
 
 			//Nope, it's missing
 			//Need to build it
