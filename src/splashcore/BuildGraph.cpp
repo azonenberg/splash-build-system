@@ -181,9 +181,14 @@ void BuildGraph::GetNodes(set<string>& nodes)
 
 /**
 	@brief Get all targets matching the requested filter
+
+	If libs_too is set, finds all targets that matched targets link to as well
  */
-void BuildGraph::GetTargets(set<BuildGraphNode*>& nodes, string target, string arch, string config)
+void BuildGraph::GetTargets(set<BuildGraphNode*>& nodes, string target, string arch, string config, bool libs_too)
 {
+	if(libs_too)
+		LogTrace("GetTargets with libs\n");
+
 	for(auto it : m_targets)
 	{
 		//Skip if we don't have a match
@@ -201,8 +206,47 @@ void BuildGraph::GetTargets(set<BuildGraphNode*>& nodes, string target, string a
 			if( (jt.first != target) && !target.empty() )
 				continue;
 
-			nodes.emplace(jt.second);
+			//This is a match!
+			auto node = jt.second;
+			nodes.emplace(node);
+
+			//If we're looking for libraries, pull in all of the libs that this node links to
+			if(libs_too)
+				GetLibrariesForTarget(node, nodes);
 		}
+	}
+}
+
+/**
+	@brief Recursively find all targets that the specified node links to
+ */
+void BuildGraph::GetLibrariesForTarget(BuildGraphNode* target, set<BuildGraphNode*>& nodes)
+{
+	//We don't look at *flags* since the node is an executable
+	//We need to look at the source files to the linker, aka objects and libs!
+	auto& sources = target->GetSources();
+	for(auto src : sources)
+	{
+		auto node = GetNodeWithPath(src);
+
+		//If we already have this node in the list, don't look further and don't recurse
+		if(nodes.find(node) != nodes.end())
+			continue;
+
+		//If this node is not a target, we don't care
+		auto name = node->GetName();
+		ArchConfig ac(node->GetArch(), node->GetConfig());
+		if(m_targets.find(ac) == m_targets.end())
+			continue;
+		TargetMap& tm = *m_targets[ac];
+		if(tm.find(name) == tm.end())
+			continue;
+		if(tm[name] != node)
+			continue;
+
+		//New target - add to list and recurse
+		nodes.emplace(node);
+		GetLibrariesForTarget(target, nodes);
 	}
 }
 

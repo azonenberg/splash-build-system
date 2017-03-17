@@ -163,7 +163,7 @@ void CPPExecutableNode::DoFinalize()
 
 		//Look up the target
 		set<BuildGraphNode*> nodes;
-		m_graph->GetTargets(nodes, f.GetArgs(), m_arch, m_config);
+		m_graph->GetTargets(nodes, f.GetArgs(), m_arch, m_config, false);
 		if(nodes.empty())
 		{
 			SetInvalidInput(
