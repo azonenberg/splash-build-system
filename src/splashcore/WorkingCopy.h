@@ -75,6 +75,12 @@ public:
 	std::map<std::string, std::string>::const_iterator end()
 	{ return m_fileMap.end(); }
 
+	void lock()
+	{ m_mutex.lock(); }
+
+	void unlock()
+	{ m_mutex.unlock(); }
+
 protected:
 
 	//Type of clients we have connected

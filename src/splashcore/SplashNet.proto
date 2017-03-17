@@ -187,6 +187,7 @@ message InfoRequest
 		CLIENT_LIST		= 3;	//Get list of all connected clients
 		TOOLCHAIN_LIST	= 4;	//Get list of all toolchains (and the resolved settings for them)
 		NODE_LIST		= 5;	//Get list of all nodes in the graph
+		BPATH_LIST		= 6;	//Get list of all files in the build directory
 
 		//TODO: stdout etc for a target's build
 	};
@@ -360,6 +361,12 @@ message BulkHashResponse
 												//(whether found or not)
 };
 
+//Response to a BPATH_LIST InfoRequest
+message WorkingCopyList
+{
+	repeated	string		path		= 1;	//The list of file names
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -396,5 +403,6 @@ message SplashMsg
 		BulkFileData			bulkFileData			= 27;
 		BulkHashRequest			bulkHashRequest			= 28;
 		BulkHashResponse		bulkHashResponse		= 29;
+		WorkingCopyList			workingCopyList			= 30;
 	}
 };

@@ -45,6 +45,7 @@ map<int, string> g_watchMap;
 int ProcessInitCommand(const vector<string>& args);
 
 int ProcessBuildCommand(Socket& s, const vector<string>& args);
+int ProcessCleanCommand(Socket& s, const vector<string>& args);
 
 int ProcessListArchesCommand(Socket& s, const vector<string>& args);
 int ProcessListClientsCommand(Socket& s, const vector<string>& args);
@@ -134,6 +135,8 @@ int main(int argc, char* argv[])
 	//Process other commands once the link is up and running
 	if(cmd == "build")
 		return ProcessBuildCommand(sock, args);
+	else if(cmd == "clean")
+		return ProcessCleanCommand(sock, args);
 	else if(cmd == "dump-graph")
 		return ProcessDumpGraphCommand(sock, args);
 	else if(cmd == "list-arches")
@@ -317,6 +320,65 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		LogNotice("\nBuild complete\n");
 		return 0;
 	}
+}
+
+/**
+	@brief Handles "splash clean"
+ */
+int ProcessCleanCommand(Socket& s, const vector<string>& args)
+{
+	//Sanity check
+	if(args.size() != 0)
+	{
+		LogError("Too many arguments. Usage:  \"splash clean\"\n");
+		return 1;
+	}
+
+	//Format the command
+	SplashMsg cmd;
+	auto cmdm = cmd.mutable_inforequest();
+	cmdm->set_type(InfoRequest::BPATH_LIST);
+	if(!SendMessage(s, cmd))
+		return 1;
+
+	//Get the response back
+	SplashMsg msg;
+	if(!RecvMessage(s, msg))
+		return 1;
+	if(msg.Payload_case() != SplashMsg::kWorkingCopyList)
+	{
+		LogError("Got wrong message type back\n");
+		return 1;
+	}
+	auto lt = msg.workingcopylist();
+
+	//Process response
+	for(int i=0; i<lt.path_size(); i++)
+	{
+		string path = lt.path(i);
+
+		//If the file doesn't exist, or is invalid, we're obviously not going to delete it
+		if(!DoesFileExist(path))
+			continue;
+		if(!ValidatePath(path))
+		{
+			LogError("Path %s failed to validate\n", path.c_str());
+			continue;
+		}
+
+		//Safety check: filename must begin with "build/"
+		//This prevents a malicious (or, more likely, buggy) server from making us delete files in our source tree
+		if(path.find("build/") != 0)
+		{
+			LogError("Path %s is outside the build directory (not deleting it).\n", path.c_str());
+			continue;
+		}
+
+		if(0 != unlink(path.c_str()))
+			LogWarning("Clean couldn't delete file %s\n", path.c_str());
+	}
+
+	return 0;
 }
 
 /**
@@ -793,8 +855,9 @@ void ShowUsage()
 		"    -q, --quiet                    Decreases log verbosity by one step\n"
 		"    --verbose                      Sets log level to verbose\n"
 		"\n"
-		"command may be one of the following:\n"
+		"command must be exactly one of the following:\n"
 		"    build                          Builds one or more targets\n"
+		"    clean                          Deletes all generated files in your local working copy\n"
 		"    dump-graph                     Print the entire dependency graph to stdout\n"
 		"                                   in graphviz format.\n"
 		"    init                           Initialize a new working copy\n"

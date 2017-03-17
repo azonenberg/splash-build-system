@@ -36,6 +36,7 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, clientID id);
 
 bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id);
+bool OnBuildPathListRequest(Socket& s, string& hostname, clientID id);
 bool OnClientListRequest(Socket& s, string& hostname, clientID id);
 bool OnConfigListRequest(Socket& s, string& hostname, clientID id);
 bool OnNodeListRequest(Socket& s, string& hostname, clientID id);
@@ -322,6 +323,11 @@ bool OnInfoRequest(Socket& s, const InfoRequest& msg, string& hostname, clientID
 		case InfoRequest::TOOLCHAIN_LIST:
 			return OnToolchainListRequest(s, hostname, id);
 
+		//getting list of files in our build dir
+		//probably prelude to a clean request
+		case InfoRequest::BPATH_LIST:
+			return OnBuildPathListRequest(s, hostname, id);
+
 		//Something garbage
 		default:
 			LogWarning("Connection to %s [%s] dropped (bad InfoRequest type)\n",
@@ -351,6 +357,31 @@ bool OnArchListRequest(Socket& s, string query, string& hostname, clientID id)
 	auto resultm = result.mutable_archlist();
 	for(auto a : arches)
 		resultm->add_arches(a);
+	if(!SendMessage(s, result, hostname))
+		return false;
+
+	return true;
+}
+
+bool OnBuildPathListRequest(Socket& s, string& hostname, clientID id)
+{
+	//No real setup required, we just query the WC and do stuff
+	//We *do* need to lock the working copy, because we're doing multiple queries to it
+	//rather than just making a single function call
+	auto wc = g_nodeManager->GetWorkingCopy(id);
+	lock_guard<WorkingCopy> lock(*wc);
+	auto builddir = wc->GetGraph().GetBuildArtifactPath() + "/";
+
+	//Go send the list to the client
+	SplashMsg result;
+	auto resultm = result.mutable_workingcopylist();
+	for(auto it : *wc)
+	{
+		//Make sure it's in the build directory
+		string path = it.first;
+		if(path.find(builddir) == 0)
+			resultm->add_path(path);
+	}
 	if(!SendMessage(s, result, hostname))
 		return false;
 
