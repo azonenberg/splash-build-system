@@ -222,9 +222,11 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 
 		//See if the file changed vs our local copy
 		bool dirty = true;
+		string curhash;
 		if(DoesFileExist(f))
 		{
-			if(sha256_file(f) == c)
+			curhash = sha256_file(f);
+			if(curhash == c)
 			{
 				//LogNotice("Skipping sync of file %s because it didn't change\n", f.c_str());
 				dirty = false;
@@ -246,21 +248,22 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 
 		//Node built OK, grab the contents from somewhere
 		//(unless the file is marked no-sync, or we already have a copy clientside)
-		else if(r.sync() && !dirty)
+		else if(r.sync() && dirty)
 		{
 			/*
-				LogNotice("Syncing file %s\n    current hash = %s\n    new hash = %s\n    idhash = %s\n",
-					f.c_str(),
-					ourhash.c_str(),
-					c.c_str(),
-					h.c_str());
-			 */
+			LogNotice("Syncing file %s\n    current hash = %s\n    new hash = %s\n    idhash = %s\n",
+				f.c_str(),
+				curhash.c_str(),
+				c.c_str(),
+				h.c_str());
+			*/
 
 			//See if we have the file in our local cache.
 			//If not, download it
 			string edat;
 			if(!g_cache->IsCached(h))
 			{
+				//LogDebug("Downloading file %s to cache\n", f.c_str());
 				if(!GetRemoteFileByHash(s, g_clientSettings->GetServerHostname(), h, edat))
 				{
 					LogError("Could not get file \"%s\" (hash = \"%s\") from server\n",
@@ -285,7 +288,7 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 			//Make the directory if needed, then write the file
 			string path = GetDirOfFile(f);
 			MakeDirectoryRecursive(path, 0700);
-			//LogDebug("Downloading file %s\n", f.c_str());
+			//LogDebug("Writing file %s from cache\n", f.c_str());
 			if(!PutFileContents(f, edat))
 			{
 				LogError("Failed to write file \"%s\"\n", f.c_str());
