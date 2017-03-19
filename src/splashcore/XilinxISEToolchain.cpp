@@ -587,7 +587,23 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 		else if(flag.GetFlag() == "speed")
 			return "-opt_level 1\n-opt_mode speed";
 		else if(flag.GetFlag() == "hierarchy")
-			return string("-keep_hierarchy ") + flag.GetArgs();
+		{
+			string args = flag.GetArgs();
+			string sargs;
+			if(args == "flatten")
+				sargs = "no";
+			else if(args == "keep")
+				sargs = "yes";
+			else if(args == "synth_only")
+				sargs = "soft";
+			else
+			{
+				LogWarning("Don't know what to do with hierarchy specifier %s\n",
+					static_cast<string>(flag).c_str());
+					return "";
+			}
+			return string("-keep_hierarchy ") + sargs;
+		}
 		else
 		{
 			LogWarning("Don't know what to do with optimization flag %s\n",
