@@ -495,6 +495,7 @@ bool XilinxISEToolchain::Synthesize(
 	fprintf(fp, "-bus_delimiter []\n");								//use [] as bus delimeter
 	fprintf(fp, "-case maintain\n");								//keep cases as is
 	fprintf(fp, "-rtlview no\n");									//do not generate RTL schematic
+	fprintf(fp, "-netlist_hierarchy rebuilt\n");					//Write a hierarchial netlist regardless of opt
 	if(device.find("coolrunner2-") == string::npos)					//FPGA-specific flags
 		fprintf(fp, "-glob_opt AllClockNets\n");					//optimize clock periods
 	fprintf(fp, "-loop_iteration_limit 131072\n");					//loops can run up to 128K cycles
