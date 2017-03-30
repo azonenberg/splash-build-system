@@ -364,7 +364,7 @@ void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
 								//see http://forums.xilinx.com/t5/Implementation/DQS-BIAS-report-durning-implementation/td-p/350011
 		"WARNING:MapLib:41",	//All members of TNM group optimized out
 		"WARNING:MapLib:50",	//Timing group optimized out
-		"Warning:Place:838"		//Multiple I/O standards in bus (unavoidable when using pmods etc)
+		"Place:838"				//Multiple I/O standards in bus (unavoidable when using pmods etc)
 	});
 
 	CrunchLog(log, blacklist, stdout);
@@ -382,7 +382,8 @@ void XilinxISEToolchain::CrunchParLog(const string& log, string& stdout)
 		"WARNING:Par:545",					//Multithreading not supported if no timing constraints
 		"WARNING:Timing:3223",				//Timing constraint ignored (empty time group, etc)
 		"RAMD_D1_O has no load",			//RAM32M with unused output
-		"RAMD_O has no load"				//RAM64M with unused output
+		"RAMD_O has no load",				//RAM64M with unused output
+		"Place:838"							//Multiple I/O standards in bus (unavoidable when using pmods etc)
 	});
 
 	CrunchLog(log, blacklist, stdout);
