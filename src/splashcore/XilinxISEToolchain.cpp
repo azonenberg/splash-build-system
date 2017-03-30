@@ -363,7 +363,8 @@ void XilinxISEToolchain::CrunchMapLog(const string& log, string& stdout)
 		"WARNING:Pack:2949",	//default DQS_BIAS ignored
 								//see http://forums.xilinx.com/t5/Implementation/DQS-BIAS-report-durning-implementation/td-p/350011
 		"WARNING:MapLib:41",	//All members of TNM group optimized out
-		"WARNING:MapLib:50"		//Timing group optimized out
+		"WARNING:MapLib:50",	//Timing group optimized out
+		"Warning:Place:838"		//Multiple I/O standards in bus (unavoidable when using pmods etc)
 	});
 
 	CrunchLog(log, blacklist, stdout);
