@@ -409,20 +409,14 @@ void XilinxISEToolchain::CrunchBitgenLog(const string& log, string& stdout)
  */
 void XilinxISEToolchain::CrunchTimingLog(const string& log, string& stdout)
 {
-	//Split the report up into lines
-	vector<string> lines;
-	ParseLines(log, lines);
-
-	for(auto line : lines)
+	//List of messages we do NOT want to see
+	static vector<string> blacklist(
 	{
-		//TODO: Blacklist messages of no importance
+		"WARNING:Timing:3223",		//Timing constraint ignored (probably means nothing there)
+									//This is commonly caused by bidirectional cross-clock constraints
+	});
 
-		//Filter out errors and warnings
-		if(line.find("ERROR:") == 0)
-			stdout += line + "\n";
-		if(line.find("WARNING:") == 0)
-			stdout += line + "\n";
-	}
+	CrunchLog(log, blacklist, stdout);
 }
 
 /**
