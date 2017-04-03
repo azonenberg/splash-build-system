@@ -89,6 +89,10 @@ protected:
 
 	HDLNetlistNode* m_netlist;
 	PhysicalNetlistNode* m_circuit;
+
+	//Our cross-clock constraints
+	typedef std::pair<std::string, std::string> stringpair;
+	std::map<stringpair, std::string> m_crossclocks;
 };
 
 #endif

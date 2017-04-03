@@ -70,6 +70,23 @@ FPGABitstreamNode::FPGABitstreamNode(
 		return;
 	}
 
+	//Read our cross-clock constraints
+	if(node["crossclocks"])
+	{
+		auto nclocks = node["crossclocks"];
+		for(auto it : nclocks)
+		{
+			auto from = it.first.as<string>();
+			auto vto = it.second;
+			for(auto jt : vto)
+			{
+				string to = jt.first.as<string>();
+				string time = jt.second.as<string>();
+				m_crossclocks[stringpair(from, to)] = time;
+			}
+		}
+	}
+
 	//Generate our constraint file
 	m_constrpath = m_graph->GetIntermediateFilePath(
 		toolchain,
@@ -198,10 +215,11 @@ bool FPGABitstreamNode::GenerateUCFConstraintFile(
 
 	//Create timing constraints for clocks
 	constraints += "########################################################################################\n";
-	constraints += "# TIMING CONSTRAINTS\n";
+	constraints += "# GENERAL TIMING CONSTRAINTS\n";
 	constraints += "\n";
 
 	//For now, assume every top-level net on a clock location is actually being used as a clock
+	set<string> tnms;
 	for(auto it : pins)
 	{
 		auto name = it.first;
@@ -222,6 +240,46 @@ bool FPGABitstreamNode::GenerateUCFConstraintFile(
 		//Render finished constraint
 		constraints += string("NET \"") + name + "\" TNM_NET = \"" + name + "\";\n";
 		constraints += string("TIMESPEC TS_") + name + " = PERIOD \"" + name + "\" " + tmp + ";\n";
+		tnms.emplace(name);
+	}
+
+	//Create timing constraints for cross-clock paths
+	constraints += "\n";
+	constraints += "########################################################################################\n";
+	constraints += "# CROSS-CLOCK TIMING CONSTRAINTS\n";
+	constraints += "\n";
+
+	for(auto it : m_crossclocks)
+	{
+		auto fromto = it.first;
+		auto dt = it.second;
+
+		//If we don't have a timing name for either the source or dest net, add it
+		if(tnms.find(fromto.first) == tnms.end())
+		{
+			constraints += string("NET  \"") + fromto.first + "\" TNM_NET = \"" + fromto.first + "\";\n";
+			tnms.emplace(fromto.first);
+		}
+		if(tnms.find(fromto.second) == tnms.end())
+		{
+			constraints += string("NET  \"") + fromto.second + "\" TNM_NET = \"" + fromto.second + "\";\n";
+			tnms.emplace(fromto.second);
+		}
+
+		//Generate the actual cross-clock constraint pair
+		string tsname = string("TS_") + fromto.first + "_" + fromto.second;
+		tsname = str_replace("/", "_", tsname);
+		tsname = str_replace("[", "_", tsname);
+		tsname = str_replace("]", "_", tsname);
+		constraints += string("TIMESPEC ") + tsname + " = FROM \"" +
+			fromto.first + "\" TO \"" + fromto.second + "\" " + dt + " DATAPATHONLY;\n";
+
+		tsname = string("TS_") + fromto.second + "_" + fromto.first;
+		tsname = str_replace("/", "_", tsname);
+		tsname = str_replace("[", "_", tsname);
+		tsname = str_replace("]", "_", tsname);
+		constraints += string("TIMESPEC ") + tsname + " = FROM \"" +
+			fromto.second + "\" TO \"" + fromto.first + "\" " + dt + " DATAPATHONLY;\n";
 	}
 
 	return true;
