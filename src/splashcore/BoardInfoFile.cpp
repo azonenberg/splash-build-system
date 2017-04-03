@@ -111,6 +111,7 @@ void BoardInfoFile::ProcessIOs(const YAML::Node& node)
 		clk:
 			loc:    L16
 			std:    LVCMOS33
+			slew:	fast
 		*/
 		string name = it.first.as<string>();
 		YAML::Node pin = it.second;
@@ -130,6 +131,21 @@ void BoardInfoFile::ProcessIOs(const YAML::Node& node)
 		m_pins[name] = BoardInfoPin(
 			pin["loc"].as<string>(),
 			pin["std"].as<string>());
+
+		//Slew rate attribute is optional
+		if(pin["slew"])
+		{
+			string s = pin["slew"].as<string>();
+			if(s == "fast")
+				m_pins[name].m_slew = BoardInfoPin::SLEW_FAST;
+			else if(s == "slow")
+				m_pins[name].m_slew = BoardInfoPin::SLEW_SLOW;
+			else
+			{
+				LogError("Pin \"%s\" has invalid slew rate\n", name.c_str());
+				return;
+			}
+		}
 	}
 }
 

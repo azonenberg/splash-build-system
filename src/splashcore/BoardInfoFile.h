@@ -36,10 +36,17 @@ public:
 	BoardInfoPin(std::string loc = "", std::string std = "")
 	: m_loc(loc)
 	, m_iostandard(std)
+	, m_slew(SLEW_SLOW)
 	{}
 
 	std::string m_loc;
 	std::string m_iostandard;
+
+	enum SlewRates
+	{
+		SLEW_SLOW,		//slew rate limited driver for EMI reduction
+		SLEW_FAST		//unlimited driver for high speed
+	} m_slew;
 };
 
 class BoardInfoClock
