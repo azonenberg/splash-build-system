@@ -206,13 +206,17 @@ bool FPGABitstreamNode::GenerateUCFConstraintFile(
 			}
 			auto bpin = binfo->GetPin(sname);
 
+			//Stringify some attributes
 			bool slewfast = bpin.m_slew == BoardInfoPin::SLEW_FAST;
 			string sslew = slewfast ? "FAST" : "SLOW";
+			char sdrive[16];
+			snprintf(sdrive, sizeof(sdrive), "%d", bpin.m_drive);
 
 			auto netdec = string("NET \"") + sname + "\" ";
 			constraints += netdec + "LOC = " + bpin.m_loc + ";\n";
 			constraints += netdec + "IOSTANDARD = " + bpin.m_iostandard + ";\n";
 			constraints += netdec + "SLEW = " + sslew + ";\n";
+			constraints += netdec + "DRIVE = " + sdrive + ";\n";
 			constraints += "\n";
 		}
 	}

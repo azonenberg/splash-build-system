@@ -37,6 +37,7 @@ public:
 	: m_loc(loc)
 	, m_iostandard(std)
 	, m_slew(SLEW_SLOW)
+	, m_drive(12)			//default for 7 series if not specified in the UCF
 	{}
 
 	std::string m_loc;
@@ -47,6 +48,9 @@ public:
 		SLEW_SLOW,		//slew rate limited driver for EMI reduction
 		SLEW_FAST		//unlimited driver for high speed
 	} m_slew;
+
+	//Drive strength, in mA
+	int m_drive;
 };
 
 class BoardInfoClock

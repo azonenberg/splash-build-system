@@ -146,6 +146,10 @@ void BoardInfoFile::ProcessIOs(const YAML::Node& node)
 				return;
 			}
 		}
+
+		//Drive strength attribute is optional
+		if(pin["drive"])
+			m_pins[name].m_drive = pin["drive"].as<int>();
 	}
 }
 
