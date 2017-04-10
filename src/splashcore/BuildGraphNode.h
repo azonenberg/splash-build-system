@@ -173,6 +173,14 @@ public:
 	NodeInfo::NodeState GetOutputState()
 	{ return g_cache->GetState(m_hash); }
 
+	/**
+		@brief Checks if we've been finalized yet
+
+		No mutexing since reading a bool should be atomic (and it only ever goes one way, from false to true)
+	 */
+	bool IsFinalized()
+	{ return m_finalized; }
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Actual building
 

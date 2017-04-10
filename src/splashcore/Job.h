@@ -93,7 +93,7 @@ public:
 
 	void AddDependency(Job* job);
 
-	bool IsRunnable();
+	virtual bool IsRunnable();
 	bool IsCanceledByDeps();
 
 	bool IsSuccessful()

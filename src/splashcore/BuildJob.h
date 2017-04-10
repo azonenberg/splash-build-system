@@ -47,6 +47,8 @@ public:
 	BuildFlag::FlagUsage GetFlagUsage()
 	{ return m_usage; }
 
+	virtual bool IsRunnable();
+
 protected:
 	//must delete via refcounter
 	virtual ~BuildJob();

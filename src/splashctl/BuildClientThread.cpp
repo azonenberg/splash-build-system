@@ -143,10 +143,11 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 				continue;
 			}
 
-			//If the job is not runnable, figure out what to do
-			if(!djob->IsRunnable())
+			//If the job is not runnable, block until it is
+			while(!djob->IsRunnable())
 			{
 				LogWarning("Job is not runnable yet!\n");
+				usleep(50 * 1000);
 			}
 
 			//Tell the dev client that the scan is in progress
@@ -184,9 +185,11 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			}
 
 			//If the job is not runnable, figure out what to do
-			if(!bj->IsRunnable())
+			//For now, just block
+			while(!bj->IsRunnable())
 			{
 				LogWarning("Job is not runnable yet!\n");
+				usleep(50 * 1000);
 			}
 
 			//We've kicked off the job, let others know
@@ -461,7 +464,14 @@ bool ProcessBuildJob(Socket& s, string& hostname, Job* job, bool& ok)
 		reqm->add_flags(f);
 	reqm->set_fname(path);
 
-	//Send the initial scan request to the client
+	//Sanity check: node must have at least one source and one dependency
+	if( (reqm->sources_size() == 0) || (reqm->deps_size() == 0) )
+	{
+		LogError("Node has no sources or no dependencies! This shouldn't be possible\n");
+		return false;
+	}
+
+	//Send the request to the client
 	if(!SendMessage(s, req, hostname))
 		return false;
 

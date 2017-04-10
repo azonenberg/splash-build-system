@@ -47,3 +47,15 @@ BuildJob::~BuildJob()
 
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Job scheduling
+
+bool BuildJob::IsRunnable()
+{
+	//If our graph node isn't finalized, we don't even know what our dependencies ARE so no way we can run
+	if(!m_output->IsFinalized())
+		return false;
+
+	//Fall back to the base class to make the final decision otherwise
+	return Job::IsRunnable();
+}
