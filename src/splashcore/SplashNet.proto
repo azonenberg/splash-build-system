@@ -337,7 +337,8 @@ message BuildResult
 message BuildResults
 {
 				bool		status		= 1;	//Status of the build (true = pass)
-	repeated	BuildResult	results		= 2;	//The results of thi sbuild
+	repeated	BuildResult	results		= 2;	//The results of this build
+				string		failreason	= 3;	//Reason why the build couldn't start (f. ex. no matching targets)
 };
 
 //Ask for the hash of a given file, given the name

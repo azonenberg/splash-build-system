@@ -315,7 +315,11 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	//Print overall status
 	if(!result.status())
 	{
-		LogNotice("\nBuild failed\n");
+		string reason = result.failreason();
+		if(reason != "")
+			LogNotice("\nBuild failed: %s\n", result.failreason().c_str());
+		else
+			LogNotice("\nBuild failed\n");
 		return 1;
 	}
 	else

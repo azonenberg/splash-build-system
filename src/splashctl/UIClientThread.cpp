@@ -121,6 +121,7 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 	SplashMsg result;
 	auto resultm = result.mutable_buildresults();
 	bool failed = false;
+	resultm->set_failreason("");
 
 	//Dispatch the build
 	{
@@ -131,6 +132,16 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 		//Find the targets for the requested build options
 		graph.GetTargets(nodes, msg.target(), msg.arch(), msg.config(), true);
+
+		//If no targets match the requested list, send an error back to the client
+		if(nodes.empty())
+		{
+			resultm->set_status(false);
+			resultm->set_failreason(string("Target ") + msg.target() + " does not exist");
+			if(!SendMessage(s, result, hostname))
+				return false;
+			return true;
+		}
 
 		//See which ones are out of date
 		set<BuildGraphNode*> missingtargets;
