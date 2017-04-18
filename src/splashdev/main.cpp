@@ -39,6 +39,8 @@ void ShowVersion();
 //Map of watch descriptors to directory names
 map<int, string> g_watchMap;
 
+int g_hnotify;
+
 /**
 	@brief Program entry point
  */
@@ -118,11 +120,11 @@ int main(int argc, char* argv[])
 	LogVerbose("Change notifications sent (in %.3f sec)\n", dt);
 
 	//Open the source directory and start an inotify watcher on it and all subdirectories
-	int hnotify = inotify_init();
-	if(hnotify < 0)
+	g_hnotify = inotify_init();
+	if(g_hnotify < 0)
 		LogFatal("Couldn't start inotify\n");
 	LogNotice("Watching for changes to source files in: %s\n", g_clientSettings->GetProjectRoot().c_str());
-	WatchDirRecursively(hnotify, g_clientSettings->GetProjectRoot());
+	WatchDirRecursively(g_hnotify, g_clientSettings->GetProjectRoot());
 
 	//TODO: signal handler so we can quit gracefully
 
@@ -132,7 +134,7 @@ int main(int argc, char* argv[])
 	while(1)
 	{
 		//Get the event
-		ssize_t len = read(hnotify, ebuf, buflen);
+		ssize_t len = read(g_hnotify, ebuf, buflen);
 		if(len <= 0)
 			break;
 
@@ -151,7 +153,7 @@ int main(int argc, char* argv[])
 	}
 
 	//Done
-	close(hnotify);
+	close(g_hnotify);
 	delete g_clientSettings;
 	return 0;
 }

@@ -31,6 +31,8 @@
 
 using namespace std;
 
+extern int g_hnotify;
+
 /**
 	@brief Do something when a file changes
  */
@@ -51,7 +53,27 @@ void WatchedFileChanged(Socket& s, int type, string fname)
 	//IN_CLOSE_NOWRITE
 	//IN_OPEN
 	
-	//TODO: IN_CREATE check if we made a new directory; if so start watching it
+	//Check if we made a new directory; if so start watching it
+	if( (type & IN_CREATE) == IN_CREATE)
+	{
+		if(DoesDirectoryExist(fname))
+		{
+			LogDebug("Directory %s created, adding to watch list\n", fname.c_str());
+			WatchDirRecursively(g_hnotify, fname);
+
+			//Send initial changes
+			LogDebug("Sending initial change notifications for new dir\n");
+			SplashMsg icn;
+			BuildChangeNotificationForFile(icn.mutable_bulkfilechanged(), fname, true, true);
+			if(!SendMessage(s, icn))
+				return;
+			SplashMsg icr;
+			if(!RecvMessage(s, icr))
+				return;
+			if(!ProcessBulkFileAck(s, icr))
+				return;
+		}
+	}
 
 	//TODO: IN_DELETE_SELF
 
