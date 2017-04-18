@@ -95,6 +95,9 @@ public:
 	std::string GetPackage()
 	{ return m_package; }
 
+	std::string GetHash()
+	{ return m_hash; }
+
 protected:
 	void ProcessDevice(const YAML::Node& node);
 	void ProcessIOs(const YAML::Node& node);
@@ -116,6 +119,9 @@ protected:
 
 	//Set of named clock signals
 	std::map<std::string, BoardInfoClock> m_clocks;
+
+	//SHA-256 of the board info data
+	std::string m_hash;
 };
 
 #endif

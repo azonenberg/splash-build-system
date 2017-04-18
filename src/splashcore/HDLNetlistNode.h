@@ -45,6 +45,7 @@ public:
 		std::string path,
 		std::string toolchain,
 		std::string board,
+		std::string binfohash,
 		std::set<BuildFlag> flags,
 		std::set<BuildGraphNode*> sources
 	);
@@ -54,6 +55,7 @@ protected:
 	virtual void DoFinalize();
 
 	std::string m_board;
+	std::string m_binfohash;
 
 	bool ScanDependencies(std::string fname);
 };

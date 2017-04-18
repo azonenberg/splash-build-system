@@ -78,11 +78,9 @@ protected:
 	//Name of our board
 	std::string m_board;
 
-	/*
-	//Internal dependency scanning stuff (used by ctor and DoFinalize only)
-	std::set<std::string> m_libdeps;
-	std::set<BuildFlag> m_libflags;
-	*/
+	//Hash of our board info file
+	std::string m_binfohash;
+
 	std::string m_constrpath;
 
 	std::set<BuildGraphNode*> m_sourcenodes;

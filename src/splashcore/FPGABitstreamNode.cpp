@@ -47,8 +47,10 @@ FPGABitstreamNode::FPGABitstreamNode(
 	YAML::Node& node)
 	: BuildGraphNode(graph, BuildFlag::FPGA_TIME, toolchain, arch, config, name, scriptpath, path, node)
 	, m_board(board)
+	, m_binfohash(binfo->GetHash())
 	, m_netlist(NULL)
 {
+
 	//LogDebug("Creating FPGABitstreamNode (toolchain %s, output fname %s)\n",
 	//	toolchain.c_str(), path.c_str());
 
@@ -425,6 +427,7 @@ void FPGABitstreamNode::DoStartFinalization()
 		netpath,
 		m_toolchain,
 		m_board,
+		m_binfohash,
 		synthFlags,
 		m_sourcenodes);
 

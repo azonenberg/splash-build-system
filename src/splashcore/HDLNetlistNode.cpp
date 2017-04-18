@@ -43,10 +43,12 @@ HDLNetlistNode::HDLNetlistNode(
 	string path,
 	string toolchain,
 	string board,
+	string binfohash,
 	set<BuildFlag> flags,
 	set<BuildGraphNode*> sources)
 	: BuildGraphNode(graph, BuildFlag::COMPILE_TIME, toolchain, arch, name, scriptpath, path, flags)
 	, m_board(board)
+	, m_binfohash(binfohash)
 {
 	/*
 	LogDebug("[%6.3f] Creating HDLNetlistNode %s\nfor arch %s, toolchain %s, board %s\n",
@@ -212,9 +214,10 @@ void HDLNetlistNode::DoFinalize()
 
 	//Need to hash both the toolchain AND the triplet since some toolchains can target multiple triplets
 	//Also hash board since pinout etc depend on that
+	//BUGFIX: hash contents of board info file, not just the name!
 	hashin += g_nodeManager->GetToolchainHash(m_arch, m_toolchain);
 	hashin += sha256(m_arch);
-	hashin += sha256(m_board);
+	hashin += sha256(m_binfohash);
 
 	//Do not hash the output file name.
 	//Having multiple files with identical inputs merged into a single node is *desirable*.

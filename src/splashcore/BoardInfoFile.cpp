@@ -36,6 +36,8 @@ using namespace std;
 
 BoardInfoFile::BoardInfoFile(string data)
 {
+	m_hash = sha256(data);
+
 	vector<YAML::Node> docs = YAML::LoadAll(data);
 	for(auto doc : docs)
 	{
