@@ -160,16 +160,21 @@ bool YosysToolchain::BuildFormal(
 	//LogDebug("YosysToolchain::BuildFormal for %s\n", fname.c_str());
 	string base = GetBasenameOfFileWithoutExt(fname);
 
-	//TODO: Flags
+	//Flags
+	string incflags = "";
 	for(auto f : flags)
 	{
-		/*
-		if(f.GetType() != BuildFlag::TYPE_DEFINE)
-			continue;
-		defines += f.GetFlag() + "=" + f.GetArgs() + " ";
-		*/
-		stdout += string("WARNING: YosysToolchain::BuildFormal: Don't know what to do with flag ") +
-			static_cast<string>(f) + "\n";
+		if(f.GetType() == BuildFlag::TYPE_LIBRARY)
+		{
+			if(f.GetFlag() == "__incdir")
+				incflags += "-I" + f.GetArgs() + " ";
+		}
+
+		else
+		{
+			stdout += string("WARNING: YosysToolchain::BuildFormal: Don't know what to do with flag ") +
+				static_cast<string>(f) + "\n";
+		}
 	}
 
 	//Write the synthesis script
@@ -185,7 +190,7 @@ bool YosysToolchain::BuildFormal(
 	{
 		//Ignore any non-Verilog sources
 		if(s.find(".v") != string::npos)
-			fprintf(fp, "read_verilog -formal \"%s\"\n", s.c_str());
+			fprintf(fp, "read_verilog -formal %s \"%s\"\n", incflags.c_str(), s.c_str());
 	}
 	fprintf(fp, "prep -nordff -top %s\n", base.c_str());
 	fprintf(fp, "check -assert\n");
