@@ -84,6 +84,7 @@ void FormalVerificationNode::DoStartFinalization()
 		netpath,
 		m_toolchain,
 		"formal",
+		sha256("formal"),
 		synthFlags,
 		m_sourcenodes);
 
