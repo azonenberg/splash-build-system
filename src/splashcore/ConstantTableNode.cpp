@@ -138,6 +138,7 @@ void ConstantTableNode::GenerateConstants(
 		return;
 	}
 
+	//LogDebug("Generating constant table %s\n", fname.c_str());
 	//LogDebug("CONSTANT TABLE\n%s\n", code.c_str());
 
 	//Add it to the working copy

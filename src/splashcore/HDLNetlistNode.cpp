@@ -122,6 +122,7 @@ bool HDLNetlistNode::ScanDependencies(string fname)
 			//Canonicalize based on our working directory and the original directory
 			string cpath_guess1 = GetDirOfFile(m_path) + "/" + fpath;
 			string cpath_guess2 = GetDirOfFile(fname) + "/" + fpath;
+			string cpath_guess3 = GetDirOfFile(m_script) + "/" + fpath;
 
 			if(CanonicalizePathThatMightNotExist(cpath_guess1) && cpath_guess1 != "" && wc->HasFile(cpath_guess1))
 			{
@@ -133,6 +134,25 @@ bool HDLNetlistNode::ScanDependencies(string fname)
 			{
 				cpath = cpath_guess2;
 				//LogDebug("Resolved include statement via source file dir: %s (%s)\n", fpath.c_str(), cpath.c_str());
+			}
+
+			else if(CanonicalizePathThatMightNotExist(cpath_guess3) && cpath_guess3 != "" && wc->HasFile(cpath_guess3))
+			{
+				cpath = cpath_guess3;
+				//LogDebug("Resolved include statement via build script dir: %s (%s)\n", fpath.c_str(), cpath.c_str());
+			}
+
+			else
+			{
+				LogWarning(
+					"Failed to resolve include path: %s\n"
+					"    cpath_guess1 = %s\n"
+					"    cpath_guess2 = %s\n"
+					"    cpath_guess3 = %s\n",
+					fpath.c_str(),
+					cpath_guess1.c_str(),
+					cpath_guess2.c_str(),
+					cpath_guess3.c_str());
 			}
 		}
 
