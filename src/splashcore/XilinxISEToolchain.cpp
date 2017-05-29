@@ -594,7 +594,7 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 				sargs = "soft";
 			else
 			{
-				LogWarning("Don't know what to do with hierarchy specifier %s\n",
+				LogWarning("Don't know what to do with optimization hierarchy specifier %s\n",
 					static_cast<string>(flag).c_str());
 					return "";
 			}
@@ -603,6 +603,32 @@ string XilinxISEToolchain::FlagToStringForSynthesis(BuildFlag flag)
 		else
 		{
 			LogWarning("Don't know what to do with optimization flag %s\n",
+				static_cast<string>(flag).c_str());
+			return "";
+		}
+	}
+
+	else if(flag.GetType() == BuildFlag::TYPE_OUTPUT)
+	{
+		if(flag.GetFlag() == "hierarchy")
+		{
+			string args = flag.GetArgs();
+			string sargs;
+			if(args == "unchanged")
+				sargs = "as_optimized";
+			else if(args == "rebuild")
+				sargs = "rebuilt";
+			else
+			{
+				LogWarning("Don't know what to do with output hierarchy specifier %s\n",
+					static_cast<string>(flag).c_str());
+					return "";
+			}
+			return string("-netlist_hierarchy ") + sargs;
+		}
+		else
+		{
+			LogWarning("Don't know what to do with output flag %s\n",
 				static_cast<string>(flag).c_str());
 			return "";
 		}

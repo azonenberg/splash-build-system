@@ -231,6 +231,15 @@ void BuildFlag::LoadOutputFlag()
 	else if(m_flag == "reloc")
 		m_usage = COMPILE_TIME | LINK_TIME;
 
+	//output/hierarchy: define netlist hierarchy post synthesis
+	else if(m_flag == "hierarchy")
+	{
+		m_usage = SYNTHESIS_TIME;
+
+		if( (m_arg != "rebuild") && (m_arg != "unchanged") )
+			LogParseError("output/hierarchy argument \"%s\" must be rebuild or unchanged\n", m_arg.c_str());
+	}
+
 	//output/unused: specify behavior of unused FPGA I/Os
 	else if(m_flag == "unused")
 	{
