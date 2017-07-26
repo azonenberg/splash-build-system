@@ -47,20 +47,25 @@ public:
 	 */
 	enum FlagUsage
 	{
-		COMPILE_TIME 	= 0x01,		//software compilation
-		LINK_TIME 		= 0x02,		//software linking
-		SYNTHESIS_TIME	= 0x04,		//HDL synthesis
-		MAP_TIME		= 0x08,		//HDL technology mapping
-		PAR_TIME		= 0x10,		//HDL place-and-route
-		IMAGE_TIME		= 0x20,		//Firmware image creation time
-		PROOF_TIME		= 0x40,		//Formal verification solvers etc
-		ANALYSIS_TIME	= 0x80,		//Static timing analysis etc
+		COMPILE_TIME 	= 0x0001,		//software compilation
+		LINK_TIME 		= 0x0002,		//software linking
+		SYNTHESIS_TIME	= 0x0004,		//HDL synthesis
+		MAP_TIME		= 0x0008,		//HDL technology mapping
+		PAR_TIME		= 0x0010,		//HDL place-and-route
+		IMAGE_TIME		= 0x0020,		//Firmware image creation time
+		PROOF_TIME		= 0x0040,		//Formal verification solvers etc
+		ANALYSIS_TIME	= 0x0080,		//Static timing analysis etc
 
-		FPGA_TIME		=			//All FPGA stuff
+		FPGA_TIME		=				//All FPGA stuff
 			SYNTHESIS_TIME | MAP_TIME | PAR_TIME | IMAGE_TIME | ANALYSIS_TIME,
 
-		NO_TIME			= 0x00,		//placeholder
-		ALL_TIME		= 0xff
+		SCAN_TIME		= 0x0100,		//Dependency scanning (not used during actual build)
+
+		COMPILE_AND_SCAN_TIME =			//Dependency scanning and compilation
+			COMPILE_TIME | SCAN_TIME,
+
+		NO_TIME			= 0x0000,		//placeholder
+		ALL_TIME		= 0xffff
 	};
 
 	/**

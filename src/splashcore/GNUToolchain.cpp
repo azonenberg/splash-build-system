@@ -309,6 +309,11 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 		paths.push_back(CanonicalizePath(searchdir));
 	}
 
+	//Add lib directory because distros are derpy and sometimes put headers here
+	string dir = string("/usr/lib/") + arch;
+	if(DoesDirectoryExist(dir))
+		paths.push_back(CanonicalizePath(dir));
+
 	//Debug dump
 	//for(auto p : paths)
 	//	LogDebug("        %s\n", p.c_str());
@@ -320,7 +325,7 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 /**
 	@brief Convert a build flag to the actual executable flag representation
  */
-string GNUToolchain::FlagToString(BuildFlag flag)
+string GNUToolchain::FlagToString(BuildFlag flag, string triplet)
 {
 	string s = flag;
 
@@ -351,6 +356,11 @@ string GNUToolchain::FlagToString(BuildFlag flag)
 	//Libraries
 	else if(flag.GetType() == BuildFlag::TYPE_LIBRARY)
 	{
+		//Special processing for incpkg
+		//TODO: can this be more cross platform? It's a giant pain in the butt
+		if(flag.GetFlag() == "incpkg")
+			return "-I/usr/include/" + flag.GetArgs() + " -I/usr/lib/" + triplet + "/" + flag.GetArgs() + "/include";
+
 		//The library is specified by absolute path on the link command line as a source file,
 		//so there's no extra flags required here
 		return "";
@@ -425,6 +435,23 @@ bool GNUToolchain::ScanDependencies(
 	string aflags = m_archflags[triplet];
 	auto apath = m_virtualSystemIncludePath[triplet];
 
+	//Look up directories specified by flags - gcc is derpy and sometimes doesn't go full absolute for these
+	//(this must happen before we search for library flags)
+	//TODO: make incpkg not a library flag since it works at scan time?
+	set<string> flagdirs;
+	for(auto f : flags)
+	{
+		if( (f.GetType() == BuildFlag::TYPE_LIBRARY) && (f.GetFlag() == "incpkg") )
+		{
+			flagdirs.emplace(string("/usr/include/") + f.GetArgs());
+			flagdirs.emplace(string("/usr/lib/") + triplet + "/" + f.GetArgs() + "/include");
+		}
+		//else
+		//	LogTrace("flag %s is not a flagdir\n", static_cast<string>(f).c_str());
+	}
+	//for(auto f : flagdirs)
+	//	LogTrace("flag dir: %s\n", f.c_str());
+
 	//Search for any library flags
 	set<string> foundpaths;
 	set<string> foundlibNames;
@@ -496,7 +523,7 @@ bool GNUToolchain::ScanDependencies(
 	//Make the full scan command line
 	string cmdline = exe + " " + aflags + " -M -MG ";
 	for(auto f : flags)
-		cmdline += FlagToString(f) + " ";
+		cmdline += FlagToString(f, triplet) + " ";
 	if(cpp)
 		cmdline += "-x c++ ";
 	else
@@ -568,7 +595,7 @@ bool GNUToolchain::ScanDependencies(
 		//If the path begins with our working copy directory, trim it off and call the rest the relative path
 		if(f.find(root) == 0)
 		{
-			LogTrace("local dir\n");
+			//LogTrace("local dir\n");
 			f = f.substr(root.length() + 1);
 		}
 
@@ -595,6 +622,22 @@ bool GNUToolchain::ScanDependencies(
 					longest_prefix = dir;
 			}
 
+			//Even if we're in a system include directory, if we're in a -I directory that is longer,
+			//match that one instead.
+			if(longest_prefix != "")
+			{
+				for(auto flagdir : flagdirs)
+				{
+					if(f.find(flagdir) != 0)
+						continue;
+
+					//We found it!
+					LogTrace("Resolved path to sysinclude subdir %s\n", flagdir.c_str());
+					if(flagdir.length() > longest_prefix.length())
+						longest_prefix = flagdir;
+				}
+			}
+
 			//It's an absolute path to a standard system include directory. Trim off the prefix and go.
 			if(longest_prefix != "")
 				f = apath + "/" + f.substr(longest_prefix.length() + 1);
@@ -611,19 +654,23 @@ bool GNUToolchain::ScanDependencies(
 			//Ask the server for it (by best-guess filename)
 			else if(longest_prefix == "")
 			{
+				LogTrace("Trying to resolve relative path %s\n", f.c_str());
+				LogIndenter li;
+
+				//Nope, maybe it's a project relative path?
 				string fname = str_replace(root + "/", "", GetDirOfFile(path)) + "/" + f;
 				if(!CanonicalizePathThatMightNotExist(fname))
 				{
 					output += string("Couldn't canonicalize path ") + fname + "\n";
 					return false;
 				}
-				LogTrace("Canonicalized %s to %s\n", f.c_str(), fname.c_str());
+				LogTrace("Trying %s\n", fname.c_str());
 
 				//It seems like sometimes #include <> (vs "") doesn't resolve to an absolute path sometimes :(
 				//Check if we have the file in the working directory
 				if(DoesFileExist(fname))
 				{
-					LogTrace("Resolved relative %s to current directory\n", fname.c_str());
+					LogTrace("Resolved relative to current directory\n");
 					files[i] = fname;
 					f = fname;
 				}
@@ -707,6 +754,10 @@ bool GNUToolchain::FindLibraries(
 	for(auto f : flags)
 	{
 		if(f.GetType() != BuildFlag::TYPE_LIBRARY)
+			continue;
+
+		//Don't filter off incpkg since this is used for dependency scanning
+		if(f.GetFlag() == "incpkg")
 			continue;
 
 		string libbase = f.GetArgs();
@@ -834,7 +885,7 @@ bool GNUToolchain::Compile(
 	else
 		cmdline += "-x c ";
 	for(auto f : flags)							//special flags
-		cmdline += FlagToString(f) + " ";
+		cmdline += FlagToString(f, triplet) + " ";
 
 	//Finish it up
 	cmdline += string("-I") + apath + "/ ";		//include the virtual system path
@@ -894,7 +945,7 @@ bool GNUToolchain::Link(
 	//Make the base command line
 	string cmdline = exe + " " + aflags + " -o " + fname + " ";
 	for(auto f : flags)
-		cmdline += FlagToString(f) + " ";
+		cmdline += FlagToString(f, triplet) + " ";
 
 	//If we're building a shared library, set the soname
 	//TODO: provide an interface for setting the library version?

@@ -62,7 +62,8 @@ CPPObjectNode::CPPObjectNode(
 
 	//Run the dependency scanner on this file to see what other stuff we need to pull in.
 	//This will likely require pulling a lot of files from the golden node.
-	//If the scan fails, declare us un-buildable
+	//If the scan fails, declare us un-buildable.
+	//Note, m_flags is filtered for compile-time flags only; flags is unfiltered and includes scan flags too
 	m_scanJob = g_scheduler->ScanDependenciesNonblocking(
 		fname,
 		arch,

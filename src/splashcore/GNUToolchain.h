@@ -88,7 +88,7 @@ public:
 	bool HasValidArches();
 
 protected:
-	std::string FlagToString(BuildFlag flag);
+	std::string FlagToString(BuildFlag flag, std::string triplet);
 	bool VerifyFlags(std::string triplet);
 
 	bool FindLibraries(

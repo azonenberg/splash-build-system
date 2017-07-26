@@ -75,9 +75,9 @@ void CPPExecutableNode::DoStartFinalization()
 	//Look up the working copy we're part of
 	WorkingCopy* wc = m_graph->GetWorkingCopy();
 
-	//Collect the compiler flags
-	set<BuildFlag> compileFlags;
-	GetFlagsForUseAt(BuildFlag::COMPILE_TIME, compileFlags);
+	//Collect the compile (and dependency scan) flags
+	set<BuildFlag> compileAndScanFlags;
+	GetFlagsForUseAt(BuildFlag::COMPILE_AND_SCAN_TIME, compileAndScanFlags);
 
 	//We have source nodes. Create the object nodes.
 	set<string> ignored;
@@ -102,7 +102,7 @@ void CPPExecutableNode::DoStartFinalization()
 			fname,
 			m_toolchain,
 			m_script,
-			compileFlags);
+			compileAndScanFlags);
 
 		//If we have a node for this hash already, delete it and use the existing one
 		string h = obj->GetHash();

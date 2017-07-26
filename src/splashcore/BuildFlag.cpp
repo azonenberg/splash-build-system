@@ -215,6 +215,11 @@ void BuildFlag::LoadLibraryFlag()
 	else if(m_flag == "__incdir")
 		m_usage = SYNTHESIS_TIME | COMPILE_TIME;
 
+	//library/incpkg: include directory relative to system standard include path
+	//Only used during dependency scanning time, not compilation
+	else if(m_flag == "incpkg")
+		m_usage = SCAN_TIME;
+
 	else
 		LogParseError("Flag \"library/%s\" is unknown\n", m_flag.c_str());
 }

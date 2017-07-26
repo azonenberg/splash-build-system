@@ -353,7 +353,10 @@ void ProcessDependencyScan(Socket& sock, DependencyScan rxm)
 	//Look up the flags
 	set<BuildFlag> flags;
 	for(int i=0; i<rxm.flags_size(); i++)
+	{
+		LogTrace("Flag: %s\n", rxm.flags(i).c_str());
 		flags.emplace(BuildFlag(rxm.flags(i)));
+	}
 
 	//Format the return message
 	SplashMsg reply;
@@ -388,8 +391,8 @@ bool DoScanDependencies(
 	set<BuildFlag>& libFlags,
 	DependencyResults* replym)
 {
-	//LogDebug("DoScanDependencies for %s\n", aname.c_str());
-	//LogIndenter li;
+	LogDebug("DoScanDependencies for %s\n", aname.c_str());
+	LogIndenter li;
 
 	//Run the scanner proper
 	while(true)
