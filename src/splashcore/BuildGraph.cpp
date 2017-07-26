@@ -186,8 +186,8 @@ void BuildGraph::GetNodes(set<string>& nodes)
  */
 void BuildGraph::GetTargets(set<BuildGraphNode*>& nodes, string target, string arch, string config, bool libs_too)
 {
-	if(libs_too)
-		LogTrace("GetTargets with libs\n");
+	//if(libs_too)
+	//	LogTrace("GetTargets with libs\n");
 
 	for(auto it : m_targets)
 	{
@@ -893,7 +893,7 @@ bool BuildGraph::ProcessConstantTable(string scriptpath, string tablepath, strin
 			//Figure out the output filename
 			string name = it.first.as<std::string>();
 			string opath = GetDirOfFile(scriptpath) + "/" + ConstantTableNode::GetOutputBasename(name, generator);
-			//LogDebug("Enum %s is at %s\n", name.c_str(), opath.c_str());
+			LogTrace("Enum %s is at %s\n", name.c_str(), opath.c_str());
 
 			//Create and add the node
 			//Do not touch any build scripts.
