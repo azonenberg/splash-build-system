@@ -315,8 +315,17 @@ void GNUToolchain::FindDefaultIncludePaths(vector<string>& paths, string exe, bo
 		paths.push_back(CanonicalizePath(dir));
 
 	//Debug dump
-	//for(auto p : paths)
-	//	LogDebug("        %s\n", p.c_str());
+	LogTrace("Standard include paths:\n");
+	int ipath = 0;
+	for(auto p : paths)
+	{
+		char tmp[128];
+		snprintf(tmp, sizeof(tmp), "search%d", ipath);
+		ipath ++;
+		m_searchdirRemap[p] = tmp;
+
+		LogTrace("    %s (%s)\n", p.c_str(), tmp);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -606,7 +615,9 @@ bool GNUToolchain::ScanDependencies(
 			string longest_prefix = "";
 			for(auto dir : sysdirs)
 			{
-				if(f.find(dir) != 0)
+				//Need to search for the trailing / so we don't match prefixed names
+				//example: foo/include-fixed should NOT hit on foo/include
+				if(f.find(dir + "/") != 0)
 					continue;
 
 				//Don't match longer prefixes if they have "backward" in them.
@@ -640,7 +651,16 @@ bool GNUToolchain::ScanDependencies(
 
 			//It's an absolute path to a standard system include directory. Trim off the prefix and go.
 			if(longest_prefix != "")
-				f = apath + "/" + f.substr(longest_prefix.length() + 1);
+			{
+				//Is it a compiler include dir? Remap to the virtual search directory
+				//so we preserve ordering for include_next
+				if(m_searchdirRemap.find(longest_prefix) != m_searchdirRemap.end())
+					f = apath + "/" + m_searchdirRemap[longest_prefix] + "/" + f.substr(longest_prefix.length() + 1);
+
+				//No, probably a -I or something. No remapping.
+				else
+					f = apath + "/" + f.substr(longest_prefix.length() + 1);
+			}
 
 			//If it's an absolute path but NOT in a system include dir, fail.
 			//Including random headers by absolute path is not portable!
@@ -887,8 +907,17 @@ bool GNUToolchain::Compile(
 	for(auto f : flags)							//special flags
 		cmdline += FlagToString(f, triplet) + " ";
 
-	//Finish it up
-	cmdline += string("-I") + apath + "/ ";		//include the virtual system path
+	//Finish it up.
+	//Include a bunch of virtual system include paths.
+	//TODO: can we transmit the number present on the golden node somehow? For now, just try ten and hope for the best
+	cmdline += string("-I") + apath + "/ ";
+	for(int i=0; i<10; i++)
+	{
+		char tmp[128];
+		snprintf(tmp, sizeof(tmp), "search%d", i);
+		cmdline += string("-I") + apath + "/" + tmp + "/ ";
+	}
+
 	//TODO: include other dirs like $PROJECT etc
 	cmdline += "-c ";
 	for(auto s : sources)

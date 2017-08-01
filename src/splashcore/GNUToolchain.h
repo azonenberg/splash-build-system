@@ -108,6 +108,11 @@ protected:
 	std::map<std::string, std::string> m_virtualSystemIncludePath;
 
 	/**
+		@brief Remapping of original system include paths to unique identifiers
+	 */
+	std::map<std::string, std::string> m_searchdirRemap;
+
+	/**
 		@brief Flags we use to target each of our supported architectures
 	 */
 	std::map<std::string, std::string> m_archflags;
