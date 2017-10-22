@@ -1239,7 +1239,7 @@ bool XilinxISEToolchain::GenerateBitstream(
 	//Figure out flags
 	string sflags = "-intstyle xflow -g DonePipe:Yes ";
 	if(triplet.find("spartan6-") == 0)
-		sflags += "-g INIT_9L:Yes ";
+		sflags += "-g INIT_9K:Yes ";
 	for(auto f : flags)
 		sflags += FlagToStringForBitgen(f);
 
