@@ -418,8 +418,8 @@ void FindFiles(string dir, vector<string>& files)
 	if(!hdir)
 		LogFatal("Directory %s could not be opened\n", dir.c_str());
 
-	dirent* pent = NULL;
-	while(pent == readdir(hdir))
+	dirent* pent;
+	while((pent = readdir(hdir)))
 	{
 		if(pent->d_name[0] == '.')
 			continue;
@@ -451,8 +451,8 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 		return;
 	}
 
-	dirent* pent = NULL;
-	while(pent == readdir(hdir))
+	dirent* pent;
+	while((pent = readdir(hdir)))
 	{
 		if(pent->d_name[0] == '.')
 			continue;
@@ -481,8 +481,8 @@ void FindFilesBySubstring(string dir, string sub, vector<string>& files)
 		return;
 	}
 
-	dirent* pent = NULL;
-	while(pent == readdir(hdir))
+	dirent* pent;
+	while((pent = readdir(hdir)))
 	{
 		if(pent->d_name[0] == '.')
 			continue;
@@ -514,8 +514,8 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 		return;
 	}
 
-	dirent* pent = NULL;
-	while(pent == readdir(hdir))
+	dirent* pent;
+	while((pent = readdir(hdir)))
 	{
 		if(pent->d_name[0] == '.')	//don't find hidden dirs
 			continue;
