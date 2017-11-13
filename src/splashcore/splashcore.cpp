@@ -418,16 +418,13 @@ void FindFiles(string dir, vector<string>& files)
 	if(!hdir)
 		LogFatal("Directory %s could not be opened\n", dir.c_str());
 
-	dirent ent;
-	dirent* pent;
-	while(0 == readdir_r(hdir, &ent, &pent))
+	dirent* pent = NULL;
+	while(pent == readdir(hdir))
 	{
-		if(pent == NULL)
-			break;
-		if(ent.d_name[0] == '.')
+		if(pent->d_name[0] == '.')
 			continue;
 
-		string fname = dir + "/" + ent.d_name;
+		string fname = dir + "/" + pent->d_name;
 		if(DoesDirectoryExist(fname))
 			continue;
 
@@ -454,17 +451,14 @@ void FindFilesByExtension(string dir, string ext, vector<string>& files)
 		return;
 	}
 
-	dirent ent;
-	dirent* pent;
-	while(0 == readdir_r(hdir, &ent, &pent))
+	dirent* pent = NULL;
+	while(pent == readdir(hdir))
 	{
-		if(pent == NULL)
-			break;
-		if(ent.d_name[0] == '.')
+		if(pent->d_name[0] == '.')
 			continue;
 
 		//Extension match
-		string fname = dir + "/" + ent.d_name;
+		string fname = dir + "/" + pent->d_name;
 		if(fname.find(ext) == (fname.length() - ext.length()) )
 			files.push_back(fname);
 	}
@@ -487,17 +481,14 @@ void FindFilesBySubstring(string dir, string sub, vector<string>& files)
 		return;
 	}
 
-	dirent ent;
-	dirent* pent;
-	while(0 == readdir_r(hdir, &ent, &pent))
+	dirent* pent = NULL;
+	while(pent == readdir(hdir))
 	{
-		if(pent == NULL)
-			break;
-		if(ent.d_name[0] == '.')
+		if(pent->d_name[0] == '.')
 			continue;
 
 		//Extension match
-		string fname = dir + "/" + ent.d_name;
+		string fname = dir + "/" + pent->d_name;
 		if(fname.find(sub) != string::npos )
 			files.push_back(fname);
 	}
@@ -523,16 +514,13 @@ void FindSubdirs(string dir, vector<string>& subdirs)
 		return;
 	}
 
-	dirent ent;
-	dirent* pent;
-	while(0 == readdir_r(hdir, &ent, &pent))
+	dirent* pent = NULL;
+	while(pent == readdir(hdir))
 	{
-		if(pent == NULL)
-			break;
-		if(ent.d_name[0] == '.')	//don't find hidden dirs
+		if(pent->d_name[0] == '.')	//don't find hidden dirs
 			continue;
 
-		string fname = dir + "/" + ent.d_name;
+		string fname = dir + "/" + pent->d_name;
 		if(!DoesDirectoryExist(fname))
 			continue;
 
