@@ -20,7 +20,7 @@ else()
 endif()
 
 #Search for Google protocol buffers
-find_package(Protobuf REQUIRED)
+find_package(Protobuf 3 REQUIRED)
 
 #TODO: Find libyaml-cpp
 
