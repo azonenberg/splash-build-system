@@ -46,8 +46,7 @@ HDLNetlistNode::HDLNetlistNode(
 	string binfohash,
 	set<BuildFlag> flags,
 	set<BuildGraphNode*> sources)
-	: BuildGraphNode(graph, BuildFlag::SYNTHESIS_TIME | BuildFlag::COMPILE_TIME,
-		toolchain, arch, name, scriptpath, path, flags)
+	: BuildGraphNode(graph, BuildFlag::SYNTHESIS_TIME, toolchain, arch, name, scriptpath, path, flags)
 	, m_board(board)
 	, m_binfohash(binfohash)
 {
