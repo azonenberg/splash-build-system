@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 
 	//Initialize the cache
 	//TODO: Separate caches for each instance if we multithread? Or one + sharing?
-	g_cache = new Cache("splash");
+	g_cache = new Cache("splash-client");
 
 	//If the command is "init" we have to process it BEFORE loading the config or connecting to the server
 	//since the config doesn't yet exist!
@@ -847,7 +847,7 @@ void ShowVersion()
 void ShowUsage()
 {
 	printf(
-		"Usage: splash [options] <command> [args]\n"
+		"Usage: spmake [options] <command> [args]\n"
 		"\n"
 		"options may be zero or more of the following:\n"
 		"    --debug                        Sets log level to debug\n"
@@ -876,10 +876,10 @@ void ShowUsage()
 		"                                   with one target name per line\n"
 		"    list-toolchains                List all toolchains the server knows about.\n"
 		"\n"
-		"splash build \n"
+		"spmake build \n"
 		"    Builds one or more targets (docs TODO)\n"
 		"\n"
-		"splash init <control server> [port]\n"
+		"spmake init <control server> [port]\n"
 		"    Initializes the .splash directory within this working copy to store\n"
 		"    client-side configuration. This must be the first Splash command\n"
 		"    executed in the working copy after cloning.\n"

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(splash)
+project(splash-build-system)
 
 set( EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
 set( LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
@@ -48,8 +48,8 @@ set(CPACK_PACKAGE_VERSION_PATCH "1")	# TODO: set this based on git sha or someth
 # List of package types to make
 set(CPACK_GENERATOR "DEB")
 
-#Debian specific configuration (TODO set bsed on host or something?)
-set(CPACK_DEBIAN_PACKAGE_NAME splash)
+#Debian specific configuration (TODO set based on host or something?)
+set(CPACK_DEBIAN_PACKAGE_NAME splash-build-system)
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE amd64)
 
 # TODO: Debian package dependencies
