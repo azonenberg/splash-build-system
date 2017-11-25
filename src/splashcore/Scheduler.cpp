@@ -67,9 +67,28 @@ Scheduler::~Scheduler()
 /**
 	@brief TODO: Cancel pending jobs for that node
  */
-void Scheduler::RemoveNode(clientID /*id*/)
+void Scheduler::RemoveNode(clientID id)
 {
-	LogWarning("Scheduler::RemoveNode() not implemented\n");
+	lock_guard<recursive_mutex> lock(m_mutex);
+	lock_guard<NodeManager> nlock(*g_nodeManager);
+
+	//LogWarning("Scheduler::RemoveNode() not implemented\n");
+
+	LogVerbose("Splashbuild worker %s is shutting down\n", id.c_str());
+
+	//See what pending jobs the node abandoned
+	if(m_pendingScanJobs[id].empty())
+		LogDebug("No pending scan jobs\n");
+	else
+		LogDebug("Node has pending scan jobs. FIXME: handle them\n");
+
+	//See if the node currently has an active job
+	LogDebug("Checking if node has active job\n");
+	auto bj = g_nodeManager->GetCurrentJob(id);
+	if(bj)
+		LogDebug("Node has a job in progress. FIXME: handle that\n");
+	else
+		LogDebug("Node has no job in progress\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,7 +128,11 @@ Job* Scheduler::PopJob(clientID id)
 	{
 		Job* job = PopJob(id, static_cast<Job::Priority>(i));
 		if(job)
+		{
+			//This job is now running on the node that requested it
+			g_nodeManager->SetCurrentJob(id, job);
 			return job;
+		}
 	}
 
 	return NULL;

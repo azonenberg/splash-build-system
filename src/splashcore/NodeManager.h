@@ -79,6 +79,9 @@ public:
 	void ListClientsForToolchain(std::set<clientID>& nodes, std::string hash);
 	void ListToolchainsForClient(std::set<std::string>& toolchains, clientID id);
 
+	void SetCurrentJob(std::string id, Job* job);
+	Job* GetCurrentJob(std::string id);
+
 protected:
 
 	void RecomputeCompilerHashes();
@@ -104,6 +107,9 @@ protected:
 
 	//The working copies of the repository for each client
 	std::map<clientID, WorkingCopy*> m_workingCopies;
+
+	//The job currently running on this node (if any)
+	std::map<std::string, Job*> m_jobRunningOnNode;
 };
 
 /**

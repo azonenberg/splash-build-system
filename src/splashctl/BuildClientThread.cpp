@@ -181,6 +181,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			{
 				bj->SetCanceled();
 				bj->Unref();
+				g_nodeManager->SetCurrentJob(id, NULL);
 				continue;
 			}
 
@@ -201,6 +202,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			{
 				bj->SetDone(ok);
 				bj->Unref();
+				g_nodeManager->SetCurrentJob(id, NULL);
 				continue;
 			}
 
@@ -208,6 +210,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			//TODO: Put it back in the queue or something fault tolerant?
 			bj->SetCanceled();
 			bj->Unref();
+			g_nodeManager->SetCurrentJob(id, NULL);
 			break;
 		}
 

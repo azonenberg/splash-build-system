@@ -72,6 +72,24 @@ void NodeManager::unlock()
 // Database manipulation
 
 /**
+	@brief Sets the job currently running on a node
+ */
+void NodeManager::SetCurrentJob(std::string id, Job* job)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	m_jobRunningOnNode[id] = job;
+}
+
+/**
+	@brief Gets the job currently running on a node
+ */
+Job* NodeManager::GetCurrentJob(std::string id)
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return m_jobRunningOnNode[id];
+}
+
+/**
 	@brief Allocate a new client ID
  */
 void NodeManager::AllocateClient(string hostname, clientID id, int type)
