@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 int ProcessBuildCommand(Socket& s, const vector<string>& args)
 {
 	//Parse arguments
-	string target;
+	vector<string> targets;
 	string config;
 	string arch;
 
@@ -178,13 +178,8 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 		else if( (args[i] == "--arch") && (i+1 < args.size()) )
 			arch = args[++i];
 
-		else if(target.empty())
-			target = args[i];
-
 		else
-		{
-			LogError("Invalid argument\n");
-		}
+			targets.push_back(args[i]);
 	}
 
 	//Go to the project root dir since everything is ref'd to that
@@ -193,7 +188,8 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	//Format the command
 	SplashMsg cmd;
 	auto cmdm = cmd.mutable_buildrequest();
-	cmdm->set_target(target);
+	for(auto t : targets)
+		cmdm->add_target(t);
 	cmdm->set_arch(arch);
 	cmdm->set_config(config);
 	cmdm->set_rebuild(false);

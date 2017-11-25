@@ -180,6 +180,24 @@ void BuildGraph::GetNodes(set<string>& nodes)
 }
 
 /**
+	@brief Checks if the requested target exists (for some arch/config combination)
+ */
+bool BuildGraph::HasTarget(string target)
+{
+	for(auto it : m_targets)
+	{
+		TargetMap& cm = *it.second;
+		for(auto jt : cm)
+		{
+			if(jt.first == target)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+/**
 	@brief Get all targets matching the requested filter
 
 	If libs_too is set, finds all targets that matched targets link to as well

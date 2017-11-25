@@ -285,7 +285,7 @@ message NodeList
 //Request from a client to build a target (or targets)
 message BuildRequest
 {
-				string		target		= 1;	//The target to build (empty for all)
+	repeated	string		target		= 1;	//The target to build (empty for all)
 				string		arch		= 2;	//The architecture to build (empty for all)
 				string		config		= 3;	//The configuration to build (empty for all)
 				bool		rebuild		= 4;	//If true, discard the existing cache output

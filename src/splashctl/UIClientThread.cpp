@@ -131,13 +131,26 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		lock_guard<recursive_mutex> lock(graph.GetMutex());
 
 		//Find the targets for the requested build options
-		graph.GetTargets(nodes, msg.target(), msg.arch(), msg.config(), true);
+		for(int i=0; i<msg.target_size(); i++)
+		{
+			if(graph.HasTarget(msg.target(i)))
+				graph.GetTargets(nodes, msg.target(i), msg.arch(), msg.config(), true);
+			else
+			{
+				resultm->set_status(false);
+				resultm->set_failreason(string("Target ") + msg.target(i) + " does not exist");
+				if(!SendMessage(s, result, hostname))
+					return false;
+				return true;
+			}
+
+		}
 
 		//If no targets match the requested list, send an error back to the client
-		if(nodes.empty())
+		if(nodes.empty() || (msg.target_size() == 0) )
 		{
 			resultm->set_status(false);
-			resultm->set_failreason(string("Target ") + msg.target() + " does not exist");
+			resultm->set_failreason("No targets specified, or no matching targets found");
 			if(!SendMessage(s, result, hostname))
 				return false;
 			return true;

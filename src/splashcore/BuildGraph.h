@@ -87,6 +87,7 @@ public:
 		std::string board = "");
 
 	void GetTargets(std::set<std::string>& targets);
+	bool HasTarget(std::string target);
 	std::string GetTargetScript(std::string name);
 	std::string GetTargetToolchain(std::string name);
 
