@@ -154,16 +154,39 @@ int main(int argc, char* argv[])
 			daemons.push_back(pid);
 	}
 
+	//Wait 2 sec and see if the processes are still running
+	usleep(2 * 1000 * 1000);
+
+	//Linux specific - fix this for other OSes if we want to target them?
+	bool ok = true;
+	for(auto pid : daemons)
+	{
+		char name[128];
+		snprintf(name, sizeof(name), name, "/proc/%d", pid);
+		DIR* dir = opendir(name);
+		if(dir == NULL)
+		{
+			ok = false;
+			break;
+		}
+		closedir(dir);
+	}
+
 	//Wait for user to press a key
-	LogNotice("Build daemons running, press any key to exit...\n");
-	fflush(stdout);
-	struct termios oldt, newt;
-	tcgetattr ( STDIN_FILENO, &oldt );
-	newt = oldt;
-	newt.c_lflag &= ~( ICANON | ECHO );
-	tcsetattr ( STDIN_FILENO, TCSANOW, &newt );
-	getchar();
-	tcsetattr ( STDIN_FILENO, TCSANOW, &oldt );
+	if(ok)
+	{
+		LogNotice("Build daemons running, press any key to exit...\n");
+		fflush(stdout);
+		struct termios oldt, newt;
+		tcgetattr ( STDIN_FILENO, &oldt );
+		newt = oldt;
+		newt.c_lflag &= ~( ICANON | ECHO );
+		tcsetattr ( STDIN_FILENO, TCSANOW, &newt );
+		getchar();
+		tcsetattr ( STDIN_FILENO, TCSANOW, &oldt );
+	}
+	else
+		LogError("Failed to start all daemons, check log file for details\n");
 
 	//Kill the build servers
 	for(auto pid : daemons)
