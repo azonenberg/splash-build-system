@@ -162,10 +162,11 @@ int main(int argc, char* argv[])
 	for(auto pid : daemons)
 	{
 		char name[128];
-		snprintf(name, sizeof(name), name, "/proc/%d", pid);
+		snprintf(name, sizeof(name), "/proc/%d", pid);
 		DIR* dir = opendir(name);
 		if(dir == NULL)
 		{
+			LogError("Couldn't find process %s\n", name);
 			ok = false;
 			break;
 		}
