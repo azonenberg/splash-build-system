@@ -22,7 +22,18 @@ endif()
 #Search for Google protocol buffers
 find_package(Protobuf 3 REQUIRED)
 
-#TODO: Find libyaml-cpp
+#Search for yaml-cpp
+find_library(HAVE_YAMLCPP NAMES yaml-cpp)
+if(NOT HAVE_YAMLCPP)
+	message(FATAL_ERROR "yaml-cpp required but not found.")
+endif()
+
+#Search for cppcheck
+find_program(CPPCHECK cppcheck)
+if(NOT CPPCHECK)
+	message(FATAL_ERROR "cppcheck required but not found.")
+endif()
+
 
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 
