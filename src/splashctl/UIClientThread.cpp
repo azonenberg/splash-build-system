@@ -110,7 +110,7 @@ void UIClientThread(Socket& s, string& hostname, clientID id)
  */
 bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, clientID id)
 {
-	bool rebuild = msg.rebuild();
+	//bool rebuild = msg.rebuild();
 
 	set<BuildGraphNode*> nodes;
 	set<Job*> jobs;
@@ -129,6 +129,15 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 		auto wc = g_nodeManager->GetWorkingCopy(id);
 		BuildGraph& graph = wc->GetGraph();
 		lock_guard<recursive_mutex> lock(graph.GetMutex());
+
+		//If we have no toolchains, fail the build instantly
+		if(!g_nodeManager->HasAnyToolchains())
+		{
+			resultm->set_status(false);
+			resultm->set_failreason("No build workers available, cannot build anything!");
+			if(!SendMessage(s, result, hostname))
+				return false;
+		}
 
 		//Find the targets for the requested build options
 		for(int i=0; i<msg.target_size(); i++)
