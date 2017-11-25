@@ -28,6 +28,7 @@
 ***********************************************************************************************************************/
 
 #include "splashctl.h"
+#include <poll.h>
 
 using namespace std;
 
@@ -214,10 +215,12 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			break;
 		}
 
-		//Wait 50 ms for more work.
-		//This shouldn't hurt performance much as we only get here when the run queue is empty.
-		//LogDebug("Run queue (for %s) is empty, sleeping...\n", hostname.c_str());
-		usleep(50 * 1000);
+		//Check if our client disconnected. Wait up to 50 ms for disconnection to avoid busy-polling
+		pollfd pfd;
+		pfd.fd = s;
+		pfd.events = POLLRDHUP;
+		if(0 != poll(&pfd, 1, 50))
+			break;
 	}
 }
 

@@ -375,8 +375,10 @@ void BuildGraph::UpdateScript(string path, string hash, bool body, bool config, 
 	//This is now a known script, keep track of it
 	m_buildScriptPaths[path] = hash;
 
-	//Reload the build script (and its dependencies)
-	InternalUpdateScript(path, hash, body, config, dirtyScripts);
+	//Reload the build script (and its dependencies).
+	//If we do not have any toolchains AT ALL, there's no point in doing this, though.
+	if(g_nodeManager->HasAnyToolchains())
+		InternalUpdateScript(path, hash, body, config, dirtyScripts);
 }
 
 /**

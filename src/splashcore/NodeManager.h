@@ -74,6 +74,7 @@ public:
 
 	void ListClients(std::set<clientID>& clients);
 
+	bool HasAnyToolchains();
 	void ListToolchains(std::set<std::string>& hashes);
 	void ListNamesForToolchain(std::set<std::string>& names, std::string hash);
 	void ListClientsForToolchain(std::set<clientID>& nodes, std::string hash);

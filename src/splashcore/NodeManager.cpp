@@ -277,8 +277,8 @@ void NodeManager::RecomputeCompilerHashes()
 	bool changed = (m_toolchainsByName != currentToolchains);
 	m_toolchainsByName = currentToolchains;
 
-	/*
 	//DEBUG: Print the final mapping
+	/*
 	for(auto it : m_toolchainsByName)
 	{
 		carch c = it.first;
@@ -399,6 +399,15 @@ void NodeManager::ListToolchains(set<string>& hashes)
 
 	for(auto it : m_toolchainsByName)
 		hashes.emplace(it.second);
+}
+
+/**
+	@brief Returns true if we have at least one toolchain
+ */
+bool NodeManager::HasAnyToolchains()
+{
+	lock_guard<recursive_mutex> lock(m_mutex);
+	return !m_toolchainsByName.empty();
 }
 
 /**

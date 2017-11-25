@@ -313,9 +313,9 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	{
 		string reason = result.failreason();
 		if(reason != "")
-			LogNotice("\nBuild failed: %s\n", result.failreason().c_str());
+			LogError("Build failed: %s\n", result.failreason().c_str());
 		else
-			LogNotice("\nBuild failed\n");
+			LogError("Build failed (no reason given)\n");
 		return 1;
 	}
 	else
