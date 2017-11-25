@@ -162,15 +162,13 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 				djob->Unref();
 				//LogDebug("[%7.3f] Job completed\n", g_scheduler->GetDT());
 				//lastJob = GetTime();
+				g_nodeManager->RemoveJob(id, djob);
 				continue;
 			}
 
-			//Job FAILED to run (client disconnected?) - update status
-			//TODO: Put it back in the queue or something fault tolerant?
-			djob->SetCanceled();
-			djob->Unref();
-			//lastJob = GetTime();
-			continue;
+			//Job FAILED to run! The client probably disconnected.
+			//Abort, let Scheduler::RemoveNode reschedule it
+			return;
 		}
 
 		//Look for actual compile jobs
@@ -182,7 +180,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			{
 				bj->SetCanceled();
 				bj->Unref();
-				g_nodeManager->SetCurrentJob(id, NULL);
+				g_nodeManager->RemoveJob(id, bj);
 				continue;
 			}
 
@@ -191,7 +189,12 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			while(!bj->IsRunnable())
 			{
 				LogWarning("Job is not runnable yet!\n");
-				usleep(50 * 1000);
+
+				pollfd pfd;
+				pfd.fd = s;
+				pfd.events = POLLRDHUP;
+				if(0 != poll(&pfd, 1, 2))
+					return;
 			}
 
 			//We've kicked off the job, let others know
@@ -203,16 +206,13 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 			{
 				bj->SetDone(ok);
 				bj->Unref();
-				g_nodeManager->SetCurrentJob(id, NULL);
+				g_nodeManager->RemoveJob(id, bj);
 				continue;
 			}
 
-			//Job FAILED to run (client disconnected?) - update status
-			//TODO: Put it back in the queue or something fault tolerant?
-			bj->SetCanceled();
-			bj->Unref();
-			g_nodeManager->SetCurrentJob(id, NULL);
-			break;
+			//Job FAILED to run! The client probably disconnected.
+			//Abort, let Scheduler::RemoveNode reschedule it
+			return;
 		}
 
 		//Check if our client disconnected. Wait up to 50 ms for disconnection to avoid busy-polling
@@ -220,7 +220,7 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		pfd.fd = s;
 		pfd.events = POLLRDHUP;
 		if(0 != poll(&pfd, 1, 50))
-			break;
+			return;
 	}
 }
 

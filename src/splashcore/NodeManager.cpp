@@ -72,21 +72,30 @@ void NodeManager::unlock()
 // Database manipulation
 
 /**
-	@brief Sets the job currently running on a node
+	@brief Marks a job as currently running on a given node
  */
-void NodeManager::SetCurrentJob(std::string id, Job* job)
+void NodeManager::AddJob(string id, Job* job)
 {
-	lock_guard<recursive_mutex> lock(m_mutex);
-	m_jobRunningOnNode[id] = job;
+	lock_guard<mutex> lock(m_jobStatusMutex);
+	m_jobsRunningOnNode[id].emplace(job);
+}
+
+/**
+	@brief Marks a job as no longer running on the given node
+ */
+void NodeManager::RemoveJob(string id, Job* job)
+{
+	lock_guard<mutex> lock(m_jobStatusMutex);
+	m_jobsRunningOnNode[id].erase(job);
 }
 
 /**
 	@brief Gets the job currently running on a node
  */
-Job* NodeManager::GetCurrentJob(std::string id)
+set<Job*> NodeManager::GetCurrentJobs(string id)
 {
-	lock_guard<recursive_mutex> lock(m_mutex);
-	return m_jobRunningOnNode[id];
+	lock_guard<mutex> lock(m_jobStatusMutex);
+	return m_jobsRunningOnNode[id];
 }
 
 /**

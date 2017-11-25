@@ -65,30 +65,32 @@ Scheduler::~Scheduler()
 // General scheduling
 
 /**
-	@brief TODO: Cancel pending jobs for that node
+	@brief Remove and re-schedule jobs running on a node that's leaving the cluster
  */
 void Scheduler::RemoveNode(clientID id)
 {
 	lock_guard<recursive_mutex> lock(m_mutex);
 	lock_guard<NodeManager> nlock(*g_nodeManager);
 
-	//LogWarning("Scheduler::RemoveNode() not implemented\n");
-
 	LogVerbose("Splashbuild worker %s is shutting down\n", id.c_str());
 
-	//See what pending jobs the node abandoned
-	if(m_pendingScanJobs[id].empty())
-		LogDebug("No pending scan jobs\n");
-	else
-		LogDebug("Node has pending scan jobs. FIXME: handle them\n");
+	//Destroy all pending scan jobs
+	//New scan jobs will be created when the node comes back
+	//(current Splash can only run scan jobs on one node at a time)
+	auto scans = m_pendingScanJobs[id];
+	for(auto job : scans)
+		job->Unref();
+	m_pendingScanJobs.erase(id);
 
 	//See if the node currently has an active job
-	LogDebug("Checking if node has active job\n");
-	auto bj = g_nodeManager->GetCurrentJob(id);
-	if(bj)
-		LogDebug("Node has a job in progress. FIXME: handle that\n");
-	else
-		LogDebug("Node has no job in progress\n");
+	auto bjs = g_nodeManager->GetCurrentJobs(id);
+	for(auto bj : bjs)
+	{
+		//Remove the ref our dying thread held, mark it as pending again, and put it back in the run queue
+		bj->SetPending();
+		bj->Unref();
+		SubmitJob(bj);
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,6 +113,7 @@ DependencyScanJob* Scheduler::PopScanJob(clientID id)
 	m_pendingScanJobs[id].pop_front();
 
 	ret->Ref();
+	g_nodeManager->AddJob(id, ret);
 	return ret;
 }
 
@@ -130,7 +133,7 @@ Job* Scheduler::PopJob(clientID id)
 		if(job)
 		{
 			//This job is now running on the node that requested it
-			g_nodeManager->SetCurrentJob(id, job);
+			g_nodeManager->AddJob(id, job);
 			return job;
 		}
 	}
