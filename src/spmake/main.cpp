@@ -770,7 +770,7 @@ int ProcessDumpGraphCommand(Socket& s, const vector<string>& args, bool suppress
 	//Sanity check
 	if(args.size() != 0)
 	{
-		LogError("Extra arguments. Usage:  \"splash list-clients\"\n");
+		LogError("Extra arguments. Usage:  \"splash dump-graph\"\n");
 		return 1;
 	}
 
