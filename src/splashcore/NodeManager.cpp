@@ -179,13 +179,23 @@ void NodeManager::AddToolchain(clientID id, Toolchain* chain, bool moreComing)
 	lock_guard<recursive_mutex> lock(m_mutex);
 
 	string hash = chain->GetHash();
-	m_toolchainsByNode[id][hash] = chain;
-	auto langs = chain->GetSupportedLanguages();
-	auto triplets = chain->GetTargetTriplets();
-	for(auto l : langs)
-		for(auto t : triplets)
-			m_nodesByLanguage[larch(l, t)].emplace(id);
-	m_nodesByCompiler[hash].emplace(id);
+
+	//If we already had a toolchain with the same hash attached to this node, this one is redundant.
+	//Clean up the pointer and don't do anything else with it
+	if(m_toolchainsByNode[id].find(hash) != m_toolchainsByNode[id].end())
+		delete chain;
+
+	//Nope, it's new - add it
+	else
+	{
+		m_toolchainsByNode[id][hash] = chain;
+		auto langs = chain->GetSupportedLanguages();
+		auto triplets = chain->GetTargetTriplets();
+		for(auto l : langs)
+			for(auto t : triplets)
+				m_nodesByLanguage[larch(l, t)].emplace(id);
+		m_nodesByCompiler[hash].emplace(id);
+	}
 
 	//Toolchains may have changed, recompute
 	if(!moreComing)
@@ -203,7 +213,7 @@ void NodeManager::RecomputeCompilerHashes()
 
 	//Make a list of every language/architecture pair we know about.
 	//The list of languages is architecture specific so we need to know what the options are.
-	//It's stupid to wasted time looking for a Verilog compiler for mips-elf.
+	//It's stupid to waste time looking for a Verilog compiler for mips-elf.
 	set<larch> larches;
 	for(auto it : m_nodesByLanguage)
 		larches.emplace(it.first);

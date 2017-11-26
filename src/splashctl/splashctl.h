@@ -50,4 +50,6 @@ void BuildClientThread(Socket& s, std::string& hostname, clientID id);
 void DevClientThread(Socket& s, std::string& hostname, clientID id);
 void UIClientThread(Socket& s, std::string& hostname, clientID id);
 
+extern bool	g_quitting;
+
 #endif

@@ -36,6 +36,9 @@ void sig_handler(int sig);
 void ShowUsage();
 void ShowVersion();
 
+bool g_quitting = false;
+Socket* g_server;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // App code
 
@@ -112,6 +115,7 @@ int main(int argc, char* argv[])
 	//Socket server
 	LogDebug("Listening on TCP port %d...\n", port);
 	Socket server(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	g_server = &server;
 	if(!server.DisableNagle())
 		return -1;
 	if(!server.Bind(port))
@@ -120,8 +124,10 @@ int main(int argc, char* argv[])
 		return -1;
 	while(true)
 	{
-		//TODO: ^C handler should set a flag to quit or something
-		thread t(ClientThread, server.Accept().Detach());
+		auto client = server.Accept();
+		if(!client.IsValid())
+			break;
+		thread t(ClientThread, client.Detach());
 		t.detach();
 	}
 
@@ -153,9 +159,11 @@ void sig_handler(int sig)
 	switch(sig)
 	{
 		case SIGINT:
-			//TODO: quit gracefully
 			printf("Quitting...\n");
-			exit(0);
+
+			g_quitting = true;
+			close(g_server->Detach());
+
 			break;
 
 		case SIGPIPE:

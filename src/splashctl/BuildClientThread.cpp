@@ -221,6 +221,9 @@ void BuildClientThread(Socket& s, string& hostname, clientID id)
 		pfd.events = POLLRDHUP;
 		if(0 != poll(&pfd, 1, 50))
 			return;
+
+		if(g_quitting)
+			break;
 	}
 }
 
