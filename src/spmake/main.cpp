@@ -196,14 +196,58 @@ int ProcessBuildCommand(Socket& s, const vector<string>& args)
 	if(!SendMessage(s, cmd))
 		return 1;
 
-	//Get the compiled files back from the server
+	string backspaces(150, '\b');
+
+	//Receive progress updates, showing a progress bar until the build completes
 	SplashMsg msg;
-	if(!RecvMessage(s, msg))
-		return 1;
-	if(msg.Payload_case() != SplashMsg::kBuildResults)
+	while(true)
 	{
-		LogError("Got wrong message type back\n");
-		return 1;
+		//Grab the packet
+		if(!RecvMessage(s, msg))
+			return 1;
+
+		//Progress update
+		if(msg.Payload_case() == SplashMsg::kBuildProgressUpdate)
+		{
+			auto update = msg.buildprogressupdate();
+
+			float total = update.tasks_pending() + update.tasks_completed() + update.tasks_failed();
+			int bar_width = 120;
+
+			//Remove the previous status update
+			LogNotice("%s", backspaces.c_str());
+
+			LogNotice("[");
+
+			//Red dots for failed tasks
+			int dots_failed = update.tasks_failed() * bar_width / total;
+			string text_failed(dots_failed, '*');
+			LogNotice("\033[31;1m%s", text_failed.c_str());
+
+			//Green dots for completed tasks
+			int dots_ok = update.tasks_completed() * bar_width / total;
+			string text_ok(dots_ok, '*');
+			LogNotice("\033[32;1m%s", text_ok.c_str());
+
+			//White dashes for pending tasks
+			int dots_pending = bar_width - (dots_ok + dots_failed);
+			string text_pending(dots_pending, '-');
+			LogNotice("\033[0m%s", text_pending.c_str());
+
+			LogNotice("]");
+
+			//Status
+			LogNotice(" %u/%d done, %u failed", update.tasks_completed(), (int)total, update.tasks_failed());
+		}
+
+		else if(msg.Payload_case() == SplashMsg::kBuildResults)
+			break;
+
+		else
+		{
+			LogError("Got wrong message type back\n");
+			return 1;
+		}
 	}
 
 	//Loop over the generated files and see where we stand

@@ -368,6 +368,14 @@ message WorkingCopyList
 	repeated	string		path		= 1;	//The list of file names
 };
 
+//Status update with progress of the build
+message BuildProgressUpdate
+{
+	uint32		tasks_pending			= 1;	//Number of tasks that are not yet completed
+	uint32		tasks_completed			= 2;	//Number of tasks that finished successfully
+	uint32		tasks_failed			= 3;	//Number of tasks that finished with errors
+};
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top-level message type
 
@@ -405,5 +413,6 @@ message SplashMsg
 		BulkHashRequest			bulkHashRequest			= 28;
 		BulkHashResponse		bulkHashResponse		= 29;
 		WorkingCopyList			workingCopyList			= 30;
+		BuildProgressUpdate		buildProgressUpdate		= 31;
 	}
 };

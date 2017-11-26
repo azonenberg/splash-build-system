@@ -215,6 +215,10 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 	//Wait for build to complete
 	LogDebug("UI client: Waiting for build jobs to complete\n");
+	unsigned int tasks_started = jobs.size();
+	unsigned int tasks_finished = 0;
+	unsigned int tasks_failed = 0;
+	double last_update_sent = GetTime();
 	while(!jobs.empty())
 	{
 		//See what's finished this pass
@@ -225,10 +229,14 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 			if(status == BuildJob::STATUS_CANCELED)
 			{
 				done.emplace(j);
+				tasks_failed ++;
 				failed = true;
 			}
 			else if(status == BuildJob::STATUS_DONE)
+			{
+				tasks_finished ++;
 				done.emplace(j);
+			}
 		}
 
 		//Clean up finished jobs as they complete
@@ -240,6 +248,25 @@ bool OnBuildRequest(Socket& s, const BuildRequest& msg, string& hostname, client
 
 		//Wait a little while (TODO: wait until one of the jobs has finished with an event or something?)
 		usleep(50 * 1000);
+
+		//Send an update to the client every second, or at the end
+		//(so we get a nice full progress bar after completion)
+		double dt = GetTime() - last_update_sent;
+		if( (dt > 1) || jobs.empty() )
+		{
+			unsigned int tasks_pending = tasks_started - (tasks_finished + tasks_failed);
+
+			SplashMsg update;
+			auto updatem = update.mutable_buildprogressupdate();
+			updatem->set_tasks_pending(tasks_pending);
+			updatem->set_tasks_completed(tasks_finished);
+			updatem->set_tasks_failed(tasks_failed);
+
+			if(!SendMessage(s, update, hostname))
+				return false;
+
+			last_update_sent = GetTime();
+		}
 	}
 
 	//LogDebug("UI client: Jobs completed\n");
