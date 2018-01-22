@@ -124,7 +124,7 @@ string ShellCommand(string cmd, bool trimNewline)
 	FILE* fp = popen(cmd.c_str(), "r");
 	if(fp == NULL)
 	{
-		LogError("popen(%s) failed\n", cmd.c_str());
+		LogError("popen(%s) failed: %s\n", cmd.c_str(), strerror(errno));
 		return "";
 	}
 	string retval;
@@ -197,6 +197,9 @@ int ShellCommand(string cmd, string& stdout)
 
 			stdout += string(tmp, len);
 		}
+
+		//Done reading, close the read side of the pipe
+		close(read_end);
 
 		//Process has terminated, clean up
 		if(waitpid(pid, &code, 0) <= 0)
